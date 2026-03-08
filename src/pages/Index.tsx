@@ -36,38 +36,36 @@ import {
   usePoliticos,
 } from "@/hooks/usePoliticos";
 import {
-  CargoParlamentar,
-  useRankingCargoMap,
   useTopDeputadosAno,
   useTopEmendasPorPaisAno,
+  useTopGeralAno,
   useTopGastadoresAno,
   useTopSenadoresAno,
 } from "@/hooks/useRankings";
 import { graphqlRequest } from "@/api/graphqlClient";
-import {
-  POLITICOS_LIST_QUERY,
-  TOP_GASTADORES_EMENDAS_ANO_QUERY,
-} from "@/api/queries";
+import { POLITICOS_LIST_QUERY } from "@/api/queries";
 import { centsToNumber, formatCents, toBigInt } from "@/lib/formatters";
-import type { Connection, PoliticoResumo, RankingConnection, TopGastadorEmenda } from "@/api/types";
+import type { Connection, PoliticoResumo, TopGastadorEmenda } from "@/api/types";
 
 const PAGE_SIZE = 20;
 const rankIcons = [Crown, Trophy, Medal];
 
 const years = Array.from({ length: 8 }, (_, i) => 2026 - i);
 
-type TabId = "geral" | "deputados" | "senadores";
+type TabId = "parlamentares" | "deputados" | "senadores" | "geral";
 
 const tabs: { id: TabId; label: string; icon: typeof Users }[] = [
-  { id: "geral", label: "Ranking geral", icon: BarChart3 },
-  { id: "deputados", label: "Deputados", icon: Users },
-  { id: "senadores", label: "Senadores", icon: Landmark },
+  { id: "parlamentares", label: "Top 30 Parlamentares", icon: BarChart3 },
+  { id: "deputados", label: "Top 30 Deputados", icon: Users },
+  { id: "senadores", label: "Top 30 Senadores", icon: Landmark },
+  { id: "geral", label: "Geral (todos os autores)", icon: Globe },
 ];
 
 const tabTitles: Record<TabId, string> = {
-  geral: "Top geral",
+  parlamentares: "Top 30 parlamentares",
   deputados: "Top deputados",
   senadores: "Top senadores",
+  geral: "Top geral (inclui bancadas/comissoes/partidos)",
 };
 
 const featuredFallback = [
@@ -80,30 +78,27 @@ const featuredFallback = [
 ];
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<TabId>("geral");
+  const [activeTab, setActiveTab] = useState<TabId>("parlamentares");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState(2025);
   const [offset, setOffset] = useState(0);
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const pagination = { limit: PAGE_SIZE, offset };
-
   const apiHealthQuery = useApiHealth();
   const featuredQuery = useFeaturedPoliticos();
 
-  const geralQuery = useTopGastadoresAno(
-    selectedYear,
-    activeTab === "geral" ? pagination : { limit: PAGE_SIZE, offset: 0 }
-  );
-  const deputadosQuery = useTopDeputadosAno(selectedYear, { limit: 30, offset: 0 });
-  const senadoresQuery = useTopSenadoresAno(selectedYear, { limit: 30, offset: 0 });
+  const parlamentaresQuery = useTopGastadoresAno(selectedYear);
+  const deputadosQuery = useTopDeputadosAno(selectedYear);
+  const senadoresQuery = useTopSenadoresAno(selectedYear);
+  const geralQuery = useTopGeralAno(selectedYear);
   const paisesQuery = useTopEmendasPorPaisAno(selectedYear, { limit: 10, offset: 0 });
 
   const activeQueryMap = {
-    geral: geralQuery,
+    parlamentares: parlamentaresQuery,
     deputados: deputadosQuery,
     senadores: senadoresQuery,
+    geral: geralQuery,
   };
 
   const activeQuery = activeQueryMap[activeTab];
@@ -114,23 +109,10 @@ const Index = () => {
   );
 
   const isSearching = Boolean(searchTerm);
-  const cargoTab: CargoParlamentar | null =
-    activeTab === "deputados"
-      ? "DEPUTADO"
-      : activeTab === "senadores"
-      ? "SENADOR"
-      : null;
   const rawRankingNodes = (activeQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
-  const cargoMapQuery = useRankingCargoMap(rawRankingNodes, !isSearching && Boolean(cargoTab));
-  const filteredRankingNodes = useMemo(() => {
-    if (!cargoTab) return rawRankingNodes;
-    const map = cargoMapQuery.data || {};
-    return rawRankingNodes.filter((node) => map[node.nomeAutorEmenda] === cargoTab);
-  }, [cargoMapQuery.data, cargoTab, rawRankingNodes]);
   const rankingNodes = useMemo(() => {
-    if (!cargoTab) return rawRankingNodes;
-    return filteredRankingNodes.slice(offset, offset + PAGE_SIZE);
-  }, [cargoTab, filteredRankingNodes, offset, rawRankingNodes]);
+    return rawRankingNodes.slice(offset, offset + PAGE_SIZE);
+  }, [offset, rawRankingNodes]);
 
   const totalPagoCents = useMemo(
     () => rankingNodes.reduce((acc, node) => acc + toBigInt(node.totalPagoCents), 0n),
@@ -173,17 +155,14 @@ const Index = () => {
 
   const total = isSearching
     ? searchQuery.data?.total ?? 0
-    : cargoTab
-    ? filteredRankingNodes.length
-    : activeQuery.data?.total ?? 0;
+    : rawRankingNodes.length;
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
 
   useEffect(() => {
-    const nextOffset = offset + PAGE_SIZE;
-    const nextPagination = { limit: PAGE_SIZE, offset: nextOffset };
-
     if (isSearching) {
+      const nextOffset = offset + PAGE_SIZE;
+      const nextPagination = { limit: PAGE_SIZE, offset: nextOffset };
       if (!searchTerm || !searchQuery.data || nextOffset >= searchQuery.data.total) return;
       const filter = { search: searchTerm };
 
@@ -199,35 +178,12 @@ const Index = () => {
       });
       return;
     }
-
-    if (!activeQuery.data || nextOffset >= activeQuery.data.total) return;
-
-    if (activeTab === "deputados" || activeTab === "senadores") {
-      return;
-    }
-
-    if (activeTab === "geral") {
-      queryClient.prefetchQuery({
-        queryKey: ["top-gastadores-ano", selectedYear, nextPagination],
-        queryFn: ({ signal }) =>
-          graphqlRequest<{ topGastadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
-            TOP_GASTADORES_EMENDAS_ANO_QUERY,
-            { ano: selectedYear, pagination: nextPagination },
-            { signal }
-          ).then((d) => d.topGastadoresEmendasAno),
-        staleTime: 60_000,
-      });
-      return;
-    }
   }, [
-    activeQuery.data,
-    activeTab,
     isSearching,
     offset,
     queryClient,
     searchQuery.data,
     searchTerm,
-    selectedYear,
   ]);
 
   return (
@@ -383,9 +339,9 @@ const Index = () => {
                   variant="green"
                 />
                 <StatsCard
-                  label="Parlamentares"
+                  label="Registros no ranking"
                   value={String(total)}
-                  description="Registro retornado pela API"
+                  description="Top retornado pela API"
                   icon={Users}
                   variant="blue"
                 />
@@ -424,14 +380,12 @@ const Index = () => {
 
               <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="space-y-4">
-                  {activeQuery.isLoading || (Boolean(cargoTab) && cargoMapQuery.isLoading) ? (
+                  {activeQuery.isLoading ? (
                     <LoadingState message="Carregando ranking da API..." />
                   ) : null}
                   {activeQuery.error ? <ErrorState error={activeQuery.error as Error} /> : null}
-                  {cargoMapQuery.error ? <ErrorState error={cargoMapQuery.error as Error} /> : null}
                   {!activeQuery.isLoading &&
                   !activeQuery.error &&
-                  !cargoMapQuery.isLoading &&
                   rankingNodes.length === 0 ? (
                     <EmptyState message="A API nao retornou ranking para este ano." />
                   ) : null}
