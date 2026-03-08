@@ -5,6 +5,7 @@ import {
   BarChart3,
   Home,
   Menu,
+  Plane,
   Search,
   X,
 } from "lucide-react";
@@ -13,6 +14,7 @@ import logo from "@/assets/logo.png";
 const navItems = [
   { icon: Home, label: "Home", path: "/", hint: "Painel principal" },
   { icon: Search, label: "Busca", path: "/busca", hint: "Encontrar politico" },
+  { icon: Plane, label: "Viagens", path: "/viagens", hint: "Custos oficiais" },
   { icon: BarChart3, label: "Rankings", path: "/rankings", hint: "Comparativos" },
 ];
 

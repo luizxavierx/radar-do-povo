@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { graphqlRequest } from "@/api/graphqlClient";
 import {
-  TOP_DEPUTADOS_EMENDAS_QUERY,
   TOP_EMENDAS_POR_PAIS_ANO_QUERY,
   TOP_GASTADORES_EMENDAS_ANO_QUERY,
   TOP_GASTADORES_EMENDAS_QUERY,
-  TOP_SENADORES_EMENDAS_QUERY,
 } from "@/api/queries";
 import type {
   Connection,
@@ -77,11 +75,19 @@ export function useTopDeputadosAno(ano: number) {
   return useQuery({
     queryKey: ["top-deputados-ano", ano],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ topDeputadosEmendasAno: RankingConnection<TopGastadorEmenda> }>(
-        TOP_DEPUTADOS_EMENDAS_QUERY,
-        { ano, pagination: TOP30_PAGINATION },
+      graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
+        TOP_GASTADORES_EMENDAS_QUERY,
+        {
+          filtro: {
+            anoInicio: ano,
+            anoFim: ano,
+            apenasParlamentares: true,
+            cargoParlamentar: "DEPUTADO",
+          },
+          pagination: TOP30_PAGINATION,
+        },
         { signal }
-      ).then((d) => d.topDeputadosEmendasAno),
+      ).then((d) => d.topGastadoresEmendas),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
   });
@@ -91,11 +97,19 @@ export function useTopSenadoresAno(ano: number) {
   return useQuery({
     queryKey: ["top-senadores-ano", ano],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ topSenadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
-        TOP_SENADORES_EMENDAS_QUERY,
-        { ano, pagination: TOP30_PAGINATION },
+      graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
+        TOP_GASTADORES_EMENDAS_QUERY,
+        {
+          filtro: {
+            anoInicio: ano,
+            anoFim: ano,
+            apenasParlamentares: true,
+            cargoParlamentar: "SENADOR",
+          },
+          pagination: TOP30_PAGINATION,
+        },
         { signal }
-      ).then((d) => d.topSenadoresEmendasAno),
+      ).then((d) => d.topGastadoresEmendas),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
   });

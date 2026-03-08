@@ -83,6 +83,20 @@ const RankingsPage = () => {
     [rawNodes]
   );
 
+  const deputadosESenadoresIguais = useMemo(() => {
+    const dep = (deputadosQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
+    const sen = (senadoresQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
+    if (!dep.length || !sen.length) return false;
+
+    const signature = (nodes: TopGastadorEmenda[]) =>
+      nodes
+        .slice(0, 10)
+        .map((node) => `${node.nomeAutorEmenda}|${node.totalPagoCents}`)
+        .join(";");
+
+    return signature(dep) === signature(sen);
+  }, [deputadosQuery.data?.nodes, senadoresQuery.data?.nodes]);
+
   const loading = activeQuery.isLoading;
   const error = activeQuery.error;
 
@@ -163,6 +177,13 @@ const RankingsPage = () => {
               variant="yellow"
             />
           </section>
+
+          {deputadosESenadoresIguais &&
+          (activeTab === "deputados" || activeTab === "senadores") ? (
+            <section className="mt-4 rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+              A API retornou os mesmos resultados para deputados e senadores neste ano. O front esta separado por endpoint, mas os dados da origem vieram iguais.
+            </section>
+          ) : null}
 
           <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-3">

@@ -57,30 +57,53 @@ export interface Passagem {
   taxaServicoCents?: string;
   meioTransporte?: string;
   emissaoData?: string;
+  idaOrigemCidade?: string;
+  idaDestinoCidade?: string;
+  voltaOrigemCidade?: string;
+  voltaDestinoCidade?: string;
+  ano?: number;
 }
 
 export interface Pagamento {
   id?: string;
   tipoPagamento?: string;
   valorCents?: string;
+  orgaoPagadorNome?: string;
+  ugPagadoraNome?: string;
   ano?: number;
 }
 
 export interface Trecho {
   id?: string;
   sequencia?: number;
+  origemData?: string;
   origemCidade?: string;
+  destinoData?: string;
   destinoCidade?: string;
+  meioTransporte?: string;
+  numeroDiarias?: number;
+  missao?: string;
+  ano?: number;
 }
 
 export interface Viagem {
   processoId?: string;
+  pcdp?: string;
+  situacao?: string;
+  viagemUrgente?: boolean;
+  orgaoSuperiorNome?: string;
+  orgaoSolicitanteNome?: string;
   dataInicio?: string;
   dataFim?: string;
+  destinos?: string;
   nomeViajante?: string;
+  cargo?: string;
   motivo?: string;
   valorDiariasCents?: string;
   valorPassagensCents?: string;
+  valorOutrosGastosCents?: string;
+  valorDevolucaoCents?: string;
+  ano?: number;
   passagens?: Connection<Passagem>;
   pagamentos?: Connection<Pagamento>;
   trechos?: Connection<Trecho>;

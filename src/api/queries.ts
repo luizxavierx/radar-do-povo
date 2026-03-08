@@ -29,11 +29,138 @@ export const POLITICOS_LIST_QUERY = `
   }
 `;
 
-export const POLITICO_CARGO_POR_NOME_QUERY = `
-  query PoliticoCargoPorNome($search: String!) {
-    politicos(filter: { search: $search }, pagination: { limit: 1, offset: 0 }) {
+export const VIAGENS_BUSCAR_POLITICO_QUERY = `
+  query BuscarPolitico($search: String!) {
+    politicos(filter: { search: $search }, pagination: { limit: 5, offset: 0 }) {
+      total
       nodes {
-        cargoAtual
+        id
+        nomeCanonico
+        nomeCompleto
+        partido
+        uf
+        fotoUrl
+      }
+    }
+  }
+`;
+
+export const VIAGENS_RESUMO_QUERY = `
+  query ResumoViagens($id: ID!, $anoInicio: Int, $anoFim: Int) {
+    politico(id: $id) {
+      id
+      nomeCanonico
+      nomeCompleto
+      partido
+      uf
+      fotoUrl
+      gastos(filtro: { anoInicio: $anoInicio, anoFim: $anoFim }) {
+        totalViagens
+        totalTrechos
+        totalDiariasCents
+        totalPassagensCents
+        totalPagamentosCents
+        totalOutrosGastosCents
+        totalDevolucaoCents
+        periodo {
+          anoInicio
+          anoFim
+        }
+      }
+    }
+  }
+`;
+
+export const VIAGENS_LISTA_QUERY = `
+  query ListaViagens($id: ID!, $anoInicio: Int, $anoFim: Int, $limit: Int!, $offset: Int!) {
+    politico(id: $id) {
+      id
+      viagens(anoInicio: $anoInicio, anoFim: $anoFim, pagination: { limit: $limit, offset: $offset }) {
+        total
+        limit
+        offset
+        nodes {
+          processoId
+          pcdp
+          situacao
+          viagemUrgente
+          orgaoSuperiorNome
+          orgaoSolicitanteNome
+          nomeViajante
+          cargo
+          dataInicio
+          dataFim
+          destinos
+          motivo
+          valorDiariasCents
+          valorPassagensCents
+          valorOutrosGastosCents
+          valorDevolucaoCents
+          ano
+        }
+      }
+    }
+  }
+`;
+
+export const VIAGENS_DETALHE_QUERY = `
+  query DetalheViagem($id: ID!, $anoInicio: Int, $anoFim: Int, $offsetViagens: Int!) {
+    politico(id: $id) {
+      id
+      viagens(anoInicio: $anoInicio, anoFim: $anoFim, pagination: { limit: 1, offset: $offsetViagens }) {
+        total
+        limit
+        offset
+        nodes {
+          processoId
+          passagens(pagination: { limit: 5, offset: 0 }) {
+            total
+            limit
+            offset
+            nodes {
+              id
+              meioTransporte
+              idaOrigemCidade
+              idaDestinoCidade
+              voltaOrigemCidade
+              voltaDestinoCidade
+              valorPassagemCents
+              taxaServicoCents
+              emissaoData
+              ano
+            }
+          }
+          pagamentos(pagination: { limit: 5, offset: 0 }) {
+            total
+            limit
+            offset
+            nodes {
+              id
+              tipoPagamento
+              orgaoPagadorNome
+              ugPagadoraNome
+              valorCents
+              ano
+            }
+          }
+          trechos(pagination: { limit: 5, offset: 0 }) {
+            total
+            limit
+            offset
+            nodes {
+              id
+              sequencia
+              origemData
+              origemCidade
+              destinoData
+              destinoCidade
+              meioTransporte
+              numeroDiarias
+              missao
+              ano
+            }
+          }
+        }
       }
     }
   }
@@ -288,9 +415,6 @@ export const TOP_GASTADORES_EMENDAS_ANO_QUERY = `
         totalPagoCents
         totalEmpenhadoCents
         totalLiquidadoCents
-        totalRpInscritosCents
-        totalRpCanceladosCents
-        totalRpPagosCents
       }
     }
   }
@@ -303,6 +427,7 @@ export const TOP_DEPUTADOS_EMENDAS_QUERY = `
       limit
       offset
       nodes {
+        codigoAutorEmenda
         nomeAutorEmenda
         totalEmendas
         totalPagoCents
@@ -318,6 +443,26 @@ export const TOP_SENADORES_EMENDAS_QUERY = `
       limit
       offset
       nodes {
+        codigoAutorEmenda
+        nomeAutorEmenda
+        totalEmendas
+        totalPagoCents
+      }
+    }
+  }
+`;
+
+export const TOP_GERAL_ANO_QUERY = `
+  query TopGeralAno($ano: Int!, $pagination: PaginationInput) {
+    topGastadoresEmendas(
+      filtro: { anoInicio: $ano, anoFim: $ano, apenasParlamentares: false }
+      pagination: $pagination
+    ) {
+      total
+      limit
+      offset
+      nodes {
+        codigoAutorEmenda
         nomeAutorEmenda
         totalEmendas
         totalPagoCents
@@ -350,6 +495,7 @@ export const TOP_GASTADORES_EMENDAS_QUERY = `
       limit
       offset
       nodes {
+        codigoAutorEmenda
         nomeAutorEmenda
         totalPagoCents
         totalEmendas
