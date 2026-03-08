@@ -171,7 +171,6 @@ const Index = () => {
                 <StatusBadge
                   status={apiHealthQuery.data?.status}
                   loading={apiHealthQuery.isLoading}
-                  source={apiHealthQuery.data?.via}
                 />
 
                 <label className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-card">
@@ -427,11 +426,9 @@ const Index = () => {
 const StatusBadge = ({
   status,
   loading,
-  source,
 }: {
   status?: string;
   loading?: boolean;
-  source?: "graphql" | "healthz";
 }) => {
   const normalized = (status || "unknown").toLowerCase();
 
@@ -455,7 +452,6 @@ const StatusBadge = ({
     <span className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-semibold ${tone}`}>
       <ShieldCheck className="h-3.5 w-3.5" />
       {loading ? "Validando API..." : label}
-      {source ? <span className="text-[10px] opacity-70">({source})</span> : null}
     </span>
   );
 };

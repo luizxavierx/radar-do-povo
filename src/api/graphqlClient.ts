@@ -1,7 +1,7 @@
 import type { GraphQLResponse, GraphQLError } from "./types";
 
-const API_BASE = "https://api.radardopovo.com";
-const GRAPHQL_ENDPOINT = `${API_BASE}/graphql`;
+const GRAPHQL_ENDPOINT = "/api/graphql";
+const HEALTH_ENDPOINT = "/api/healthz";
 const REQUEST_TIMEOUT = 15_000;
 
 export class GraphQLRequestError extends Error {
@@ -46,16 +46,17 @@ export async function graphqlRequest<TData, TVars = Record<string, unknown>>(
 
     if (json.errors?.length) {
       const requestId = json.errors[0]?.extensions?.request_id as string | undefined;
+
       if (requestId) {
-        console.error(`[RadarDoPovo] GraphQL error — request_id: ${requestId}`, json.errors);
+        console.error(`[RadarDoPovo] GraphQL error - request_id: ${requestId}`, json.errors);
       } else {
         console.error("[RadarDoPovo] GraphQL error", json.errors);
       }
 
-      throw new GraphQLRequestError(
-        json.errors.map((e) => e.message).join("; "),
-        { requestId, graphqlErrors: json.errors }
-      );
+      throw new GraphQLRequestError(json.errors.map((e) => e.message).join("; "), {
+        requestId,
+        graphqlErrors: json.errors,
+      });
     }
 
     if (!json.data) {
@@ -66,7 +67,7 @@ export async function graphqlRequest<TData, TVars = Record<string, unknown>>(
   } catch (err) {
     if (err instanceof GraphQLRequestError) throw err;
     if ((err as Error).name === "AbortError") {
-      throw new GraphQLRequestError("Timeout: a API não respondeu a tempo");
+      throw new GraphQLRequestError("Timeout: a API nao respondeu a tempo");
     }
     throw new GraphQLRequestError((err as Error).message);
   } finally {
@@ -77,7 +78,7 @@ export async function graphqlRequest<TData, TVars = Record<string, unknown>>(
 /** Health check */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/api/healthz`, { signal: AbortSignal.timeout(5_000) });
+    const res = await fetch(HEALTH_ENDPOINT, { signal: AbortSignal.timeout(5_000) });
     return res.ok;
   } catch {
     return false;
