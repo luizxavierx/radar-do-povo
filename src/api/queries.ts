@@ -45,6 +45,77 @@ export const POLITICO_BASICO_QUERY = `
   }
 `;
 
+export const POLITICO_DOSSIE_COMPLETO_QUERY = `
+  query DossieCompleto($nome: String!, $anoInicio: Int!, $anoFim: Int!) {
+    politicos(filter: { search: $nome }, pagination: { limit: 1, offset: 0 }) {
+      total
+      limit
+      offset
+      nodes {
+        id
+        nomeCanonico
+        nomeCompleto
+        partido
+        uf
+        cargoAtual
+        dataNascimento
+        fotoUrl
+        perfilExterno {
+          camara { id nome siglaPartido siglaUf email uri urlFoto fonte }
+          senado { codigo nome nomeCompleto siglaPartido uf email urlFoto urlPagina afastadoAtual fonte }
+          tse { termoBusca datasetCandidatosUrl datasetResultadosUrl candidatosCdnBaseUrl divulgaCandContasUrl fonte }
+          lexml { total documentos { titulo tipo data url } }
+          brasilIo { total candidatos { anoEleicao nomeUrna siglaPartido descricaoCargo situacaoCandidatura } }
+          wikipedia { titulo resumo url fonte }
+        }
+        gastos(filtro: { anoInicio: $anoInicio, anoFim: $anoFim }) {
+          totalViagens
+          totalTrechos
+          totalDiariasCents
+          totalPassagensCents
+          totalPagamentosCents
+          totalOutrosGastosCents
+          totalDevolucaoCents
+        }
+        viagens(anoInicio: $anoInicio, anoFim: $anoFim, pagination: { limit: 50, offset: 0 }) {
+          total
+          limit
+          offset
+          nodes {
+            processoId
+            dataInicio
+            dataFim
+            nomeViajante
+            motivo
+            valorDiariasCents
+            valorPassagensCents
+            pagamentos(pagination: { limit: 30, offset: 0 }) { total limit offset nodes { id tipoPagamento valorCents ano } }
+            passagens(pagination: { limit: 30, offset: 0 }) { total limit offset nodes { id meioTransporte valorPassagemCents taxaServicoCents } }
+            trechos(pagination: { limit: 30, offset: 0 }) { total limit offset nodes { id sequencia origemCidade destinoCidade } }
+          }
+        }
+        emendas(filtro: { anoInicio: $anoInicio, anoFim: $anoFim }, pagination: { limit: 50, offset: 0 }) {
+          total
+          limit
+          offset
+          nodes {
+            id
+            codigoEmenda
+            anoEmenda
+            tipoEmenda
+            nomeAutorEmenda
+            valorEmpenhadoCents
+            valorLiquidadoCents
+            valorPagoCents
+            convenios(pagination: { limit: 30, offset: 0 }) { total limit offset nodes { id numeroConvenio valorConvenioCents } }
+            favorecidos(pagination: { limit: 30, offset: 0 }) { total limit offset nodes { id favorecido valorRecebidoCents } }
+          }
+        }
+      }
+    }
+  }
+`;
+
 // Block B: expenses + amendments summary
 export const POLITICO_RESUMO_FINANCEIRO_QUERY = `
   query PoliticoResumoFinanceiro(

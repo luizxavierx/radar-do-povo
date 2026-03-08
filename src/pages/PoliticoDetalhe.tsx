@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -17,22 +17,14 @@ import {
   User,
 } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
-import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  usePoliticoDetalhe,
-  usePoliticoPerfilExterno,
-} from "@/hooks/usePoliticos";
-import { useViagens } from "@/hooks/useViagens";
-import { useEmendas, usePoliticoResumoFinanceiro } from "@/hooks/useEmendas";
-import { graphqlRequest } from "@/api/graphqlClient";
-import { EMENDAS_POLITICO_QUERY, VIAGENS_POLITICO_QUERY } from "@/api/queries";
+import { usePoliticoDossieCompleto } from "@/hooks/usePoliticos";
 import { centsToNumber, formatCents, formatDate, toBigInt } from "@/lib/formatters";
-import type { Connection, Emenda, PerfilExterno, Viagem } from "@/api/types";
+import type { Emenda, PerfilExterno } from "@/api/types";
 
 const PAGE_SIZE = 10;
 const years = Array.from({ length: 8 }, (_, i) => 2026 - i);
@@ -46,38 +38,31 @@ const PoliticoDetalhe = () => {
   const [anoFim, setAnoFim] = useState(2025);
   const [viagensOffset, setViagensOffset] = useState(0);
   const [emendasOffset, setEmendasOffset] = useState(0);
-  const queryClient = useQueryClient();
 
-  const { data: politico, isLoading, error } = usePoliticoDetalhe({ id });
-  const perfilExternoQuery = usePoliticoPerfilExterno(id, {
-    camara: true,
-    senado: true,
-    lexml: true,
-    brasilIo: true,
-    wikipedia: true,
-    tse: false,
-  });
-  const resumoFinanceiroQuery = usePoliticoResumoFinanceiro(id, { anoInicio, anoFim });
-  const { data: viagens, isLoading: loadingViagens, error: viagensError } = useViagens(
-    id,
-    { limit: PAGE_SIZE, offset: viagensOffset },
+  const nomeBusca = decodeURIComponent(id || "").trim();
+  const { data: politico, isLoading, error } = usePoliticoDossieCompleto(
+    nomeBusca,
     anoInicio,
     anoFim
   );
-  const { data: emendas, isLoading: loadingEmendas, error: emendasError } = useEmendas(
-    id,
-    { limit: PAGE_SIZE, offset: emendasOffset },
-    { anoInicio, anoFim }
-  );
 
-  const gastos = resumoFinanceiroQuery.data?.gastos;
-  const emendasResumo = resumoFinanceiroQuery.data?.emendasResumo;
-  const loadingResumo = resumoFinanceiroQuery.isLoading;
-  const loadingGastos = resumoFinanceiroQuery.isLoading;
-  const resumoError = resumoFinanceiroQuery.error as Error | null;
+  const gastos = politico?.gastos;
+  const viagensNodes = politico?.viagens?.nodes ?? [];
+  const viagensTotalApi = politico?.viagens?.total ?? viagensNodes.length;
+  const viagensTotalView = Math.min(viagensTotalApi, viagensNodes.length);
+  const viagensPage = viagensNodes.slice(viagensOffset, viagensOffset + PAGE_SIZE);
+
+  const emendasNodes = politico?.emendas?.nodes ?? [];
+  const emendasTotalApi = politico?.emendas?.total ?? emendasNodes.length;
+  const emendasTotalView = Math.min(emendasTotalApi, emendasNodes.length);
+  const emendasPage = emendasNodes.slice(emendasOffset, emendasOffset + PAGE_SIZE);
+
+  const emendasResumo = useMemo(() => buildEmendasResumo(emendasNodes), [emendasNodes]);
 
   const fotoUrl =
-    politico?.fotoUrl || perfilExternoQuery.data?.camara?.urlFoto || perfilExternoQuery.data?.senado?.urlFoto;
+    politico?.fotoUrl ||
+    politico?.perfilExterno?.camara?.urlFoto ||
+    politico?.perfilExterno?.senado?.urlFoto;
 
   const pieData = useMemo(() => {
     if (!gastos) return [];
@@ -111,48 +96,6 @@ const PoliticoDetalhe = () => {
     setEmendasOffset(0);
   };
 
-  useEffect(() => {
-    if (!id || !viagens) return;
-
-    const nextOffset = viagensOffset + PAGE_SIZE;
-    if (nextOffset >= viagens.total) return;
-
-    queryClient.prefetchQuery({
-      queryKey: ["viagens-politico", id, { limit: PAGE_SIZE, offset: nextOffset }, anoInicio, anoFim],
-      queryFn: ({ signal }) =>
-        graphqlRequest<{ viagensPolitico: Connection<Viagem> }>(
-          VIAGENS_POLITICO_QUERY,
-          {
-            input: { politicoId: id, anoInicio, anoFim },
-            pagination: { limit: PAGE_SIZE, offset: nextOffset },
-          },
-          { signal }
-        ).then((d) => d.viagensPolitico),
-      staleTime: 60_000,
-    });
-  }, [anoFim, anoInicio, id, queryClient, viagens, viagensOffset]);
-
-  useEffect(() => {
-    if (!id || !emendas) return;
-
-    const nextOffset = emendasOffset + PAGE_SIZE;
-    if (nextOffset >= emendas.total) return;
-
-    queryClient.prefetchQuery({
-      queryKey: ["emendas-politico", id, { limit: PAGE_SIZE, offset: nextOffset }, { anoInicio, anoFim }],
-      queryFn: ({ signal }) =>
-        graphqlRequest<{ emendasPolitico: Connection<Emenda> }>(
-          EMENDAS_POLITICO_QUERY,
-          {
-            input: { politicoId: id, filtro: { anoInicio, anoFim } },
-            pagination: { limit: PAGE_SIZE, offset: nextOffset },
-          },
-          { signal }
-        ).then((d) => d.emendasPolitico),
-      staleTime: 60_000,
-    });
-  }, [anoFim, anoInicio, emendas, emendasOffset, id, queryClient]);
-
   return (
     <div className="min-h-screen bg-grid-pattern">
       <AppSidebar />
@@ -167,9 +110,11 @@ const PoliticoDetalhe = () => {
             Voltar
           </button>
 
-          {isLoading ? <LoadingState message="Carregando perfil do politico..." /> : null}
+          {isLoading ? <DossieSkeleton /> : null}
           {error ? <ErrorState error={error as Error} /> : null}
-          {!isLoading && !error && !politico ? <EmptyState message="Politico nao encontrado." /> : null}
+          {!isLoading && !error && !politico ? (
+            <EmptyState message={`Nenhum dossie encontrado para "${nomeBusca}".`} />
+          ) : null}
 
           {politico ? (
             <div className="space-y-6">
@@ -177,7 +122,11 @@ const PoliticoDetalhe = () => {
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                   <div className="flex min-w-0 items-start gap-4">
                     {fotoUrl ? (
-                      <img src={fotoUrl} alt={politico.nomeCanonico} className="h-24 w-24 rounded-2xl object-cover shadow-card" />
+                      <img
+                        src={fotoUrl}
+                        alt={politico.nomeCanonico}
+                        className="h-24 w-24 rounded-2xl object-cover shadow-card"
+                      />
                     ) : (
                       <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-muted">
                         <User className="h-10 w-10 text-muted-foreground" />
@@ -208,11 +157,15 @@ const PoliticoDetalhe = () => {
                       </div>
 
                       <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                        {politico.dataNascimento ? <span>Nascimento: {formatDate(politico.dataNascimento)}</span> : null}
-                        {perfilExternoQuery.data?.camara?.email || perfilExternoQuery.data?.senado?.email ? (
+                        {politico.dataNascimento ? (
+                          <span>Nascimento: {formatDate(politico.dataNascimento)}</span>
+                        ) : null}
+                        {politico.perfilExterno?.camara?.email ||
+                        politico.perfilExterno?.senado?.email ? (
                           <span className="inline-flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            {perfilExternoQuery.data?.camara?.email || perfilExternoQuery.data?.senado?.email}
+                            {politico.perfilExterno?.camara?.email ||
+                              politico.perfilExterno?.senado?.email}
                           </span>
                         ) : null}
                       </div>
@@ -255,33 +208,51 @@ const PoliticoDetalhe = () => {
                 </div>
               </section>
 
-              {loadingResumo ? <MetricsSkeleton /> : null}
-              {!loadingResumo ? (
-                <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <MetricCard label="Total gastos" value={totalGastos} icon={Banknote} />
-                  <MetricCard label="Total viagens" value={String(gastos?.totalViagens ?? 0)} icon={Plane} />
-                  <MetricCard label="Total emendas" value={String(emendasResumo?.totalEmendas ?? 0)} icon={FileText} />
-                  <MetricCard label="Pago em emendas" value={formatCents(emendasResumo?.totalPagoCents)} icon={Landmark} />
-                </section>
-              ) : null}
-              {resumoError ? <ErrorState error={resumoError} /> : null}
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricCard label="Total gastos" value={totalGastos} icon={Banknote} />
+                <MetricCard
+                  label="Total viagens"
+                  value={String(gastos?.totalViagens ?? viagensTotalApi)}
+                  icon={Plane}
+                />
+                <MetricCard
+                  label="Total emendas"
+                  value={String(emendasTotalApi)}
+                  icon={FileText}
+                />
+                <MetricCard
+                  label="Pago em emendas"
+                  value={formatCents(emendasResumo.totalPagoCents)}
+                  icon={Landmark}
+                />
+              </section>
 
               <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
-                  <h2 className="mb-3 text-base font-bold">Composicao dos gastos ({anoInicio}-{anoFim})</h2>
+                  <h2 className="mb-3 text-base font-bold">
+                    Composicao dos gastos ({anoInicio}-{anoFim})
+                  </h2>
 
-                  {loadingGastos ? <PieBlockSkeleton /> : null}
-                  {!loadingGastos && !resumoError && pieData.length === 0 ? (
+                  {pieData.length === 0 ? (
                     <EmptyState message="Sem valores de gastos para este periodo." />
-                  ) : null}
-
-                  {pieData.length ? (
+                  ) : (
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={92} innerRadius={50}>
+                          <Pie
+                            data={pieData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={92}
+                            innerRadius={50}
+                          >
                             {pieData.map((entry, index) => (
-                              <Cell key={entry.name} fill={pieColors[index % pieColors.length]} />
+                              <Cell
+                                key={entry.name}
+                                fill={pieColors[index % pieColors.length]}
+                              />
                             ))}
                           </Pie>
                           <RechartsTooltip
@@ -296,34 +267,42 @@ const PoliticoDetalhe = () => {
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                  ) : null}
+                  )}
                 </div>
 
                 <div className="space-y-4">
                   <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
                     <h2 className="mb-3 text-sm font-bold">Resumo de emendas</h2>
-                    {loadingResumo ? <ResumoEmendasSkeleton /> : null}
-                    {!loadingResumo && !resumoError ? (
-                      <div className="space-y-2 text-xs">
-                        <SummaryRow label="Empenhado" value={formatCents(emendasResumo?.totalEmpenhadoCents)} />
-                        <SummaryRow label="Liquidado" value={formatCents(emendasResumo?.totalLiquidadoCents)} />
-                        <SummaryRow label="Pago" value={formatCents(emendasResumo?.totalPagoCents)} />
-                        <SummaryRow
-                          label="Favorecidos"
-                          value={String(emendasResumo?.totalFavorecidos ?? 0)}
-                        />
-                        <SummaryRow
-                          label="Recebido por favorecidos"
-                          value={formatCents(emendasResumo?.totalRecebidoFavorecidosCents)}
-                        />
-                      </div>
-                    ) : null}
+                    <div className="space-y-2 text-xs">
+                      <SummaryRow
+                        label="Empenhado"
+                        value={formatCents(emendasResumo.totalEmpenhadoCents)}
+                      />
+                      <SummaryRow
+                        label="Liquidado"
+                        value={formatCents(emendasResumo.totalLiquidadoCents)}
+                      />
+                      <SummaryRow
+                        label="Pago"
+                        value={formatCents(emendasResumo.totalPagoCents)}
+                      />
+                      <SummaryRow
+                        label="Favorecidos (carga atual)"
+                        value={String(emendasResumo.totalFavorecidos)}
+                      />
+                      <SummaryRow
+                        label="Recebido por favorecidos"
+                        value={formatCents(emendasResumo.totalRecebidoFavorecidosCents)}
+                      />
+                    </div>
                   </section>
 
                   <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
                     <h2 className="mb-3 text-sm font-bold">Periodo ativo</h2>
                     <p className="text-xs text-muted-foreground">
-                      Este painel esta consultando a API entre <strong className="text-foreground">{anoInicio}</strong> e <strong className="text-foreground">{anoFim}</strong>.
+                      Este painel esta consultando a API entre{" "}
+                      <strong className="text-foreground">{anoInicio}</strong> e{" "}
+                      <strong className="text-foreground">{anoFim}</strong>.
                     </p>
                   </section>
                 </div>
@@ -335,16 +314,18 @@ const PoliticoDetalhe = () => {
                   Viagens
                 </h2>
 
-                {loadingViagens ? <TableSkeleton rows={5} /> : null}
-                {viagensError ? <ErrorState error={viagensError as Error} /> : null}
-                {!loadingViagens && !viagensError && (!viagens || viagens.total === 0) ? (
+                {viagensPage.length === 0 ? (
                   <EmptyState message="Nenhuma viagem registrada neste periodo." />
-                ) : null}
-
-                {viagens?.nodes?.length ? (
+                ) : (
                   <>
+                    {viagensTotalApi > viagensNodes.length ? (
+                      <p className="mb-3 text-[11px] text-muted-foreground">
+                        Mostrando {viagensNodes.length} de {viagensTotalApi} viagens retornadas.
+                      </p>
+                    ) : null}
+
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[640px] text-xs">
+                      <table className="w-full min-w-[700px] text-xs">
                         <thead>
                           <tr className="border-b border-border/80 text-left text-muted-foreground">
                             <th className="pb-2 pr-4 font-semibold">Periodo</th>
@@ -355,7 +336,7 @@ const PoliticoDetalhe = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border/60">
-                          {viagens.nodes.map((viagem, index) => (
+                          {viagensPage.map((viagem, index) => (
                             <tr key={viagem.processoId || index} className="hover:bg-muted/35">
                               <td className="py-2.5 pr-4 text-muted-foreground">
                                 {formatDate(viagem.dataInicio)} - {formatDate(viagem.dataFim)}
@@ -363,8 +344,13 @@ const PoliticoDetalhe = () => {
                               <td className="max-w-[240px] truncate py-2.5 pr-4 font-medium text-foreground">
                                 {viagem.motivo || "-"}
                               </td>
-                              <td className="max-w-[220px] truncate py-2.5 pr-4 text-muted-foreground">
-                                {viagem.trechos?.nodes?.map((trecho) => `${trecho.origemCidade} -> ${trecho.destinoCidade}`).join(" | ") || "-"}
+                              <td className="max-w-[240px] truncate py-2.5 pr-4 text-muted-foreground">
+                                {viagem.trechos?.nodes
+                                  ?.map(
+                                    (trecho) =>
+                                      `${trecho.origemCidade} -> ${trecho.destinoCidade}`
+                                  )
+                                  .join(" | ") || "-"}
                               </td>
                               <td className="py-2.5 text-right font-semibold text-primary">
                                 {formatCents(viagem.valorDiariasCents)}
@@ -378,14 +364,16 @@ const PoliticoDetalhe = () => {
                       </table>
                     </div>
 
-                    <PaginationControls
-                      total={viagens.total}
-                      limit={viagens.limit}
-                      offset={viagens.offset}
-                      onPageChange={setViagensOffset}
-                    />
+                    {viagensTotalView > PAGE_SIZE ? (
+                      <PaginationControls
+                        total={viagensTotalView}
+                        limit={PAGE_SIZE}
+                        offset={viagensOffset}
+                        onPageChange={setViagensOffset}
+                      />
+                    ) : null}
                   </>
-                ) : null}
+                )}
               </section>
 
               <section className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
@@ -394,50 +382,70 @@ const PoliticoDetalhe = () => {
                   Emendas parlamentares
                 </h2>
 
-                {loadingEmendas ? <TableSkeleton rows={5} /> : null}
-                {emendasError ? <ErrorState error={emendasError as Error} /> : null}
-                {!loadingEmendas && !emendasError && (!emendas || emendas.total === 0) ? (
+                {emendasPage.length === 0 ? (
                   <EmptyState message="Nenhuma emenda registrada neste periodo." />
-                ) : null}
-
-                {emendas?.nodes?.length ? (
+                ) : (
                   <>
+                    {emendasTotalApi > emendasNodes.length ? (
+                      <p className="mb-3 text-[11px] text-muted-foreground">
+                        Mostrando {emendasNodes.length} de {emendasTotalApi} emendas retornadas.
+                      </p>
+                    ) : null}
+
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[560px] text-xs">
+                      <table className="w-full min-w-[760px] text-xs">
                         <thead>
                           <tr className="border-b border-border/80 text-left text-muted-foreground">
                             <th className="pb-2 pr-4 font-semibold">Ano</th>
                             <th className="pb-2 pr-4 font-semibold">Tipo</th>
                             <th className="pb-2 pr-4 font-semibold">Codigo</th>
-                            <th className="pb-2 text-right font-semibold">Valor pago</th>
+                            <th className="pb-2 pr-4 text-right font-semibold">Empenhado</th>
+                            <th className="pb-2 pr-4 text-right font-semibold">Liquidado</th>
+                            <th className="pb-2 text-right font-semibold">Pago</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border/60">
-                          {emendas.nodes.map((emenda, index) => (
+                          {emendasPage.map((emenda, index) => (
                             <tr key={emenda.id || index} className="hover:bg-muted/35">
-                              <td className="py-2.5 pr-4 font-semibold">{emenda.anoEmenda || "-"}</td>
-                              <td className="py-2.5 pr-4 text-muted-foreground">{emenda.tipoEmenda || "-"}</td>
-                              <td className="py-2.5 pr-4 font-mono text-[10px] text-muted-foreground">{emenda.codigoEmenda || "-"}</td>
-                              <td className="py-2.5 text-right font-semibold text-primary">{formatCents(emenda.valorPagoCents)}</td>
+                              <td className="py-2.5 pr-4 font-semibold">
+                                {emenda.anoEmenda || "-"}
+                              </td>
+                              <td className="py-2.5 pr-4 text-muted-foreground">
+                                {emenda.tipoEmenda || "-"}
+                              </td>
+                              <td className="py-2.5 pr-4 font-mono text-[10px] text-muted-foreground">
+                                {emenda.codigoEmenda || "-"}
+                              </td>
+                              <td className="py-2.5 pr-4 text-right font-semibold text-muted-foreground">
+                                {formatCents(emenda.valorEmpenhadoCents)}
+                              </td>
+                              <td className="py-2.5 pr-4 text-right font-semibold text-muted-foreground">
+                                {formatCents(emenda.valorLiquidadoCents)}
+                              </td>
+                              <td className="py-2.5 text-right font-semibold text-primary">
+                                {formatCents(emenda.valorPagoCents)}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
 
-                    <PaginationControls
-                      total={emendas.total}
-                      limit={emendas.limit}
-                      offset={emendas.offset}
-                      onPageChange={setEmendasOffset}
-                    />
+                    {emendasTotalView > PAGE_SIZE ? (
+                      <PaginationControls
+                        total={emendasTotalView}
+                        limit={PAGE_SIZE}
+                        offset={emendasOffset}
+                        onPageChange={setEmendasOffset}
+                      />
+                    ) : null}
                   </>
-                ) : null}
+                )}
               </section>
 
-              {perfilExternoQuery.isLoading ? <PerfilExternoSkeleton /> : null}
-              {perfilExternoQuery.error ? <ErrorState error={perfilExternoQuery.error as Error} /> : null}
-              {perfilExternoQuery.data ? <PerfilExternoSection perfil={perfilExternoQuery.data} /> : null}
+              {politico.perfilExterno ? (
+                <PerfilExternoSection perfil={politico.perfilExterno} />
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -457,7 +465,9 @@ const MetricCard = ({
 }) => (
   <article className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
     <div className="flex items-center justify-between">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </p>
       <Icon className="h-4 w-4 text-primary" />
     </div>
     <p className="mt-2 text-2xl font-extrabold text-foreground">{value}</p>
@@ -471,50 +481,26 @@ const SummaryRow = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const MetricsSkeleton = () => (
-  <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    {Array.from({ length: 4 }).map((_, index) => (
-      <article key={index} className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="mt-3 h-8 w-28" />
-      </article>
-    ))}
-  </section>
-);
-
-const PieBlockSkeleton = () => (
-  <div className="space-y-3">
-    <Skeleton className="h-5 w-52" />
+const DossieSkeleton = () => (
+  <div className="space-y-6">
+    <section className="rounded-3xl border border-border/70 bg-card/80 p-6 shadow-card">
+      <div className="flex items-start gap-4">
+        <Skeleton className="h-24 w-24 rounded-2xl" />
+        <div className="flex-1 space-y-3">
+          <Skeleton className="h-8 w-72" />
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-4 w-52" />
+        </div>
+      </div>
+    </section>
+    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <Skeleton key={index} className="h-24 w-full rounded-2xl" />
+      ))}
+    </section>
+    <Skeleton className="h-64 w-full rounded-2xl" />
     <Skeleton className="h-64 w-full rounded-2xl" />
   </div>
-);
-
-const ResumoEmendasSkeleton = () => (
-  <div className="space-y-2">
-    {Array.from({ length: 5 }).map((_, index) => (
-      <Skeleton key={index} className="h-9 w-full rounded-lg" />
-    ))}
-  </div>
-);
-
-const TableSkeleton = ({ rows = 4 }: { rows?: number }) => (
-  <div className="space-y-3">
-    <Skeleton className="h-8 w-full rounded-lg" />
-    {Array.from({ length: rows }).map((_, index) => (
-      <Skeleton key={index} className="h-10 w-full rounded-lg" />
-    ))}
-  </div>
-);
-
-const PerfilExternoSkeleton = () => (
-  <section className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
-    <Skeleton className="mb-4 h-5 w-56" />
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <Skeleton key={index} className="h-28 w-full rounded-xl" />
-      ))}
-    </div>
-  </section>
 );
 
 const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
@@ -527,10 +513,22 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
       content: (
         <>
           <p className="font-semibold text-foreground">{perfil.camara?.nome}</p>
-          <p>{perfil.camara?.siglaPartido}/{perfil.camara?.siglaUf}</p>
-          {perfil.camara?.email ? <p className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{perfil.camara.email}</p> : null}
+          <p>
+            {perfil.camara?.siglaPartido}/{perfil.camara?.siglaUf}
+          </p>
+          {perfil.camara?.email ? (
+            <p className="inline-flex items-center gap-1">
+              <Mail className="h-3 w-3" />
+              {perfil.camara.email}
+            </p>
+          ) : null}
           {perfil.camara?.uri ? (
-            <a href={perfil.camara.uri} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+            <a
+              href={perfil.camara.uri}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
               Acessar fonte <ExternalLink className="h-3 w-3" />
             </a>
           ) : null}
@@ -545,10 +543,22 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
       content: (
         <>
           <p className="font-semibold text-foreground">{perfil.senado?.nome}</p>
-          <p>{perfil.senado?.siglaPartido}/{perfil.senado?.uf}</p>
-          {perfil.senado?.email ? <p className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{perfil.senado.email}</p> : null}
+          <p>
+            {perfil.senado?.siglaPartido}/{perfil.senado?.uf}
+          </p>
+          {perfil.senado?.email ? (
+            <p className="inline-flex items-center gap-1">
+              <Mail className="h-3 w-3" />
+              {perfil.senado.email}
+            </p>
+          ) : null}
           {perfil.senado?.urlPagina ? (
-            <a href={perfil.senado.urlPagina} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+            <a
+              href={perfil.senado.urlPagina}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
               Acessar fonte <ExternalLink className="h-3 w-3" />
             </a>
           ) : null}
@@ -562,10 +572,13 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
       visible: Boolean((perfil.brasilIo?.total ?? 0) > 0),
       content: (
         <>
-          <p className="font-semibold text-foreground">{perfil.brasilIo?.total ?? 0} candidaturas encontradas</p>
+          <p className="font-semibold text-foreground">
+            {perfil.brasilIo?.total ?? 0} candidaturas encontradas
+          </p>
           {perfil.brasilIo?.candidatos?.slice(0, 3).map((candidato, index) => (
             <p key={index}>
-              {candidato.anoEleicao} - {candidato.descricaoCargo} - {candidato.siglaPartido}
+              {candidato.anoEleicao} - {candidato.descricaoCargo} -{" "}
+              {candidato.siglaPartido}
             </p>
           ))}
         </>
@@ -578,7 +591,9 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
       visible: Boolean((perfil.lexml?.total ?? 0) > 0),
       content: (
         <>
-          <p className="font-semibold text-foreground">{perfil.lexml?.total ?? 0} documentos legislativos</p>
+          <p className="font-semibold text-foreground">
+            {perfil.lexml?.total ?? 0} documentos legislativos
+          </p>
           {perfil.lexml?.documentos?.slice(0, 2).map((doc, index) => (
             <a
               key={index}
@@ -602,7 +617,12 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
         <>
           <p className="line-clamp-4">{perfil.wikipedia?.resumo}</p>
           {perfil.wikipedia?.url ? (
-            <a href={perfil.wikipedia.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+            <a
+              href={perfil.wikipedia.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
               Ler artigo <ExternalLink className="h-3 w-3" />
             </a>
           ) : null}
@@ -622,7 +642,10 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {cards.map((card) => (
-          <article key={card.key} className="rounded-xl border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground">
+          <article
+            key={card.key}
+            className="rounded-xl border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground"
+          >
             <h3 className="mb-2 flex items-center gap-2 text-xs font-bold text-foreground">
               <card.icon className="h-4 w-4 text-primary" />
               {card.label}
@@ -634,5 +657,33 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
     </section>
   );
 };
+
+function buildEmendasResumo(emendas: Emenda[]) {
+  let totalEmpenhado = 0n;
+  let totalLiquidado = 0n;
+  let totalPago = 0n;
+  let totalRecebidoFavorecidos = 0n;
+  let totalFavorecidos = 0;
+
+  for (const emenda of emendas) {
+    totalEmpenhado += toBigInt(emenda.valorEmpenhadoCents);
+    totalLiquidado += toBigInt(emenda.valorLiquidadoCents);
+    totalPago += toBigInt(emenda.valorPagoCents);
+
+    const favorecidos = emenda.favorecidos?.nodes || [];
+    totalFavorecidos += favorecidos.length;
+    for (const fav of favorecidos) {
+      totalRecebidoFavorecidos += toBigInt(fav.valorRecebidoCents);
+    }
+  }
+
+  return {
+    totalEmpenhadoCents: totalEmpenhado.toString(),
+    totalLiquidadoCents: totalLiquidado.toString(),
+    totalPagoCents: totalPago.toString(),
+    totalRecebidoFavorecidosCents: totalRecebidoFavorecidos.toString(),
+    totalFavorecidos,
+  };
+}
 
 export default PoliticoDetalhe;

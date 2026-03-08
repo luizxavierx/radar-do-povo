@@ -4,6 +4,7 @@ import {
   FEATURED_POLITICOS_QUERY,
   HEALTH_QUERY,
   POLITICO_BASICO_QUERY,
+  POLITICO_DOSSIE_COMPLETO_QUERY,
   POLITICO_PERFIL_EXTERNO_QUERY,
   POLITICOS_LIST_QUERY,
 } from "@/api/queries";
@@ -13,6 +14,7 @@ import type {
   PerfilExterno,
   PerfilExternoFieldSelection,
   PoliticoDetalhe,
+  PoliticoDossieCompleto,
   PoliticoFilterInput,
   PoliticoResumo,
   PaginationInput,
@@ -121,6 +123,27 @@ export function usePoliticoDetalhe(idOrNome?: { id?: string; nomeCanonico?: stri
         { signal, timeoutMs: 12_000 }
       ).then((d) => d.politico),
     enabled: Boolean(idOrNome?.id || idOrNome?.nomeCanonico),
+    staleTime: QUERY_STALE_TIME,
+    gcTime: QUERY_GC_TIME,
+  });
+}
+
+export function usePoliticoDossieCompleto(
+  nome?: string,
+  anoInicio = 2019,
+  anoFim = 2026
+) {
+  const search = (nome || "").trim();
+
+  return useQuery({
+    queryKey: ["politico-dossie-completo", search, anoInicio, anoFim],
+    queryFn: ({ signal }) =>
+      graphqlRequest<{ politicos: Connection<PoliticoDossieCompleto> }>(
+        POLITICO_DOSSIE_COMPLETO_QUERY,
+        { nome: search, anoInicio, anoFim },
+        { signal, timeoutMs: 20_000 }
+      ).then((d) => d.politicos.nodes[0]),
+    enabled: Boolean(search),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
   });

@@ -330,7 +330,9 @@ const Index = () => {
                     <button
                       key={perfil.key}
                       onClick={() =>
-                        politico?.id ? navigate(`/politico/${politico.id}`) : handleSearch(perfil.search)
+                        politico?.nomeCanonico
+                          ? navigate(`/politico/${encodeURIComponent(politico.nomeCanonico)}`)
+                          : handleSearch(perfil.search)
                       }
                       className="rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
                     >
@@ -368,7 +370,9 @@ const Index = () => {
               {searchQuery.data?.nodes.map((politico) => (
                 <button
                   key={politico.id}
-                  onClick={() => navigate(`/politico/${politico.id}`)}
+                  onClick={() =>
+                    navigate(`/politico/${encodeURIComponent(politico.nomeCanonico || politico.id)}`)
+                  }
                   className="w-full text-left"
                 >
                   <PoliticianSearchCard politico={politico} />

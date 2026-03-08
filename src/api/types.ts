@@ -54,6 +54,8 @@ export interface GastosAgregados {
 export interface Passagem {
   id?: string;
   valorPassagemCents?: string;
+  taxaServicoCents?: string;
+  meioTransporte?: string;
   emissaoData?: string;
 }
 
@@ -61,6 +63,7 @@ export interface Pagamento {
   id?: string;
   tipoPagamento?: string;
   valorCents?: string;
+  ano?: number;
 }
 
 export interface Trecho {
@@ -111,6 +114,8 @@ export interface Emenda {
   anoEmenda?: number;
   tipoEmenda?: string;
   nomeAutorEmenda?: string;
+  valorEmpenhadoCents?: string;
+  valorLiquidadoCents?: string;
   valorPagoCents?: string;
   convenios?: Connection<Convenio>;
   favorecidos?: Connection<Favorecido>;
@@ -236,6 +241,13 @@ export interface PerfilExterno {
 // ─── Politico completo (detalhe) ───
 export interface PoliticoDetalhe extends PoliticoResumo {
   perfilExterno?: PerfilExterno;
+}
+
+export interface PoliticoDossieCompleto extends PoliticoResumo {
+  perfilExterno?: PerfilExterno;
+  gastos?: GastosAgregados;
+  viagens?: Connection<Viagem>;
+  emendas?: Connection<Emenda>;
 }
 
 export interface PoliticoFinanceiroResumo {

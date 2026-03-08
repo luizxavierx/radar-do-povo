@@ -179,7 +179,9 @@ const BuscaPage = () => {
             {data?.nodes.map((politico) => (
               <button
                 key={politico.id}
-                onClick={() => navigate(`/politico/${politico.id}`)}
+                onClick={() =>
+                  navigate(`/politico/${encodeURIComponent(politico.nomeCanonico || politico.id)}`)
+                }
                 className="w-full text-left"
               >
                 <PoliticianResultCard politico={politico} />
