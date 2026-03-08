@@ -5,7 +5,6 @@ import {
   TOP_EMENDAS_POR_PAIS_ANO_QUERY,
   TOP_GASTADORES_EMENDAS_ANO_QUERY,
   TOP_GASTADORES_EMENDAS_QUERY,
-  TOP_GERAL_ANO_QUERY,
   TOP_SENADORES_EMENDAS_QUERY,
 } from "@/api/queries";
 import type {
@@ -24,6 +23,24 @@ import {
 } from "./queryShared";
 
 const TOP30_PAGINATION = { limit: 30, offset: 0 } as const;
+const TOP_GERAL_ANO_QUERY_LOCAL = `
+  query TopGeralAno($ano: Int!, $pagination: PaginationInput) {
+    topGastadoresEmendas(
+      filtro: { anoInicio: $ano, anoFim: $ano, apenasParlamentares: false }
+      pagination: $pagination
+    ) {
+      total
+      limit
+      offset
+      nodes {
+        codigoAutorEmenda
+        nomeAutorEmenda
+        totalEmendas
+        totalPagoCents
+      }
+    }
+  }
+`;
 
 function normalizeAutorName(value?: string): string {
   return (value || "")
@@ -89,7 +106,7 @@ export function useTopGeralAno(ano: number) {
     queryKey: ["top-geral-ano", ano],
     queryFn: ({ signal }) =>
       graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
-        TOP_GERAL_ANO_QUERY,
+        TOP_GERAL_ANO_QUERY_LOCAL,
         { ano, pagination: TOP30_PAGINATION },
         { signal }
       ).then((d) => d.topGastadoresEmendas),
