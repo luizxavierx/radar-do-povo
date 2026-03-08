@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
   Crown,
@@ -29,9 +30,23 @@ import {
   useTopGastadoresAno,
   useTopGastadoresCustom,
   useTopSenadoresAno,
-} from "@/hooks/usePoliticos";
+} from "@/hooks/useRankings";
+import { graphqlRequest } from "@/api/graphqlClient";
+import {
+  TOP_DEPUTADOS_EMENDAS_QUERY,
+  TOP_EMENDAS_POR_PAIS_ANO_QUERY,
+  TOP_GASTADORES_EMENDAS_ANO_QUERY,
+  TOP_GASTADORES_EMENDAS_QUERY,
+  TOP_SENADORES_EMENDAS_QUERY,
+} from "@/api/queries";
 import { centsToNumber, formatCents, toBigInt } from "@/lib/formatters";
-import type { RankingEmendaFiltroInput, TopEmendaPais, TopGastadorEmenda } from "@/api/types";
+import type {
+  Connection,
+  RankingConnection,
+  RankingEmendaFiltroInput,
+  TopEmendaPais,
+  TopGastadorEmenda,
+} from "@/api/types";
 
 const PAGE_SIZE = 25;
 const rankIcons = [Crown, Trophy, Medal];
@@ -59,6 +74,7 @@ const RankingsPage = () => {
   const [tipoEmenda, setTipoEmenda] = useState("");
   const [apenasParlamentares, setApenasParlamentares] = useState(true);
   const [cargoParlamentar, setCargoParlamentar] = useState<"" | "DEPUTADO" | "SENADOR">("");
+  const queryClient = useQueryClient();
 
   const pagination = { limit: PAGE_SIZE, offset };
 
@@ -150,6 +166,82 @@ const RankingsPage = () => {
   const total = activeQuery.data?.total ?? 0;
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
+
+  useEffect(() => {
+    if (!activeQuery.data) return;
+
+    const nextOffset = offset + PAGE_SIZE;
+    if (nextOffset >= activeQuery.data.total) return;
+
+    const nextPagination = { limit: PAGE_SIZE, offset: nextOffset };
+
+    if (activeTab === "geral") {
+      queryClient.prefetchQuery({
+        queryKey: ["top-gastadores-ano", ano, nextPagination],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ topGastadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
+            TOP_GASTADORES_EMENDAS_ANO_QUERY,
+            { ano, pagination: nextPagination },
+            { signal }
+          ).then((d) => d.topGastadoresEmendasAno),
+        staleTime: 60_000,
+      });
+      return;
+    }
+
+    if (activeTab === "deputados") {
+      queryClient.prefetchQuery({
+        queryKey: ["top-deputados-ano", ano, nextPagination],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ topDeputadosEmendasAno: RankingConnection<TopGastadorEmenda> }>(
+            TOP_DEPUTADOS_EMENDAS_QUERY,
+            { ano, pagination: nextPagination },
+            { signal }
+          ).then((d) => d.topDeputadosEmendasAno),
+        staleTime: 60_000,
+      });
+      return;
+    }
+
+    if (activeTab === "senadores") {
+      queryClient.prefetchQuery({
+        queryKey: ["top-senadores-ano", ano, nextPagination],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ topSenadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
+            TOP_SENADORES_EMENDAS_QUERY,
+            { ano, pagination: nextPagination },
+            { signal }
+          ).then((d) => d.topSenadoresEmendasAno),
+        staleTime: 60_000,
+      });
+      return;
+    }
+
+    if (activeTab === "pais") {
+      queryClient.prefetchQuery({
+        queryKey: ["top-emendas-pais-ano", ano, nextPagination],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ topEmendasPorPaisAno: Connection<TopEmendaPais> }>(
+            TOP_EMENDAS_POR_PAIS_ANO_QUERY,
+            { ano, pagination: nextPagination },
+            { signal }
+          ).then((d) => d.topEmendasPorPaisAno),
+        staleTime: 60_000,
+      });
+      return;
+    }
+
+    queryClient.prefetchQuery({
+      queryKey: ["top-gastadores-custom", customFilter, nextPagination],
+      queryFn: ({ signal }) =>
+        graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
+          TOP_GASTADORES_EMENDAS_QUERY,
+          { filtro: customFilter, pagination: nextPagination },
+          { signal }
+        ).then((d) => d.topGastadoresEmendas),
+      staleTime: 60_000,
+    });
+  }, [activeQuery.data, activeTab, ano, customFilter, offset, queryClient]);
 
   const handleTab = (tab: TabId) => {
     setActiveTab(tab);

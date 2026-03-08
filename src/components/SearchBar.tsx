@@ -1,5 +1,5 @@
 import { Search, Loader2, X } from "lucide-react";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 interface SearchBarProps {
   onSearch?: (query: string) => void;
@@ -7,6 +7,8 @@ interface SearchBarProps {
   placeholder?: string;
   defaultValue?: string;
   submitLabel?: string;
+  autoSearch?: boolean;
+  debounceMs?: number;
 }
 
 const SearchBar = ({
@@ -15,26 +17,50 @@ const SearchBar = ({
   placeholder = "Buscar parlamentar por nome...",
   defaultValue = "",
   submitLabel = "Buscar",
+  autoSearch = false,
+  debounceMs = 300,
 }: SearchBarProps) => {
   const [query, setQuery] = useState(defaultValue);
+  const [debouncedQuery, setDebouncedQuery] = useState(defaultValue);
+  const onSearchRef = useRef(onSearch);
+
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
 
   useEffect(() => {
     setQuery(defaultValue);
+    setDebouncedQuery(defaultValue);
   }, [defaultValue]);
+
+  useEffect(() => {
+    if (!autoSearch) return;
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query);
+    }, debounceMs);
+
+    return () => window.clearTimeout(timer);
+  }, [autoSearch, debounceMs, query]);
+
+  useEffect(() => {
+    if (!autoSearch || !onSearchRef.current) return;
+    onSearchRef.current(debouncedQuery.trim());
+  }, [autoSearch, debouncedQuery]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       const normalized = query.trim();
-      if (!normalized || !onSearch) return;
-      onSearch(normalized);
+      if (!normalized || !onSearchRef.current) return;
+      onSearchRef.current(normalized);
     },
-    [query, onSearch]
+    [query]
   );
 
   const clearQuery = () => {
     setQuery("");
-    onSearch?.("");
+    setDebouncedQuery("");
+    onSearchRef.current?.("");
   };
 
   return (

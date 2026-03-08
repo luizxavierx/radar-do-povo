@@ -1,154 +1,289 @@
-// ─── Health ───
 export const HEALTH_QUERY = `
-  query { health { status db redis timestamp } }
+  query Health {
+    health {
+      status
+      db
+      redis
+      timestamp
+    }
+  }
 `;
 
-// ─── Listagem de políticos ───
 export const POLITICOS_LIST_QUERY = `
   query Politicos($filter: PoliticoFilterInput, $pagination: PaginationInput) {
     politicos(filter: $filter, pagination: $pagination) {
-      total limit offset
-      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl dataNascimento }
-    }
-  }
-`;
-
-// ─── Político por ID ───
-export const POLITICO_DETALHE_QUERY = `
-  query PoliticoDetalhe($id: ID, $nomeCanonico: String) {
-    politico(id: $id, nomeCanonico: $nomeCanonico) {
-      id nomeCanonico nomeCompleto partido cargoAtual uf dataNascimento fotoUrl
-      perfilExterno {
-        camara { id nome siglaPartido siglaUf urlFoto email uri fonte }
-        senado { codigo nome nomeCompleto siglaPartido uf email urlFoto urlPagina afastadoAtual fonte }
-        tse { termoBusca fonte }
-        lexml { total documentos { titulo identificador tipo data url fonte } }
-        brasilIo { total candidatos { anoEleicao siglaUf nomeUrna nomeCompleto numeroCandidato siglaPartido descricaoCargo situacaoCandidatura fonte } }
-        wikipedia { titulo resumo url fonte }
+      total
+      limit
+      offset
+      nodes {
+        id
+        nomeCanonico
+        nomeCompleto
+        partido
+        cargoAtual
+        uf
+        fotoUrl
+        dataNascimento
       }
     }
   }
 `;
 
-// ─── Gastos agregados ───
-export const GASTOS_POLITICO_QUERY = `
-  query GastosPolitico($input: GastosPoliticoInput!) {
-    gastosPolitico(input: $input) {
-      totalViagens totalTrechos totalDiariasCents totalPassagensCents
-      totalPagamentosCents totalOutrosGastosCents totalDevolucaoCents
-      periodo { anoInicio anoFim }
+// Block A: basic profile
+export const POLITICO_BASICO_QUERY = `
+  query PoliticoBasico($id: ID, $nomeCanonico: String) {
+    politico(id: $id, nomeCanonico: $nomeCanonico) {
+      id
+      nomeCanonico
+      nomeCompleto
+      partido
+      cargoAtual
+      uf
+      dataNascimento
+      fotoUrl
     }
   }
 `;
 
-// ─── Viagens paginadas ───
+// Block B: expenses + amendments summary
+export const POLITICO_RESUMO_FINANCEIRO_QUERY = `
+  query PoliticoResumoFinanceiro(
+    $gastosInput: GastosPoliticoInput!
+    $emendasInput: EmendasPoliticoInput!
+  ) {
+    gastosPolitico(input: $gastosInput) {
+      totalViagens
+      totalTrechos
+      totalDiariasCents
+      totalPassagensCents
+      totalPagamentosCents
+      totalOutrosGastosCents
+      totalDevolucaoCents
+      periodo {
+        anoInicio
+        anoFim
+      }
+    }
+    emendasResumoPolitico(input: $emendasInput) {
+      totalEmendas
+      totalEmpenhadoCents
+      totalLiquidadoCents
+      totalPagoCents
+      totalRecebidoFavorecidosCents
+      totalFavorecidos
+    }
+  }
+`;
+
+// Block C: paginated trips
 export const VIAGENS_POLITICO_QUERY = `
   query ViagensPolitico($input: ViagensPoliticoInput!, $pagination: PaginationInput) {
     viagensPolitico(input: $input, pagination: $pagination) {
-      total limit offset
+      total
+      limit
+      offset
       nodes {
-        processoId dataInicio dataFim nomeViajante motivo valorDiariasCents valorPassagensCents
-        trechos(pagination: { limit: 5, offset: 0 }) { total nodes { id origemCidade destinoCidade } }
+        processoId
+        dataInicio
+        dataFim
+        nomeViajante
+        motivo
+        valorDiariasCents
+        valorPassagensCents
+        trechos(pagination: { limit: 10, offset: 0 }) {
+          total
+          nodes {
+            id
+            sequencia
+            origemCidade
+            destinoCidade
+          }
+        }
       }
     }
   }
 `;
 
-// ─── Emendas resumo ───
-export const EMENDAS_RESUMO_POLITICO_QUERY = `
-  query EmendasResumoPolitico($input: EmendasPoliticoInput!) {
-    emendasResumoPolitico(input: $input) {
-      totalEmendas totalEmpenhadoCents totalLiquidadoCents totalPagoCents
-      totalRecebidoFavorecidosCents totalFavorecidos
-    }
-  }
-`;
-
-// ─── Emendas paginadas ───
+// Block D: paginated amendments
 export const EMENDAS_POLITICO_QUERY = `
   query EmendasPolitico($input: EmendasPoliticoInput!, $pagination: PaginationInput) {
     emendasPolitico(input: $input, pagination: $pagination) {
-      total limit offset
+      total
+      limit
+      offset
       nodes {
-        id codigoEmenda anoEmenda tipoEmenda nomeAutorEmenda valorPagoCents
+        id
+        codigoEmenda
+        anoEmenda
+        tipoEmenda
+        nomeAutorEmenda
+        valorPagoCents
       }
     }
   }
 `;
 
-// ─── Top geral emendas por ano ───
+// Block E: external profile, request only fields needed by current screen
+export const POLITICO_PERFIL_EXTERNO_QUERY = `
+  query PoliticoPerfilExterno(
+    $id: ID!
+    $includeCamara: Boolean = true
+    $includeSenado: Boolean = true
+    $includeTse: Boolean = false
+    $includeLexml: Boolean = true
+    $includeBrasilIo: Boolean = true
+    $includeWikipedia: Boolean = true
+  ) {
+    politico(id: $id) {
+      id
+      nomeCanonico
+      perfilExterno {
+        camara @include(if: $includeCamara) {
+          nome
+          siglaPartido
+          siglaUf
+          urlFoto
+          email
+          uri
+          fonte
+        }
+        senado @include(if: $includeSenado) {
+          codigo
+          nome
+          nomeCompleto
+          siglaPartido
+          uf
+          email
+          urlFoto
+          urlPagina
+          afastadoAtual
+          fonte
+        }
+        tse @include(if: $includeTse) {
+          termoBusca
+          fonte
+        }
+        lexml @include(if: $includeLexml) {
+          total
+          documentos {
+            titulo
+            tipo
+            data
+            url
+            fonte
+          }
+        }
+        brasilIo @include(if: $includeBrasilIo) {
+          total
+          candidatos {
+            anoEleicao
+            descricaoCargo
+            siglaPartido
+            situacaoCandidatura
+            fonte
+          }
+        }
+        wikipedia @include(if: $includeWikipedia) {
+          titulo
+          resumo
+          url
+          fonte
+        }
+      }
+    }
+  }
+`;
+
 export const TOP_GASTADORES_EMENDAS_ANO_QUERY = `
   query TopGastadoresEmendasAno($ano: Int!, $pagination: PaginationInput) {
     topGastadoresEmendasAno(ano: $ano, pagination: $pagination) {
-      total limit offset
+      total
+      limit
+      offset
       nodes {
-        codigoAutorEmenda nomeAutorEmenda totalEmendas totalPagoCents
-        totalEmpenhadoCents totalLiquidadoCents
-        totalRpInscritosCents totalRpCanceladosCents totalRpPagosCents
+        codigoAutorEmenda
+        nomeAutorEmenda
+        totalEmendas
+        totalPagoCents
+        totalEmpenhadoCents
+        totalLiquidadoCents
+        totalRpInscritosCents
+        totalRpCanceladosCents
+        totalRpPagosCents
       }
     }
   }
 `;
 
-// ─── Top deputados emendas ───
 export const TOP_DEPUTADOS_EMENDAS_QUERY = `
   query TopDeputadosEmendas($ano: Int!, $pagination: PaginationInput) {
     topDeputadosEmendasAno(ano: $ano, pagination: $pagination) {
       total
-      nodes { nomeAutorEmenda totalEmendas totalPagoCents }
+      limit
+      offset
+      nodes {
+        nomeAutorEmenda
+        totalEmendas
+        totalPagoCents
+      }
     }
   }
 `;
 
-// ─── Top senadores emendas ───
 export const TOP_SENADORES_EMENDAS_QUERY = `
   query TopSenadoresEmendas($ano: Int!, $pagination: PaginationInput) {
     topSenadoresEmendasAno(ano: $ano, pagination: $pagination) {
       total
-      nodes { nomeAutorEmenda totalEmendas totalPagoCents }
+      limit
+      offset
+      nodes {
+        nomeAutorEmenda
+        totalEmendas
+        totalPagoCents
+      }
     }
   }
 `;
 
-// ─── Top emendas por país ───
 export const TOP_EMENDAS_POR_PAIS_ANO_QUERY = `
   query TopEmendasPorPaisAno($ano: Int!, $pagination: PaginationInput) {
     topEmendasPorPaisAno(ano: $ano, pagination: $pagination) {
-      total limit offset
-      nodes { pais totalEmendas totalPagoCents totalEmpenhadoCents totalLiquidadoCents }
+      total
+      limit
+      offset
+      nodes {
+        pais
+        totalEmendas
+        totalPagoCents
+        totalEmpenhadoCents
+        totalLiquidadoCents
+      }
     }
   }
 `;
 
-// ─── Ranking custom (filtros avançados) ───
 export const TOP_GASTADORES_EMENDAS_QUERY = `
   query TopGastadoresEmendas($filtro: RankingEmendaFiltroInput, $pagination: PaginationInput) {
     topGastadoresEmendas(filtro: $filtro, pagination: $pagination) {
       total
-      nodes { nomeAutorEmenda totalPagoCents totalEmendas }
+      limit
+      offset
+      nodes {
+        nomeAutorEmenda
+        totalPagoCents
+        totalEmendas
+      }
     }
   }
 `;
 
 export const FEATURED_POLITICOS_QUERY = `
   query FeaturedPoliticos {
-    lula: politicos(filter: { search: "lula" }, pagination: { limit: 1, offset: 0 }) {
-      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
-    }
-    bolsonaro: politicos(filter: { search: "bolsonaro" }, pagination: { limit: 1, offset: 0 }) {
-      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
-    }
-    arthurLira: politicos(filter: { search: "arthur lira" }, pagination: { limit: 1, offset: 0 }) {
-      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
-    }
-    daviAlcolumbre: politicos(filter: { search: "davi alcolumbre" }, pagination: { limit: 1, offset: 0 }) {
-      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
-    }
-    flavioDino: politicos(filter: { search: "flavio dino" }, pagination: { limit: 1, offset: 0 }) {
-      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
-    }
-    simoneTebet: politicos(filter: { search: "simone tebet" }, pagination: { limit: 1, offset: 0 }) {
-      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
-    }
+    lula: politico(nomeCanonico: "lula") { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    bolsonaro: politico(nomeCanonico: "bolsonaro") { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    arthurLira: politico(nomeCanonico: "arthur-lira") { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    daviAlcolumbre: politico(nomeCanonico: "davi-alcolumbre") { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    flavioDino: politico(nomeCanonico: "flavio-dino") { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    simoneTebet: politico(nomeCanonico: "simone-tebet") { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
   }
 `;

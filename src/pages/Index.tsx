@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -24,6 +24,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
 import SearchBar from "@/components/SearchBar";
@@ -33,13 +34,22 @@ import {
   useApiHealth,
   useFeaturedPoliticos,
   usePoliticos,
+} from "@/hooks/usePoliticos";
+import {
   useTopDeputadosAno,
   useTopEmendasPorPaisAno,
   useTopGastadoresAno,
   useTopSenadoresAno,
-} from "@/hooks/usePoliticos";
+} from "@/hooks/useRankings";
+import { graphqlRequest } from "@/api/graphqlClient";
+import {
+  POLITICOS_LIST_QUERY,
+  TOP_DEPUTADOS_EMENDAS_QUERY,
+  TOP_GASTADORES_EMENDAS_ANO_QUERY,
+  TOP_SENADORES_EMENDAS_QUERY,
+} from "@/api/queries";
 import { centsToNumber, formatCents, toBigInt } from "@/lib/formatters";
-import type { PoliticoResumo, TopGastadorEmenda } from "@/api/types";
+import type { Connection, PoliticoResumo, RankingConnection, TopGastadorEmenda } from "@/api/types";
 
 const PAGE_SIZE = 20;
 const rankIcons = [Crown, Trophy, Medal];
@@ -76,6 +86,7 @@ const Index = () => {
   const [offset, setOffset] = useState(0);
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const pagination = { limit: PAGE_SIZE, offset };
 
   const apiHealthQuery = useApiHealth();
@@ -93,7 +104,7 @@ const Index = () => {
     selectedYear,
     activeTab === "senadores" ? pagination : { limit: PAGE_SIZE, offset: 0 }
   );
-  const paisesQuery = useTopEmendasPorPaisAno(selectedYear, { limit: 8, offset: 0 });
+  const paisesQuery = useTopEmendasPorPaisAno(selectedYear, { limit: 10, offset: 0 });
 
   const activeQueryMap = {
     geral: geralQuery,
@@ -154,6 +165,78 @@ const Index = () => {
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
 
+  useEffect(() => {
+    const nextOffset = offset + PAGE_SIZE;
+    const nextPagination = { limit: PAGE_SIZE, offset: nextOffset };
+
+    if (isSearching) {
+      if (!searchTerm || !searchQuery.data || nextOffset >= searchQuery.data.total) return;
+      const filter = { search: searchTerm };
+
+      queryClient.prefetchQuery({
+        queryKey: ["politicos", filter, nextPagination],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ politicos: Connection<PoliticoResumo> }>(
+            POLITICOS_LIST_QUERY,
+            { filter, pagination: nextPagination },
+            { signal }
+          ).then((d) => d.politicos),
+        staleTime: 60_000,
+      });
+      return;
+    }
+
+    if (!activeQuery.data || nextOffset >= activeQuery.data.total) return;
+
+    if (activeTab === "geral") {
+      queryClient.prefetchQuery({
+        queryKey: ["top-gastadores-ano", selectedYear, nextPagination],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ topGastadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
+            TOP_GASTADORES_EMENDAS_ANO_QUERY,
+            { ano: selectedYear, pagination: nextPagination },
+            { signal }
+          ).then((d) => d.topGastadoresEmendasAno),
+        staleTime: 60_000,
+      });
+      return;
+    }
+
+    if (activeTab === "deputados") {
+      queryClient.prefetchQuery({
+        queryKey: ["top-deputados-ano", selectedYear, nextPagination],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ topDeputadosEmendasAno: RankingConnection<TopGastadorEmenda> }>(
+            TOP_DEPUTADOS_EMENDAS_QUERY,
+            { ano: selectedYear, pagination: nextPagination },
+            { signal }
+          ).then((d) => d.topDeputadosEmendasAno),
+        staleTime: 60_000,
+      });
+      return;
+    }
+
+    queryClient.prefetchQuery({
+      queryKey: ["top-senadores-ano", selectedYear, nextPagination],
+      queryFn: ({ signal }) =>
+        graphqlRequest<{ topSenadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
+          TOP_SENADORES_EMENDAS_QUERY,
+          { ano: selectedYear, pagination: nextPagination },
+          { signal }
+        ).then((d) => d.topSenadoresEmendasAno),
+      staleTime: 60_000,
+    });
+  }, [
+    activeQuery.data,
+    activeTab,
+    isSearching,
+    offset,
+    queryClient,
+    searchQuery.data,
+    searchTerm,
+    selectedYear,
+  ]);
+
   return (
     <div className="min-h-screen bg-grid-pattern">
       <AppSidebar />
@@ -212,6 +295,8 @@ const Index = () => {
               isLoading={isSearching && searchQuery.isLoading}
               placeholder="Digite nome, partido ou parte do nome canonico"
               submitLabel="Consultar"
+              autoSearch
+              debounceMs={300}
             />
           </section>
 

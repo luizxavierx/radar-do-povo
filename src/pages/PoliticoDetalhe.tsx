@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -17,19 +17,22 @@ import {
   User,
 } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
+import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  useEmendasPolitico,
-  useEmendasResumoPolitico,
-  useGastosPolitico,
   usePoliticoDetalhe,
-  useViagensPolitico,
+  usePoliticoPerfilExterno,
 } from "@/hooks/usePoliticos";
+import { useViagens } from "@/hooks/useViagens";
+import { useEmendas, usePoliticoResumoFinanceiro } from "@/hooks/useEmendas";
+import { graphqlRequest } from "@/api/graphqlClient";
+import { EMENDAS_POLITICO_QUERY, VIAGENS_POLITICO_QUERY } from "@/api/queries";
 import { centsToNumber, formatCents, formatDate, toBigInt } from "@/lib/formatters";
-import type { PerfilExterno } from "@/api/types";
+import type { Connection, Emenda, PerfilExterno, Viagem } from "@/api/types";
 
 const PAGE_SIZE = 10;
 const years = Array.from({ length: 8 }, (_, i) => 2026 - i);
@@ -43,24 +46,38 @@ const PoliticoDetalhe = () => {
   const [anoFim, setAnoFim] = useState(2025);
   const [viagensOffset, setViagensOffset] = useState(0);
   const [emendasOffset, setEmendasOffset] = useState(0);
+  const queryClient = useQueryClient();
 
   const { data: politico, isLoading, error } = usePoliticoDetalhe({ id });
-  const { data: gastos, isLoading: loadingGastos } = useGastosPolitico(id, anoInicio, anoFim);
-  const { data: viagens, isLoading: loadingViagens } = useViagensPolitico(
+  const perfilExternoQuery = usePoliticoPerfilExterno(id, {
+    camara: true,
+    senado: true,
+    lexml: true,
+    brasilIo: true,
+    wikipedia: true,
+    tse: false,
+  });
+  const resumoFinanceiroQuery = usePoliticoResumoFinanceiro(id, { anoInicio, anoFim });
+  const { data: viagens, isLoading: loadingViagens, error: viagensError } = useViagens(
     id,
     { limit: PAGE_SIZE, offset: viagensOffset },
     anoInicio,
     anoFim
   );
-  const { data: emendasResumo, isLoading: loadingResumo } = useEmendasResumoPolitico(id, { anoInicio, anoFim });
-  const { data: emendas, isLoading: loadingEmendas } = useEmendasPolitico(
+  const { data: emendas, isLoading: loadingEmendas, error: emendasError } = useEmendas(
     id,
     { limit: PAGE_SIZE, offset: emendasOffset },
     { anoInicio, anoFim }
   );
 
+  const gastos = resumoFinanceiroQuery.data?.gastos;
+  const emendasResumo = resumoFinanceiroQuery.data?.emendasResumo;
+  const loadingResumo = resumoFinanceiroQuery.isLoading;
+  const loadingGastos = resumoFinanceiroQuery.isLoading;
+  const resumoError = resumoFinanceiroQuery.error as Error | null;
+
   const fotoUrl =
-    politico?.fotoUrl || politico?.perfilExterno?.camara?.urlFoto || politico?.perfilExterno?.senado?.urlFoto;
+    politico?.fotoUrl || perfilExternoQuery.data?.camara?.urlFoto || perfilExternoQuery.data?.senado?.urlFoto;
 
   const pieData = useMemo(() => {
     if (!gastos) return [];
@@ -93,6 +110,48 @@ const PoliticoDetalhe = () => {
     setViagensOffset(0);
     setEmendasOffset(0);
   };
+
+  useEffect(() => {
+    if (!id || !viagens) return;
+
+    const nextOffset = viagensOffset + PAGE_SIZE;
+    if (nextOffset >= viagens.total) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["viagens-politico", id, { limit: PAGE_SIZE, offset: nextOffset }, anoInicio, anoFim],
+      queryFn: ({ signal }) =>
+        graphqlRequest<{ viagensPolitico: Connection<Viagem> }>(
+          VIAGENS_POLITICO_QUERY,
+          {
+            input: { politicoId: id, anoInicio, anoFim },
+            pagination: { limit: PAGE_SIZE, offset: nextOffset },
+          },
+          { signal }
+        ).then((d) => d.viagensPolitico),
+      staleTime: 60_000,
+    });
+  }, [anoFim, anoInicio, id, queryClient, viagens, viagensOffset]);
+
+  useEffect(() => {
+    if (!id || !emendas) return;
+
+    const nextOffset = emendasOffset + PAGE_SIZE;
+    if (nextOffset >= emendas.total) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["emendas-politico", id, { limit: PAGE_SIZE, offset: nextOffset }, { anoInicio, anoFim }],
+      queryFn: ({ signal }) =>
+        graphqlRequest<{ emendasPolitico: Connection<Emenda> }>(
+          EMENDAS_POLITICO_QUERY,
+          {
+            input: { politicoId: id, filtro: { anoInicio, anoFim } },
+            pagination: { limit: PAGE_SIZE, offset: nextOffset },
+          },
+          { signal }
+        ).then((d) => d.emendasPolitico),
+      staleTime: 60_000,
+    });
+  }, [anoFim, anoInicio, emendas, emendasOffset, id, queryClient]);
 
   return (
     <div className="min-h-screen bg-grid-pattern">
@@ -150,10 +209,10 @@ const PoliticoDetalhe = () => {
 
                       <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
                         {politico.dataNascimento ? <span>Nascimento: {formatDate(politico.dataNascimento)}</span> : null}
-                        {politico.perfilExterno?.camara?.email || politico.perfilExterno?.senado?.email ? (
+                        {perfilExternoQuery.data?.camara?.email || perfilExternoQuery.data?.senado?.email ? (
                           <span className="inline-flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            {politico.perfilExterno?.camara?.email || politico.perfilExterno?.senado?.email}
+                            {perfilExternoQuery.data?.camara?.email || perfilExternoQuery.data?.senado?.email}
                           </span>
                         ) : null}
                       </div>
@@ -196,19 +255,23 @@ const PoliticoDetalhe = () => {
                 </div>
               </section>
 
-              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard label="Total gastos" value={totalGastos} icon={Banknote} />
-                <MetricCard label="Total viagens" value={String(gastos?.totalViagens ?? 0)} icon={Plane} />
-                <MetricCard label="Total emendas" value={String(emendasResumo?.totalEmendas ?? 0)} icon={FileText} />
-                <MetricCard label="Pago em emendas" value={formatCents(emendasResumo?.totalPagoCents)} icon={Landmark} />
-              </section>
+              {loadingResumo ? <MetricsSkeleton /> : null}
+              {!loadingResumo ? (
+                <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <MetricCard label="Total gastos" value={totalGastos} icon={Banknote} />
+                  <MetricCard label="Total viagens" value={String(gastos?.totalViagens ?? 0)} icon={Plane} />
+                  <MetricCard label="Total emendas" value={String(emendasResumo?.totalEmendas ?? 0)} icon={FileText} />
+                  <MetricCard label="Pago em emendas" value={formatCents(emendasResumo?.totalPagoCents)} icon={Landmark} />
+                </section>
+              ) : null}
+              {resumoError ? <ErrorState error={resumoError} /> : null}
 
               <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
                   <h2 className="mb-3 text-base font-bold">Composicao dos gastos ({anoInicio}-{anoFim})</h2>
 
-                  {loadingGastos ? <LoadingState message="Carregando composicao de gastos..." /> : null}
-                  {!loadingGastos && pieData.length === 0 ? (
+                  {loadingGastos ? <PieBlockSkeleton /> : null}
+                  {!loadingGastos && !resumoError && pieData.length === 0 ? (
                     <EmptyState message="Sem valores de gastos para este periodo." />
                   ) : null}
 
@@ -239,8 +302,8 @@ const PoliticoDetalhe = () => {
                 <div className="space-y-4">
                   <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
                     <h2 className="mb-3 text-sm font-bold">Resumo de emendas</h2>
-                    {loadingResumo ? <LoadingState message="Carregando resumo de emendas..." /> : null}
-                    {!loadingResumo ? (
+                    {loadingResumo ? <ResumoEmendasSkeleton /> : null}
+                    {!loadingResumo && !resumoError ? (
                       <div className="space-y-2 text-xs">
                         <SummaryRow label="Empenhado" value={formatCents(emendasResumo?.totalEmpenhadoCents)} />
                         <SummaryRow label="Liquidado" value={formatCents(emendasResumo?.totalLiquidadoCents)} />
@@ -272,8 +335,9 @@ const PoliticoDetalhe = () => {
                   Viagens
                 </h2>
 
-                {loadingViagens ? <LoadingState message="Carregando viagens..." /> : null}
-                {!loadingViagens && (!viagens || viagens.total === 0) ? (
+                {loadingViagens ? <TableSkeleton rows={5} /> : null}
+                {viagensError ? <ErrorState error={viagensError as Error} /> : null}
+                {!loadingViagens && !viagensError && (!viagens || viagens.total === 0) ? (
                   <EmptyState message="Nenhuma viagem registrada neste periodo." />
                 ) : null}
 
@@ -330,8 +394,9 @@ const PoliticoDetalhe = () => {
                   Emendas parlamentares
                 </h2>
 
-                {loadingEmendas ? <LoadingState message="Carregando emendas..." /> : null}
-                {!loadingEmendas && (!emendas || emendas.total === 0) ? (
+                {loadingEmendas ? <TableSkeleton rows={5} /> : null}
+                {emendasError ? <ErrorState error={emendasError as Error} /> : null}
+                {!loadingEmendas && !emendasError && (!emendas || emendas.total === 0) ? (
                   <EmptyState message="Nenhuma emenda registrada neste periodo." />
                 ) : null}
 
@@ -370,7 +435,9 @@ const PoliticoDetalhe = () => {
                 ) : null}
               </section>
 
-              {politico.perfilExterno ? <PerfilExternoSection perfil={politico.perfilExterno} /> : null}
+              {perfilExternoQuery.isLoading ? <PerfilExternoSkeleton /> : null}
+              {perfilExternoQuery.error ? <ErrorState error={perfilExternoQuery.error as Error} /> : null}
+              {perfilExternoQuery.data ? <PerfilExternoSection perfil={perfilExternoQuery.data} /> : null}
             </div>
           ) : null}
         </div>
@@ -402,6 +469,52 @@ const SummaryRow = ({ label, value }: { label: string; value: string }) => (
     <span className="text-muted-foreground">{label}</span>
     <span className="font-semibold text-foreground">{value}</span>
   </div>
+);
+
+const MetricsSkeleton = () => (
+  <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {Array.from({ length: 4 }).map((_, index) => (
+      <article key={index} className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="mt-3 h-8 w-28" />
+      </article>
+    ))}
+  </section>
+);
+
+const PieBlockSkeleton = () => (
+  <div className="space-y-3">
+    <Skeleton className="h-5 w-52" />
+    <Skeleton className="h-64 w-full rounded-2xl" />
+  </div>
+);
+
+const ResumoEmendasSkeleton = () => (
+  <div className="space-y-2">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <Skeleton key={index} className="h-9 w-full rounded-lg" />
+    ))}
+  </div>
+);
+
+const TableSkeleton = ({ rows = 4 }: { rows?: number }) => (
+  <div className="space-y-3">
+    <Skeleton className="h-8 w-full rounded-lg" />
+    {Array.from({ length: rows }).map((_, index) => (
+      <Skeleton key={index} className="h-10 w-full rounded-lg" />
+    ))}
+  </div>
+);
+
+const PerfilExternoSkeleton = () => (
+  <section className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
+    <Skeleton className="mb-4 h-5 w-56" />
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <Skeleton key={index} className="h-28 w-full rounded-xl" />
+      ))}
+    </div>
+  </section>
 );
 
 const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {

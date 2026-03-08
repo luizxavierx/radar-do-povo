@@ -238,6 +238,20 @@ export interface PoliticoDetalhe extends PoliticoResumo {
   perfilExterno?: PerfilExterno;
 }
 
+export interface PoliticoFinanceiroResumo {
+  gastos: GastosAgregados;
+  emendasResumo: EmendasResumo;
+}
+
+export interface PerfilExternoFieldSelection {
+  camara?: boolean;
+  senado?: boolean;
+  tse?: boolean;
+  lexml?: boolean;
+  brasilIo?: boolean;
+  wikipedia?: boolean;
+}
+
 // ─── Health ───
 export interface HealthStatus {
   status: string;

@@ -1,12 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Filter, MapPin, Search, Users } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
 import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { usePoliticos } from "@/hooks/usePoliticos";
-import type { PoliticoResumo } from "@/api/types";
+import { graphqlRequest } from "@/api/graphqlClient";
+import { POLITICOS_LIST_QUERY } from "@/api/queries";
+import type { Connection, PoliticoResumo } from "@/api/types";
 
 const PAGE_SIZE = 24;
 
@@ -20,6 +23,7 @@ const BuscaPage = () => {
   const [offset, setOffset] = useState(0);
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const filter = useMemo(() => {
     const payload = {
@@ -42,6 +46,24 @@ const BuscaPage = () => {
   const total = data?.total ?? 0;
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
+
+  useEffect(() => {
+    if (!filter || !data) return;
+
+    const nextOffset = offset + PAGE_SIZE;
+    if (nextOffset >= data.total) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["politicos", filter, { limit: PAGE_SIZE, offset: nextOffset }],
+      queryFn: ({ signal }) =>
+        graphqlRequest<{ politicos: Connection<PoliticoResumo> }>(
+          POLITICOS_LIST_QUERY,
+          { filter, pagination: { limit: PAGE_SIZE, offset: nextOffset } },
+          { signal }
+        ).then((d) => d.politicos),
+      staleTime: 60_000,
+    });
+  }, [data, filter, offset, queryClient]);
 
   const resetFilters = () => {
     setSearch("");
@@ -75,6 +97,8 @@ const BuscaPage = () => {
                 placeholder="Ex.: joao silva"
                 defaultValue={search}
                 submitLabel="Buscar"
+                autoSearch
+                debounceMs={300}
               />
             </div>
 
