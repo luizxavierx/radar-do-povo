@@ -99,10 +99,10 @@ const PoliticoDetalhe = () => {
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1180px] px-4 pb-10 pt-16 sm:px-6 lg:pt-8">
+        <div className="mx-auto w-full max-w-[1180px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
           <button
             onClick={() => navigate(-1)}
-            className="mb-5 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground shadow-card transition-colors hover:bg-muted"
+            className="mb-6 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground shadow-card transition-colors hover:bg-muted"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Voltar

@@ -56,8 +56,8 @@ const BuscaPage = () => {
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-16 sm:px-6 lg:pt-8">
-          <section className="animate-fade-up rounded-3xl border border-white/60 bg-card/80 p-6 shadow-elevated backdrop-blur-sm">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+          <section className="animate-fade-up rounded-3xl border border-white/60 bg-card/85 p-7 shadow-elevated backdrop-blur-sm sm:p-8">
             <h1 className="text-3xl font-extrabold leading-tight">
               Busca inteligente de <span className="text-gradient-primary">politicos</span>
             </h1>
@@ -78,7 +78,7 @@ const BuscaPage = () => {
               />
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
               <label className="rounded-xl border border-border bg-card p-3 text-xs shadow-card">
                 <span className="mb-2 block font-semibold text-muted-foreground">Partido</span>
                 <input
@@ -134,7 +134,7 @@ const BuscaPage = () => {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
+            <div className="mt-5 flex flex-wrap items-center gap-3 text-xs">
               <span className="rounded-full border border-border bg-background px-3 py-1 text-muted-foreground">
                 Filtros ativos: {hasFilter ? "sim" : "nao"}
               </span>
@@ -144,7 +144,7 @@ const BuscaPage = () => {
             </div>
           </section>
 
-          <section className="mt-6 space-y-3">
+          <section className="mt-8 space-y-3">
             {!hasFilter ? <EmptyState message="Use ao menos um filtro para iniciar a consulta." /> : null}
             {isLoading ? <LoadingState message="Consultando lista de politicos..." /> : null}
             {error ? <ErrorState error={error as Error} /> : null}
@@ -164,7 +164,7 @@ const BuscaPage = () => {
           </section>
 
           {total > PAGE_SIZE ? (
-            <section className="mt-6 flex items-center justify-center gap-3">
+            <section className="mt-8 flex items-center justify-center gap-3">
               <button
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}

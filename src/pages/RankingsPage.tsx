@@ -161,8 +161,8 @@ const RankingsPage = () => {
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-10 pt-16 sm:px-6 lg:pt-8">
-          <section className="animate-fade-up rounded-3xl border border-white/60 bg-card/80 p-6 shadow-elevated backdrop-blur-sm">
+        <div className="mx-auto w-full max-w-[1240px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+          <section className="animate-fade-up rounded-3xl border border-white/60 bg-card/85 p-7 shadow-elevated backdrop-blur-sm sm:p-8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h1 className="text-3xl font-extrabold">
@@ -210,7 +210,7 @@ const RankingsPage = () => {
             </div>
           </section>
 
-          <section className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <section className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatsCard
               label="Total pago na pagina"
               value={formatCents(totalPagoCents.toString())}
@@ -232,7 +232,7 @@ const RankingsPage = () => {
           </section>
 
           {activeTab === "custom" ? (
-            <section className="mt-6 rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
+            <section className="mt-7 rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
                 <Filter className="h-4 w-4 text-primary" />
                 Filtros da consulta custom
@@ -350,7 +350,7 @@ const RankingsPage = () => {
             </section>
           ) : null}
 
-          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-3">
               {activeQuery.isLoading ? <LoadingState message="Carregando ranking..." /> : null}
               {activeQuery.error ? <ErrorState error={activeQuery.error as Error} /> : null}
@@ -438,7 +438,7 @@ const RankingsPage = () => {
           </section>
 
           {total > PAGE_SIZE ? (
-            <section className="mt-6 flex items-center justify-center gap-3">
+            <section className="mt-8 flex items-center justify-center gap-3">
               <button
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}

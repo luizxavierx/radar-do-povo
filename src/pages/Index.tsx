@@ -59,6 +59,15 @@ const tabTitles: Record<TabId, string> = {
   senadores: "Top senadores",
 };
 
+const featuredPoliticos = [
+  { nome: "Luiz Inacio Lula da Silva", cargo: "Presidente", partido: "PT", uf: "SP", search: "lula" },
+  { nome: "Jair Messias Bolsonaro", cargo: "Ex-presidente", partido: "PL", uf: "RJ", search: "bolsonaro" },
+  { nome: "Arthur Lira", cargo: "Deputado Federal", partido: "PP", uf: "AL", search: "arthur lira" },
+  { nome: "Davi Alcolumbre", cargo: "Senador", partido: "UNIAO", uf: "AP", search: "davi alcolumbre" },
+  { nome: "Flavio Dino", cargo: "Ministro", partido: "PSB", uf: "MA", search: "flavio dino" },
+  { nome: "Simone Tebet", cargo: "Ministra", partido: "MDB", uf: "MS", search: "simone tebet" },
+];
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabId>("geral");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -148,8 +157,8 @@ const Index = () => {
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-10 pt-16 sm:px-6 lg:pt-8">
-          <section className="animate-fade-up relative overflow-hidden rounded-3xl border border-white/60 bg-card/80 p-6 shadow-elevated backdrop-blur-sm">
+        <div className="mx-auto w-full max-w-[1240px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+          <section className="animate-fade-up relative overflow-hidden rounded-3xl border border-white/60 bg-card/85 p-7 shadow-elevated backdrop-blur-sm sm:p-8">
             <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-cyan-300/25 blur-3xl" />
             <div className="absolute -bottom-20 left-20 h-56 w-56 rounded-full bg-blue-300/20 blur-3xl" />
 
@@ -195,7 +204,7 @@ const Index = () => {
             </div>
           </section>
 
-          <section className="mt-6 animate-fade-up" style={{ animationDelay: "120ms" }}>
+          <section className="mt-8 animate-fade-up" style={{ animationDelay: "120ms" }}>
             <SearchBar
               onSearch={handleSearch}
               isLoading={isSearching && searchQuery.isLoading}
@@ -204,8 +213,58 @@ const Index = () => {
             />
           </section>
 
+          {!isSearching ? (
+            <section className="mt-8 rounded-3xl border border-border/75 bg-card/85 p-5 shadow-card sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-base font-bold sm:text-lg">Perfis em destaque</h2>
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                    Atalhos para os nomes mais buscados no momento.
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/busca")}
+                  className="inline-flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  Ver busca completa
+                </button>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {featuredPoliticos.map((perfil) => (
+                  <button
+                    key={perfil.nome}
+                    onClick={() => handleSearch(perfil.search)}
+                    className="rounded-2xl border border-border/80 bg-background/85 p-4 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-soft text-sm font-bold text-primary">
+                        {getInitials(perfil.nome)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold uppercase tracking-wide text-foreground">
+                          {perfil.nome}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{perfil.cargo}</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            {perfil.partido}
+                          </span>
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                            {perfil.uf}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           {isSearching ? (
-            <section className="mt-6 space-y-4 animate-fade-up" style={{ animationDelay: "180ms" }}>
+            <section className="mt-8 space-y-4 animate-fade-up" style={{ animationDelay: "180ms" }}>
               {searchQuery.isLoading ? <LoadingState message="Buscando politicos na API..." /> : null}
               {searchQuery.error ? <ErrorState error={searchQuery.error as Error} /> : null}
               {!searchQuery.isLoading && !searchQuery.error && searchQuery.data?.nodes.length === 0 ? (
@@ -224,7 +283,7 @@ const Index = () => {
             </section>
           ) : (
             <>
-              <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <StatsCard
                   label="Total pago top"
                   value={totalPago}
@@ -255,7 +314,7 @@ const Index = () => {
                 />
               </section>
 
-              <section className="mt-6 flex flex-wrap gap-2">
+              <section className="mt-7 flex flex-wrap gap-2">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -272,7 +331,7 @@ const Index = () => {
                 ))}
               </section>
 
-              <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="space-y-4">
                   {activeQuery.isLoading ? <LoadingState message="Carregando ranking da API..." /> : null}
                   {activeQuery.error ? <ErrorState error={activeQuery.error as Error} /> : null}
@@ -397,7 +456,7 @@ const Index = () => {
           )}
 
           {total > PAGE_SIZE ? (
-            <section className="mt-7 flex items-center justify-center gap-3">
+            <section className="mt-8 flex items-center justify-center gap-3">
               <button
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}
@@ -528,4 +587,14 @@ function shortName(value?: string): string {
     .slice(0, 18);
 }
 
+function getInitials(value: string): string {
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase())
+    .join("");
+}
+
 export default Index;
+

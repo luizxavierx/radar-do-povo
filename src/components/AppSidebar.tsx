@@ -3,12 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   BarChart3,
-  ExternalLink,
   Home,
   Instagram,
   Menu,
   Search,
-  ShieldCheck,
   X,
   Youtube,
 } from "lucide-react";
@@ -112,32 +110,7 @@ const AppSidebar = () => {
             })}
           </nav>
 
-          <div className="mx-3 mt-1 rounded-2xl border border-border bg-card p-4">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Dados</p>
-            <p className="mt-2 text-sm font-semibold text-foreground">Consulta segura via backend</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              O frontend consulta apenas rotas internas do projeto. A URL real da API fica protegida no ambiente da Vercel.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Endpoint oculto do cliente
-            </div>
-          </div>
-
-          <div className="mx-3 mt-3 rounded-2xl border border-border bg-card p-4">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Links</p>
-            <a
-              href="https://www.portaltransparencia.gov.br/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
-            >
-              Portal da Transparencia
-              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-            </a>
-          </div>
-
-          <div className="mt-auto border-t border-sidebar-border px-5 py-4">
+          <div className="mt-auto border-t border-sidebar-border px-5 py-5">
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-muted-foreground">Radar monitorando gastos</p>
               <Activity className="h-4 w-4 text-primary animate-pulse-glow rounded-full" />
