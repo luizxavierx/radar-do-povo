@@ -13,9 +13,11 @@ import {
   TOP_SENADORES_EMENDAS_QUERY,
   TOP_EMENDAS_POR_PAIS_ANO_QUERY,
   TOP_GASTADORES_EMENDAS_QUERY,
+  FEATURED_POLITICOS_QUERY,
 } from "@/api/queries";
 import type {
   Connection,
+  RankingConnection,
   PoliticoResumo,
   PoliticoDetalhe,
   PoliticoFilterInput,
@@ -36,6 +38,29 @@ export interface ApiHealthSnapshot extends HealthStatus {
 }
 
 const DEFAULT_PERIOD = { anoInicio: 2019, anoFim: 2026 };
+
+type FeaturedAlias =
+  | "lula"
+  | "bolsonaro"
+  | "arthurLira"
+  | "daviAlcolumbre"
+  | "flavioDino"
+  | "simoneTebet";
+
+export interface FeaturedPolitico {
+  key: FeaturedAlias;
+  search: string;
+  politico?: PoliticoResumo;
+}
+
+const featuredBlueprint: { key: FeaturedAlias; search: string }[] = [
+  { key: "lula", search: "lula" },
+  { key: "bolsonaro", search: "bolsonaro" },
+  { key: "arthurLira", search: "arthur lira" },
+  { key: "daviAlcolumbre", search: "davi alcolumbre" },
+  { key: "flavioDino", search: "flavio dino" },
+  { key: "simoneTebet", search: "simone tebet" },
+];
 
 export function useApiHealth() {
   return useQuery({
@@ -150,7 +175,7 @@ export function useTopGastadoresAno(ano: number, pagination?: PaginationInput) {
   return useQuery({
     queryKey: ["top-gastadores-ano", ano, pagination],
     queryFn: () =>
-      graphqlRequest<{ topGastadoresEmendasAno: { total: number; nodes: TopGastadorEmenda[] } }>(
+      graphqlRequest<{ topGastadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
         TOP_GASTADORES_EMENDAS_ANO_QUERY,
         { ano, pagination }
       ).then((d) => d.topGastadoresEmendasAno),
@@ -162,7 +187,7 @@ export function useTopDeputadosAno(ano: number, pagination?: PaginationInput) {
   return useQuery({
     queryKey: ["top-deputados-ano", ano, pagination],
     queryFn: () =>
-      graphqlRequest<{ topDeputadosEmendasAno: { total: number; nodes: TopGastadorEmenda[] } }>(
+      graphqlRequest<{ topDeputadosEmendasAno: RankingConnection<TopGastadorEmenda> }>(
         TOP_DEPUTADOS_EMENDAS_QUERY,
         { ano, pagination }
       ).then((d) => d.topDeputadosEmendasAno),
@@ -174,7 +199,7 @@ export function useTopSenadoresAno(ano: number, pagination?: PaginationInput) {
   return useQuery({
     queryKey: ["top-senadores-ano", ano, pagination],
     queryFn: () =>
-      graphqlRequest<{ topSenadoresEmendasAno: { total: number; nodes: TopGastadorEmenda[] } }>(
+      graphqlRequest<{ topSenadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
         TOP_SENADORES_EMENDAS_QUERY,
         { ano, pagination }
       ).then((d) => d.topSenadoresEmendasAno),
@@ -201,10 +226,27 @@ export function useTopGastadoresCustom(
   return useQuery({
     queryKey: ["top-gastadores-custom", filtro, pagination],
     queryFn: () =>
-      graphqlRequest<{ topGastadoresEmendas: { total: number; nodes: TopGastadorEmenda[] } }>(
+      graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
         TOP_GASTADORES_EMENDAS_QUERY,
         { filtro, pagination }
       ).then((d) => d.topGastadoresEmendas),
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useFeaturedPoliticos() {
+  return useQuery({
+    queryKey: ["featured-politicos"],
+    queryFn: () =>
+      graphqlRequest<Record<FeaturedAlias, { nodes: PoliticoResumo[] }>>(
+        FEATURED_POLITICOS_QUERY
+      ).then((data) =>
+        featuredBlueprint.map(({ key, search }) => ({
+          key,
+          search,
+          politico: data[key]?.nodes?.[0],
+        }))
+      ),
+    staleTime: 15 * 60_000,
   });
 }

@@ -31,6 +31,7 @@ import StatsCard from "@/components/StatsCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import {
   useApiHealth,
+  useFeaturedPoliticos,
   usePoliticos,
   useTopDeputadosAno,
   useTopEmendasPorPaisAno,
@@ -59,13 +60,13 @@ const tabTitles: Record<TabId, string> = {
   senadores: "Top senadores",
 };
 
-const featuredPoliticos = [
-  { nome: "Luiz Inacio Lula da Silva", cargo: "Presidente", partido: "PT", uf: "SP", search: "lula" },
-  { nome: "Jair Messias Bolsonaro", cargo: "Ex-presidente", partido: "PL", uf: "RJ", search: "bolsonaro" },
-  { nome: "Arthur Lira", cargo: "Deputado Federal", partido: "PP", uf: "AL", search: "arthur lira" },
-  { nome: "Davi Alcolumbre", cargo: "Senador", partido: "UNIAO", uf: "AP", search: "davi alcolumbre" },
-  { nome: "Flavio Dino", cargo: "Ministro", partido: "PSB", uf: "MA", search: "flavio dino" },
-  { nome: "Simone Tebet", cargo: "Ministra", partido: "MDB", uf: "MS", search: "simone tebet" },
+const featuredFallback = [
+  { key: "lula", search: "lula", nome: "Luiz Inacio Lula da Silva" },
+  { key: "bolsonaro", search: "bolsonaro", nome: "Jair Messias Bolsonaro" },
+  { key: "arthurLira", search: "arthur lira", nome: "Arthur Lira" },
+  { key: "daviAlcolumbre", search: "davi alcolumbre", nome: "Davi Alcolumbre" },
+  { key: "flavioDino", search: "flavio dino", nome: "Flavio Dino" },
+  { key: "simoneTebet", search: "simone tebet", nome: "Simone Tebet" },
 ];
 
 const Index = () => {
@@ -78,6 +79,7 @@ const Index = () => {
   const pagination = { limit: PAGE_SIZE, offset };
 
   const apiHealthQuery = useApiHealth();
+  const featuredQuery = useFeaturedPoliticos();
 
   const geralQuery = useTopGastadoresAno(
     selectedYear,
@@ -115,17 +117,9 @@ const Index = () => {
   );
 
   const totalPago = formatCents(totalPagoCents.toString());
-  const mediaPago = nodes.length ? formatCents((totalPagoCents / BigInt(nodes.length)).toString()) : "R$ 0,00";
-
-  const top3Cents = useMemo(
-    () => nodes.slice(0, 3).reduce((acc, node) => acc + toBigInt(node.totalPagoCents), 0n),
-    [nodes]
-  );
-
-  const concentracaoTop3 =
-    totalPagoCents > 0n
-      ? `${Number((top3Cents * 10000n) / totalPagoCents) / 100}%`
-      : "0%";
+  const totalEmendas = nodes.reduce((acc, node) => acc + (node.totalEmendas || 0), 0);
+  const mediaPagoPorEmenda =
+    totalEmendas > 0 ? formatCents((totalPagoCents / BigInt(totalEmendas)).toString()) : "R$ 0,00";
 
   const graficoTop = useMemo(
     () =>
@@ -137,6 +131,14 @@ const Index = () => {
   );
 
   const topPais = paisesQuery.data?.nodes?.[0];
+  const featuredPoliticos: { key: string; search: string; politico?: PoliticoResumo }[] =
+    featuredQuery.data?.length
+      ? featuredQuery.data
+      : featuredFallback.map((item) => ({
+          key: item.key,
+          search: item.search,
+          politico: undefined,
+        }));
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -231,34 +233,41 @@ const Index = () => {
                 </button>
               </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {featuredPoliticos.map((perfil) => (
-                  <button
-                    key={perfil.nome}
-                    onClick={() => handleSearch(perfil.search)}
-                    className="rounded-2xl border border-border/80 bg-background/85 p-4 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-soft text-sm font-bold text-primary">
-                        {getInitials(perfil.nome)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-bold uppercase tracking-wide text-foreground">
-                          {perfil.nome}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">{perfil.cargo}</p>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                            {perfil.partido}
-                          </span>
-                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                            {perfil.uf}
-                          </span>
+              <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                {featuredPoliticos.map((perfil) => {
+                  const politico = perfil.politico;
+                  const nome = politico?.nomeCompleto || politico?.nomeCanonico || perfil.search;
+                  const partido = politico?.partido;
+                  const uf = politico?.uf;
+                  const imageUrl = politico?.fotoUrl || buildAvatarUrl(nome);
+
+                  return (
+                    <button
+                      key={perfil.key}
+                      onClick={() =>
+                        politico?.id ? navigate(`/politico/${politico.id}`) : handleSearch(perfil.search)
+                      }
+                      className="rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={imageUrl}
+                          alt={nome}
+                          className="h-9 w-9 flex-shrink-0 rounded-full border border-border object-cover"
+                        />
+
+                        <div className="min-w-0">
+                          <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
+                            {nome}
+                          </p>
+                          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                            {[partido, uf].filter(Boolean).join(" - ") || "Perfil principal"}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </section>
           ) : null}
@@ -299,16 +308,16 @@ const Index = () => {
                   variant="blue"
                 />
                 <StatsCard
-                  label="Media por nome"
-                  value={mediaPago}
-                  description="Base da pagina atual"
+                  label="Total emendas"
+                  value={totalEmendas.toLocaleString("pt-BR")}
+                  description="Soma de emendas do recorte"
                   icon={BarChart3}
                   variant="yellow"
                 />
                 <StatsCard
-                  label="Concentracao top 3"
-                  value={concentracaoTop3}
-                  description="Participacao no total pago"
+                  label="Ticket por emenda"
+                  value={mediaPagoPorEmenda}
+                  description="Total pago dividido por emendas"
                   icon={ShieldCheck}
                   variant="blue"
                 />
@@ -587,13 +596,10 @@ function shortName(value?: string): string {
     .slice(0, 18);
 }
 
-function getInitials(value: string): string {
-  return value
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase())
-    .join("");
+function buildAvatarUrl(value: string): string {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    value
+  )}&background=e6f7f7&color=0f766e&size=128&format=png`;
 }
 
 export default Index;

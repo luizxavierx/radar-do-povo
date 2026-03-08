@@ -11,6 +11,13 @@ export interface Connection<T> {
   nodes: T[];
 }
 
+export interface RankingConnection<T> {
+  total: number;
+  limit?: number;
+  offset?: number;
+  nodes: T[];
+}
+
 // ─── Politico (listagem leve) ───
 export interface PoliticoResumo {
   id: string;

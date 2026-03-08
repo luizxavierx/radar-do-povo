@@ -4,11 +4,9 @@ import {
   Activity,
   BarChart3,
   Home,
-  Instagram,
   Menu,
   Search,
   X,
-  Youtube,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -114,27 +112,6 @@ const AppSidebar = () => {
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-muted-foreground">Radar monitorando gastos</p>
               <Activity className="h-4 w-4 text-primary animate-pulse-glow rounded-full" />
-            </div>
-
-            <div className="mt-3 flex items-center gap-2">
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full border border-border p-2 text-muted-foreground hover:bg-muted"
-                aria-label="YouTube"
-              >
-                <Youtube className="h-4 w-4" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full border border-border p-2 text-muted-foreground hover:bg-muted"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-4 w-4" />
-              </a>
             </div>
           </div>
         </div>

@@ -80,10 +80,11 @@ export const EMENDAS_POLITICO_QUERY = `
 export const TOP_GASTADORES_EMENDAS_ANO_QUERY = `
   query TopGastadoresEmendasAno($ano: Int!, $pagination: PaginationInput) {
     topGastadoresEmendasAno(ano: $ano, pagination: $pagination) {
-      total
+      total limit offset
       nodes {
         codigoAutorEmenda nomeAutorEmenda totalEmendas totalPagoCents
         totalEmpenhadoCents totalLiquidadoCents
+        totalRpInscritosCents totalRpCanceladosCents totalRpPagosCents
       }
     }
   }
@@ -94,10 +95,7 @@ export const TOP_DEPUTADOS_EMENDAS_QUERY = `
   query TopDeputadosEmendas($ano: Int!, $pagination: PaginationInput) {
     topDeputadosEmendasAno(ano: $ano, pagination: $pagination) {
       total
-      nodes {
-        codigoAutorEmenda nomeAutorEmenda totalEmendas totalPagoCents
-        totalEmpenhadoCents totalLiquidadoCents
-      }
+      nodes { nomeAutorEmenda totalEmendas totalPagoCents }
     }
   }
 `;
@@ -107,10 +105,7 @@ export const TOP_SENADORES_EMENDAS_QUERY = `
   query TopSenadoresEmendas($ano: Int!, $pagination: PaginationInput) {
     topSenadoresEmendasAno(ano: $ano, pagination: $pagination) {
       total
-      nodes {
-        codigoAutorEmenda nomeAutorEmenda totalEmendas totalPagoCents
-        totalEmpenhadoCents totalLiquidadoCents
-      }
+      nodes { nomeAutorEmenda totalEmendas totalPagoCents }
     }
   }
 `;
@@ -130,10 +125,30 @@ export const TOP_GASTADORES_EMENDAS_QUERY = `
   query TopGastadoresEmendas($filtro: RankingEmendaFiltroInput, $pagination: PaginationInput) {
     topGastadoresEmendas(filtro: $filtro, pagination: $pagination) {
       total
-      nodes {
-        codigoAutorEmenda nomeAutorEmenda totalEmendas totalPagoCents
-        totalEmpenhadoCents totalLiquidadoCents
-      }
+      nodes { nomeAutorEmenda totalPagoCents totalEmendas }
+    }
+  }
+`;
+
+export const FEATURED_POLITICOS_QUERY = `
+  query FeaturedPoliticos {
+    lula: politicos(filter: { search: "lula" }, pagination: { limit: 1, offset: 0 }) {
+      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    }
+    bolsonaro: politicos(filter: { search: "bolsonaro" }, pagination: { limit: 1, offset: 0 }) {
+      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    }
+    arthurLira: politicos(filter: { search: "arthur lira" }, pagination: { limit: 1, offset: 0 }) {
+      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    }
+    daviAlcolumbre: politicos(filter: { search: "davi alcolumbre" }, pagination: { limit: 1, offset: 0 }) {
+      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    }
+    flavioDino: politicos(filter: { search: "flavio dino" }, pagination: { limit: 1, offset: 0 }) {
+      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
+    }
+    simoneTebet: politicos(filter: { search: "simone tebet" }, pagination: { limit: 1, offset: 0 }) {
+      nodes { id nomeCanonico nomeCompleto partido cargoAtual uf fotoUrl }
     }
   }
 `;
