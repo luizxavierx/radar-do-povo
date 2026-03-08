@@ -29,6 +29,16 @@ export const POLITICOS_LIST_QUERY = `
   }
 `;
 
+export const POLITICO_CARGO_POR_NOME_QUERY = `
+  query PoliticoCargoPorNome($search: String!) {
+    politicos(filter: { search: $search }, pagination: { limit: 1, offset: 0 }) {
+      nodes {
+        cargoAtual
+      }
+    }
+  }
+`;
+
 // Block A: basic profile
 export const POLITICO_BASICO_QUERY = `
   query PoliticoBasico($id: ID, $nomeCanonico: String) {

@@ -25,6 +25,8 @@ import AppSidebar from "@/components/AppSidebar";
 import StatsCard from "@/components/StatsCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import {
+  CargoParlamentar,
+  useRankingCargoMap,
   useTopDeputadosAno,
   useTopEmendasPorPaisAno,
   useTopGastadoresAno,
@@ -33,11 +35,9 @@ import {
 } from "@/hooks/useRankings";
 import { graphqlRequest } from "@/api/graphqlClient";
 import {
-  TOP_DEPUTADOS_EMENDAS_QUERY,
   TOP_EMENDAS_POR_PAIS_ANO_QUERY,
   TOP_GASTADORES_EMENDAS_ANO_QUERY,
   TOP_GASTADORES_EMENDAS_QUERY,
-  TOP_SENADORES_EMENDAS_QUERY,
 } from "@/api/queries";
 import { centsToNumber, formatCents, toBigInt } from "@/lib/formatters";
 import type {
@@ -95,14 +95,8 @@ const RankingsPage = () => {
     ano,
     activeTab === "geral" ? pagination : { limit: PAGE_SIZE, offset: 0 }
   );
-  const depQuery = useTopDeputadosAno(
-    ano,
-    activeTab === "deputados" ? pagination : { limit: PAGE_SIZE, offset: 0 }
-  );
-  const senQuery = useTopSenadoresAno(
-    ano,
-    activeTab === "senadores" ? pagination : { limit: PAGE_SIZE, offset: 0 }
-  );
+  const depQuery = useTopDeputadosAno(ano, { limit: 30, offset: 0 });
+  const senQuery = useTopSenadoresAno(ano, { limit: 30, offset: 0 });
   const paisQuery = useTopEmendasPorPaisAno(
     ano,
     activeTab === "pais" ? pagination : { limit: PAGE_SIZE, offset: 0 }
@@ -123,10 +117,29 @@ const RankingsPage = () => {
       ? customQuery
       : paisQuery;
 
-  const topNodes =
+  const cargoTab: CargoParlamentar | null =
+    activeTab === "deputados"
+      ? "DEPUTADO"
+      : activeTab === "senadores"
+      ? "SENADOR"
+      : null;
+
+  const rawTopNodes =
     activeTab === "pais"
       ? []
       : (activeQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
+  const cargoMapQuery = useRankingCargoMap(rawTopNodes, Boolean(cargoTab));
+
+  const topNodes = useMemo(() => {
+    if (!cargoTab) return rawTopNodes;
+    const map = cargoMapQuery.data || {};
+    return rawTopNodes.filter((node) => map[node.nomeAutorEmenda] === cargoTab);
+  }, [cargoMapQuery.data, cargoTab, rawTopNodes]);
+
+  const visibleTopNodes = useMemo(() => {
+    if (!cargoTab) return topNodes;
+    return topNodes.slice(offset, offset + PAGE_SIZE);
+  }, [cargoTab, offset, topNodes]);
 
   const paisNodes =
     activeTab === "pais"
@@ -164,8 +177,14 @@ const RankingsPage = () => {
   }, [activeTab, paisNodes, topNodes]);
 
   const total = activeQuery.data?.total ?? 0;
+  const computedTotal =
+    activeTab === "pais"
+      ? total
+      : cargoTab
+      ? topNodes.length
+      : total;
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
-  const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
+  const totalPages = computedTotal ? Math.ceil(computedTotal / PAGE_SIZE) : 1;
 
   useEffect(() => {
     if (!activeQuery.data) return;
@@ -189,31 +208,7 @@ const RankingsPage = () => {
       return;
     }
 
-    if (activeTab === "deputados") {
-      queryClient.prefetchQuery({
-        queryKey: ["top-deputados-ano", ano, nextPagination],
-        queryFn: ({ signal }) =>
-          graphqlRequest<{ topDeputadosEmendasAno: RankingConnection<TopGastadorEmenda> }>(
-            TOP_DEPUTADOS_EMENDAS_QUERY,
-            { ano, pagination: nextPagination },
-            { signal }
-          ).then((d) => d.topDeputadosEmendasAno),
-        staleTime: 60_000,
-      });
-      return;
-    }
-
-    if (activeTab === "senadores") {
-      queryClient.prefetchQuery({
-        queryKey: ["top-senadores-ano", ano, nextPagination],
-        queryFn: ({ signal }) =>
-          graphqlRequest<{ topSenadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
-            TOP_SENADORES_EMENDAS_QUERY,
-            { ano, pagination: nextPagination },
-            { signal }
-          ).then((d) => d.topSenadoresEmendasAno),
-        staleTime: 60_000,
-      });
+    if (activeTab === "deputados" || activeTab === "senadores") {
       return;
     }
 
@@ -311,7 +306,7 @@ const RankingsPage = () => {
             />
             <StatsCard
               label="Registros totais"
-              value={String(total)}
+              value={String(computedTotal)}
               description="Total retornado pela API"
               variant="blue"
             />
@@ -444,13 +439,20 @@ const RankingsPage = () => {
 
           <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-3">
-              {activeQuery.isLoading ? <LoadingState message="Carregando ranking..." /> : null}
+              {activeQuery.isLoading || (Boolean(cargoTab) && cargoMapQuery.isLoading) ? (
+                <LoadingState message="Carregando ranking..." />
+              ) : null}
               {activeQuery.error ? <ErrorState error={activeQuery.error as Error} /> : null}
+              {cargoMapQuery.error ? <ErrorState error={cargoMapQuery.error as Error} /> : null}
 
               {!activeQuery.isLoading && !activeQuery.error && activeTab === "pais" && paisNodes.length === 0 ? (
                 <EmptyState message="Nenhum pais encontrado no recorte atual." />
               ) : null}
-              {!activeQuery.isLoading && !activeQuery.error && activeTab !== "pais" && topNodes.length === 0 ? (
+              {!activeQuery.isLoading &&
+              !activeQuery.error &&
+              activeTab !== "pais" &&
+              !cargoMapQuery.isLoading &&
+              topNodes.length === 0 ? (
                 <EmptyState message="Nenhum parlamentar encontrado no recorte atual." />
               ) : null}
 
@@ -458,7 +460,7 @@ const RankingsPage = () => {
                 ? paisNodes.map((node, index) => (
                     <PaisRow key={`${node.pais}-${offset + index}`} node={node} rank={offset + index + 1} />
                   ))
-                : topNodes.map((node, index) => (
+                : visibleTopNodes.map((node, index) => (
                     <ParlamentarRow
                       key={`${node.nomeAutorEmenda}-${offset + index}`}
                       node={node}
@@ -517,7 +519,7 @@ const RankingsPage = () => {
                     Ano principal: <strong className="text-foreground">{ano}</strong>
                   </li>
                   <li className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">
-                    Total retornado: <strong className="text-foreground">{total}</strong>
+                    Total retornado: <strong className="text-foreground">{computedTotal}</strong>
                   </li>
                   {activeTab === "custom" ? (
                     <li className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">
@@ -529,7 +531,7 @@ const RankingsPage = () => {
             </aside>
           </section>
 
-          {total > PAGE_SIZE ? (
+          {computedTotal > PAGE_SIZE ? (
             <section className="mt-8 flex items-center justify-center gap-3">
               <button
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
@@ -545,7 +547,7 @@ const RankingsPage = () => {
 
               <button
                 onClick={() => setOffset(offset + PAGE_SIZE)}
-                disabled={offset + PAGE_SIZE >= total}
+                disabled={offset + PAGE_SIZE >= computedTotal}
                 className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Proxima
