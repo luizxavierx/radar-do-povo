@@ -56,19 +56,19 @@ const recorteMeta: Record<
   { label: string; description: string; eyebrow: string }
 > = {
   geral: {
-    label: "Painel geral de parlamentares",
+    label: "Painel geral de viagens",
     description:
       "Ranking anual otimizado quando o filtro e de um unico ano e sem refinamentos extras.",
     eyebrow: "Recorte Geral",
   },
   deputados: {
-    label: "Painel exclusivo de deputados",
-    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar DEPUTADO.",
+    label: "Recorte de deputados",
+    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar DEPUTADO, mantendo apenasParlamentares em false.",
     eyebrow: "Camara Federal",
   },
   senadores: {
-    label: "Painel exclusivo de senadores",
-    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar SENADOR.",
+    label: "Recorte de senadores",
+    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar SENADOR, mantendo apenasParlamentares em false.",
     eyebrow: "Senado Federal",
   },
 };

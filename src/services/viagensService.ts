@@ -468,7 +468,9 @@ function shouldUseAnnualRanking(filtro?: RankingViagemFiltroInput): filtro is Ra
 export function normalizeViagensFilter(
   filtro?: RankingViagemFiltroInput
 ): RankingViagemFiltroInput | undefined {
-  if (!filtro) return undefined;
+  if (!filtro) {
+    return { apenasParlamentares: false };
+  }
 
   const normalized: RankingViagemFiltroInput = {
     anoInicio: filtro.anoInicio,
@@ -485,7 +487,7 @@ export function normalizeViagensFilter(
     funcao: trimOrUndefined(filtro.funcao),
     destino: trimOrUndefined(filtro.destino),
     motivo: trimOrUndefined(filtro.motivo),
-    apenasParlamentares: filtro.apenasParlamentares,
+    apenasParlamentares: false,
     cargoParlamentar: filtro.cargoParlamentar,
   };
 
@@ -499,7 +501,7 @@ export function applyRecorteToViagensFilter(
 ): RankingViagemFiltroInput {
   const base: RankingViagemFiltroInput = {
     ...filtro,
-    apenasParlamentares: true,
+    apenasParlamentares: false,
   };
 
   if (recorte === "deputados") {

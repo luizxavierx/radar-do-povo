@@ -65,9 +65,9 @@ const TEXT_FILTER_KEYS: TextFilterKey[] = [
 ];
 
 const recorteOptions: { id: ViagensRecorte; label: string; hint: string }[] = [
-  { id: "geral", label: "Geral", hint: "Somente parlamentares" },
-  { id: "deputados", label: "Deputados", hint: "Recorte da Camara" },
-  { id: "senadores", label: "Senadores", hint: "Recorte do Senado" },
+  { id: "geral", label: "Geral", hint: "Sem filtro de parlamentares" },
+  { id: "deputados", label: "Deputados", hint: "Recorte por cargo parlamentar" },
+  { id: "senadores", label: "Senadores", hint: "Recorte por cargo parlamentar" },
 ];
 
 const fieldMeta: { key: TextFilterKey; label: string; placeholder: string }[] = [
