@@ -6,31 +6,22 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const graphqlBase =
-    env.VITE_RADAR_API_BASE || "https://api.radardopovo.com/graphql";
-  const devUpstreamApiBase = graphqlBase.replace(/\/graphql\/?$/, "");
+  const rawRadarApiBase = env.RADAR_API_BASE;
+  if (!rawRadarApiBase) {
+    throw new Error("Missing env: RADAR_API_BASE");
+  }
+
+  const radarApiBase = rawRadarApiBase.replace(/\/+$/, "");
 
   return {
+    define: {
+      __RADAR_API_BASE__: JSON.stringify(radarApiBase),
+    },
     server: {
       host: "::",
       port: 8080,
       hmr: {
         overlay: false,
-      },
-      proxy: {
-        "/api/graphql": {
-          target: devUpstreamApiBase,
-          changeOrigin: true,
-          rewrite: () => "/graphql",
-        },
-        "/api/healthz": {
-          target: devUpstreamApiBase,
-          changeOrigin: true,
-        },
-        "/healthz": {
-          target: devUpstreamApiBase,
-          changeOrigin: true,
-        },
       },
     },
     plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),

@@ -1,13 +1,10 @@
 import type { GraphQLResponse, GraphQLError } from "./types";
 
-const RADAR_API_BASE = import.meta.env.VITE_RADAR_API_BASE?.trim();
-const GRAPHQL_ENDPOINT = RADAR_API_BASE || "/api/graphql";
-const HEALTH_ENDPOINTS = RADAR_API_BASE
-  ? [
-      RADAR_API_BASE.replace(/\/graphql\/?$/, "/api/healthz"),
-      RADAR_API_BASE.replace(/\/graphql\/?$/, "/healthz"),
-    ]
-  : ["/api/healthz", "/healthz"];
+const GRAPHQL_ENDPOINT = __RADAR_API_BASE__;
+const HEALTH_ENDPOINTS = [
+  __RADAR_API_BASE__.replace(/\/graphql\/?$/, "/api/healthz"),
+  __RADAR_API_BASE__.replace(/\/graphql\/?$/, "/healthz"),
+];
 const REQUEST_TIMEOUT = 15_000;
 const DEFAULT_RETRIES = 1;
 
