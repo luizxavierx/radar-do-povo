@@ -6,8 +6,9 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const devUpstreamApiBase =
-    env.VITE_DEV_UPSTREAM_API_BASE || "https://api.radardopovo.com";
+  const graphqlBase =
+    env.VITE_RADAR_API_BASE || "https://api.radardopovo.com/graphql";
+  const devUpstreamApiBase = graphqlBase.replace(/\/graphql\/?$/, "");
 
   return {
     server: {
@@ -23,6 +24,10 @@ export default defineConfig(({ mode }) => {
           rewrite: () => "/graphql",
         },
         "/api/healthz": {
+          target: devUpstreamApiBase,
+          changeOrigin: true,
+        },
+        "/healthz": {
           target: devUpstreamApiBase,
           changeOrigin: true,
         },

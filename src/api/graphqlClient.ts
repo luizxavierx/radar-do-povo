@@ -1,7 +1,13 @@
 import type { GraphQLResponse, GraphQLError } from "./types";
 
-const GRAPHQL_ENDPOINT = "/api/graphql";
-const HEALTH_ENDPOINT = "/api/healthz";
+const RADAR_API_BASE = import.meta.env.VITE_RADAR_API_BASE?.trim();
+const GRAPHQL_ENDPOINT = RADAR_API_BASE || "/api/graphql";
+const HEALTH_ENDPOINTS = RADAR_API_BASE
+  ? [
+      RADAR_API_BASE.replace(/\/graphql\/?$/, "/api/healthz"),
+      RADAR_API_BASE.replace(/\/graphql\/?$/, "/healthz"),
+    ]
+  : ["/api/healthz", "/healthz"];
 const REQUEST_TIMEOUT = 15_000;
 const DEFAULT_RETRIES = 1;
 
@@ -163,14 +169,19 @@ export async function graphqlRequest<TData, TVars = Record<string, unknown>>(
 
 /** Health check */
 export async function checkApiHealth(): Promise<boolean> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5_000);
-  try {
-    const res = await fetch(HEALTH_ENDPOINT, { signal: controller.signal });
-    return res.ok;
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
+  for (const endpoint of HEALTH_ENDPOINTS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5_000);
+
+    try {
+      const res = await fetch(endpoint, { signal: controller.signal });
+      if (res.ok) return true;
+    } catch {
+      // Try the next fallback endpoint.
+    } finally {
+      clearTimeout(timer);
+    }
   }
+
+  return false;
 }
