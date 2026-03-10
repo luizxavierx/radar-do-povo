@@ -186,6 +186,11 @@ const ViagensTable = ({
                                 processo {viagem.processoId}
                               </span>
                             ) : null}
+                            {viagem.pcdp ? (
+                              <span className="rounded-full border border-border bg-card px-2 py-1">
+                                pcdp {viagem.pcdp}
+                              </span>
+                            ) : null}
                           </div>
                         </div>
                       </TableCell>

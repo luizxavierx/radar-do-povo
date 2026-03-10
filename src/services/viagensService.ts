@@ -15,6 +15,8 @@ export type ViagensRecorte = "geral" | "deputados" | "senadores";
 
 export interface ViagemDetalheInput {
   processoId: string;
+  pcdp?: string;
+  cpfViajante?: string;
   nomeViajante?: string;
   anoInicio?: number;
   anoFim?: number;
@@ -126,7 +128,9 @@ const TOP_GASTADORES_VIAGENS_QUERY = `
         cpfViajante
         nomeViajante
         cargo
+        funcao
         totalViagens
+        totalTrechos
         totalPagamentosCents
         totalPassagensCents
         totalDiariasCents
@@ -304,43 +308,38 @@ const DETALHE_VIAGEM_EXPANDIDA_QUERY = `
         nodes {
           processoId
           pcdp
-          situacao
-          viagemUrgente
-          justificativaUrgencia
-          orgaoSuperiorCodigo
-          orgaoSuperiorNome
-          orgaoSolicitanteCodigo
-          orgaoSolicitanteNome
-          cpfViajante
           nomeViajante
           cargo
           funcao
-          descricaoFuncao
-          dataInicio
-          dataFim
           destinos
           motivo
-          valorDiariasCents
-          valorPassagensCents
-          valorDevolucaoCents
-          valorOutrosGastosCents
-          ano
-          importedAt
           passagens(pagination: { limit: 10, offset: 0 }) {
             total
             limit
             offset
             nodes {
               id
+              processoId
+              pcdp
               meioTransporte
+              idaOrigemPais
+              idaOrigemUf
               idaOrigemCidade
+              idaDestinoPais
+              idaDestinoUf
               idaDestinoCidade
+              voltaOrigemPais
+              voltaOrigemUf
               voltaOrigemCidade
+              voltaDestinoPais
+              voltaDestinoUf
               voltaDestinoCidade
               valorPassagemCents
               taxaServicoCents
               emissaoData
+              emissaoHora
               ano
+              importedAt
             }
           }
           pagamentos(pagination: { limit: 10, offset: 0 }) {
@@ -349,11 +348,18 @@ const DETALHE_VIAGEM_EXPANDIDA_QUERY = `
             offset
             nodes {
               id
+              processoId
+              pcdp
+              orgaoSuperiorCodigo
+              orgaoSuperiorNome
+              orgaoPagadorCodigo
               tipoPagamento
               orgaoPagadorNome
+              ugPagadoraCodigo
               ugPagadoraNome
               valorCents
               ano
+              importedAt
             }
           }
           trechos(pagination: { limit: 10, offset: 0 }) {
@@ -362,15 +368,22 @@ const DETALHE_VIAGEM_EXPANDIDA_QUERY = `
             offset
             nodes {
               id
+              processoId
+              pcdp
               sequencia
               origemData
+              origemPais
+              origemUf
               origemCidade
               destinoData
+              destinoPais
+              destinoUf
               destinoCidade
               meioTransporte
               numeroDiarias
               missao
               ano
+              importedAt
             }
           }
         }
@@ -440,7 +453,15 @@ function shouldUseAnnualRanking(filtro?: RankingViagemFiltroInput): filtro is Ra
     trimOrUndefined(filtro.search) ||
     trimOrUndefined(filtro.situacao) ||
     trimOrUndefined(filtro.orgaoSuperiorCodigo) ||
-    trimOrUndefined(filtro.orgaoSolicitanteCodigo)
+    trimOrUndefined(filtro.orgaoSolicitanteCodigo) ||
+    trimOrUndefined(filtro.processoId) ||
+    trimOrUndefined(filtro.pcdp) ||
+    trimOrUndefined(filtro.cpfViajante) ||
+    trimOrUndefined(filtro.nomeViajante) ||
+    trimOrUndefined(filtro.cargo) ||
+    trimOrUndefined(filtro.funcao) ||
+    trimOrUndefined(filtro.destino) ||
+    trimOrUndefined(filtro.motivo)
   );
 }
 
@@ -456,6 +477,14 @@ export function normalizeViagensFilter(
     orgaoSolicitanteCodigo: trimOrUndefined(filtro.orgaoSolicitanteCodigo),
     search: trimOrUndefined(filtro.search),
     situacao: trimOrUndefined(filtro.situacao),
+    processoId: trimOrUndefined(filtro.processoId),
+    pcdp: trimOrUndefined(filtro.pcdp),
+    cpfViajante: trimOrUndefined(filtro.cpfViajante),
+    nomeViajante: trimOrUndefined(filtro.nomeViajante),
+    cargo: trimOrUndefined(filtro.cargo),
+    funcao: trimOrUndefined(filtro.funcao),
+    destino: trimOrUndefined(filtro.destino),
+    motivo: trimOrUndefined(filtro.motivo),
     apenasParlamentares: filtro.apenasParlamentares,
     cargoParlamentar: filtro.cargoParlamentar,
   };
@@ -666,6 +695,7 @@ export async function fetchDetalheViagemPorProcesso(
   options?: { signal?: AbortSignal }
 ) {
   const nomeViajante = trimOrUndefined(input.nomeViajante);
+  const pcdp = trimOrUndefined(input.pcdp);
   if (!input.processoId) {
     throw new Error("Processo da viagem nao informado.");
   }
@@ -708,7 +738,9 @@ export async function fetchDetalheViagemPorProcesso(
 
     total = detailData.politico?.viagens?.total ?? 0;
     const match = detailData.politico?.viagens?.nodes?.find(
-      (viagem) => viagem.processoId === input.processoId
+      (viagem) =>
+        viagem.processoId === input.processoId ||
+        (pcdp ? trimOrUndefined(viagem.pcdp) === pcdp : false)
     );
 
     if (match) {

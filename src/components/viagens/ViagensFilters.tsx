@@ -19,6 +19,14 @@ export interface ViagensFilterState {
   orgaoSolicitanteCodigo: string;
   search: string;
   situacao: string;
+  processoId: string;
+  pcdp: string;
+  cpfViajante: string;
+  nomeViajante: string;
+  cargo: string;
+  funcao: string;
+  destino: string;
+  motivo: string;
 }
 
 interface ViagensFiltersProps {
@@ -27,60 +35,147 @@ interface ViagensFiltersProps {
   onReset: () => void;
 }
 
+type TextFilterKey =
+  | "orgaoSuperiorCodigo"
+  | "orgaoSolicitanteCodigo"
+  | "search"
+  | "situacao"
+  | "processoId"
+  | "pcdp"
+  | "cpfViajante"
+  | "nomeViajante"
+  | "cargo"
+  | "funcao"
+  | "destino"
+  | "motivo";
+
+const TEXT_FILTER_KEYS: TextFilterKey[] = [
+  "search",
+  "situacao",
+  "processoId",
+  "pcdp",
+  "cpfViajante",
+  "nomeViajante",
+  "cargo",
+  "funcao",
+  "destino",
+  "motivo",
+  "orgaoSuperiorCodigo",
+  "orgaoSolicitanteCodigo",
+];
+
 const recorteOptions: { id: ViagensRecorte; label: string; hint: string }[] = [
   { id: "geral", label: "Geral", hint: "Somente parlamentares" },
   { id: "deputados", label: "Deputados", hint: "Recorte da Camara" },
   { id: "senadores", label: "Senadores", hint: "Recorte do Senado" },
 ];
 
-const situacaoOptions = [
-  { value: "TODAS", label: "Todas as situacoes" },
-  { value: "PAGA", label: "Paga" },
-  { value: "CONCLUIDA", label: "Concluida" },
-  { value: "CANCELADA", label: "Cancelada" },
-  { value: "EM_ANDAMENTO", label: "Em andamento" },
+const fieldMeta: { key: TextFilterKey; label: string; placeholder: string }[] = [
+  { key: "processoId", label: "Processo ID", placeholder: "0001234-25.2024.1.00.0000" },
+  { key: "pcdp", label: "PCDP", placeholder: "Codigo da proposta/viagem" },
+  { key: "cpfViajante", label: "CPF do viajante", placeholder: "Somente numeros" },
+  { key: "nomeViajante", label: "Nome do viajante", placeholder: "Ex.: Kim Kataguiri" },
+  { key: "cargo", label: "Cargo", placeholder: "Ex.: Deputado Federal" },
+  { key: "funcao", label: "Funcao", placeholder: "Funcao ou descricao da funcao" },
+  { key: "destino", label: "Destino", placeholder: "Ex.: Brasilia" },
+  { key: "motivo", label: "Motivo", placeholder: "Ex.: missao oficial" },
+  { key: "situacao", label: "Situacao", placeholder: "Ex.: CONCLUIDA" },
+  { key: "orgaoSuperiorCodigo", label: "Orgao superior", placeholder: "Ex.: 26000" },
+  {
+    key: "orgaoSolicitanteCodigo",
+    label: "Orgao solicitante",
+    placeholder: "Ex.: 26298",
+  },
 ];
 
 export const travelYears = Array.from({ length: 10 }, (_, index) => 2026 - index);
 
+function pickTextFilters(value: ViagensFilterState): Record<TextFilterKey, string> {
+  return {
+    search: value.search,
+    situacao: value.situacao,
+    processoId: value.processoId,
+    pcdp: value.pcdp,
+    cpfViajante: value.cpfViajante,
+    nomeViajante: value.nomeViajante,
+    cargo: value.cargo,
+    funcao: value.funcao,
+    destino: value.destino,
+    motivo: value.motivo,
+    orgaoSuperiorCodigo: value.orgaoSuperiorCodigo,
+    orgaoSolicitanteCodigo: value.orgaoSolicitanteCodigo,
+  };
+}
+
 const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
-  const [searchInput, setSearchInput] = useState(value.search);
+  const [textDraft, setTextDraft] = useState<Record<TextFilterKey, string>>(() =>
+    pickTextFilters(value)
+  );
 
   useEffect(() => {
-    setSearchInput(value.search);
-  }, [value.search]);
+    setTextDraft(pickTextFilters(value));
+  }, [
+    value.cargo,
+    value.cpfViajante,
+    value.destino,
+    value.funcao,
+    value.motivo,
+    value.nomeViajante,
+    value.orgaoSolicitanteCodigo,
+    value.orgaoSuperiorCodigo,
+    value.pcdp,
+    value.processoId,
+    value.search,
+    value.situacao,
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      if (searchInput !== value.search) {
-        onChange({ search: searchInput });
+      const patch: Partial<ViagensFilterState> = {};
+
+      TEXT_FILTER_KEYS.forEach((key) => {
+        if (textDraft[key] !== value[key]) {
+          patch[key] = textDraft[key];
+        }
+      });
+
+      if (Object.keys(patch).length) {
+        onChange(patch);
       }
     }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [onChange, searchInput, value.search]);
+  }, [onChange, textDraft, value]);
 
   const activeBadges = [
     value.search ? `Busca: ${value.search}` : "",
+    value.processoId ? `Processo: ${value.processoId}` : "",
+    value.pcdp ? `PCDP: ${value.pcdp}` : "",
+    value.cpfViajante ? `CPF: ${value.cpfViajante}` : "",
+    value.nomeViajante ? `Viajante: ${value.nomeViajante}` : "",
+    value.cargo ? `Cargo: ${value.cargo}` : "",
+    value.funcao ? `Funcao: ${value.funcao}` : "",
+    value.destino ? `Destino: ${value.destino}` : "",
+    value.motivo ? `Motivo: ${value.motivo}` : "",
+    value.situacao ? `Situacao: ${value.situacao}` : "",
     value.orgaoSuperiorCodigo ? `Orgao superior: ${value.orgaoSuperiorCodigo}` : "",
     value.orgaoSolicitanteCodigo
       ? `Orgao solicitante: ${value.orgaoSolicitanteCodigo}`
       : "",
-    value.situacao ? `Situacao: ${value.situacao}` : "",
   ].filter(Boolean);
 
   return (
     <section className="rounded-3xl border border-border/75 bg-card/88 p-5 shadow-card sm:p-6">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
               <Filter className="h-3.5 w-3.5" />
               Filtros da Area
             </p>
-            <h2 className="text-xl font-extrabold text-foreground">Recorte e filtros avancados</h2>
+            <h2 className="text-xl font-extrabold text-foreground">Recorte e filtros reais do banco</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Cada bloco da tela reage ao mesmo filtro, com carregamento e retry independentes.
+              Busca ampla e filtros exatos do contrato oficial, todos sincronizados com a URL.
             </p>
           </div>
 
@@ -114,17 +209,19 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
           })}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="space-y-2 xl:col-span-2">
             <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Busca livre
+              Busca textual ampla
             </label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Nome, cargo, motivo ou orgao"
+                value={textDraft.search}
+                onChange={(event) =>
+                  setTextDraft((current) => ({ ...current, search: event.target.value }))
+                }
+                placeholder="Nome, cargo, funcao, destino, motivo ou orgao"
                 className="pl-9"
               />
             </div>
@@ -171,50 +268,34 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Situacao
-            </label>
-            <Select
-              value={value.situacao || "TODAS"}
-              onValueChange={(nextValue) =>
-                onChange({ situacao: nextValue === "TODAS" ? "" : nextValue })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todas as situacoes" />
-              </SelectTrigger>
-              <SelectContent>
-                {situacaoOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="rounded-3xl border border-border/70 bg-background/70 p-4">
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-foreground">Filtros exatos</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Campos reais do banco para recortes mais precisos, com debounce para nao martelar a API.
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Codigo do orgao superior
-            </label>
-            <Input
-              value={value.orgaoSuperiorCodigo}
-              onChange={(event) => onChange({ orgaoSuperiorCodigo: event.target.value })}
-              placeholder="Ex.: 26000"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Codigo do orgao solicitante
-            </label>
-            <Input
-              value={value.orgaoSolicitanteCodigo}
-              onChange={(event) => onChange({ orgaoSolicitanteCodigo: event.target.value })}
-              placeholder="Ex.: 26298"
-            />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {fieldMeta.map((field) => (
+              <div key={field.key} className="space-y-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  {field.label}
+                </label>
+                <Input
+                  value={textDraft[field.key]}
+                  onChange={(event) =>
+                    setTextDraft((current) => ({
+                      ...current,
+                      [field.key]: event.target.value,
+                    }))
+                  }
+                  placeholder={field.placeholder}
+                />
+              </div>
+            ))}
           </div>
         </div>
 

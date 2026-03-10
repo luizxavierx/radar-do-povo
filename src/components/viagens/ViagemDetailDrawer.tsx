@@ -72,7 +72,7 @@ const ViagemDetailDrawer = ({
   error,
   onRetry,
 }: ViagemDetailDrawerProps) => {
-  const viagem = detail?.viagem || viagemBase;
+  const viagem = detail?.viagem ? { ...(viagemBase || {}), ...detail.viagem } : viagemBase;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -93,6 +93,7 @@ const ViagemDetailDrawer = ({
                 {detail?.politico?.partido || "Partido nao informado"}
                 {" | "}
                 processo {viagem?.processoId || "-"}
+                {viagem?.pcdp ? ` | pcdp ${viagem.pcdp}` : ""}
               </DrawerDescription>
             </div>
 
@@ -177,6 +178,15 @@ const ViagemDetailDrawer = ({
                         {viagem.motivo || "Nao informado"}
                       </span>
                     </p>
+                    {viagem.cpfViajante ? (
+                      <p className="inline-flex items-start gap-2 text-muted-foreground">
+                        <ClipboardList className="mt-0.5 h-4 w-4 text-primary" />
+                        <span>
+                          <strong className="text-foreground">CPF do viajante:</strong>{" "}
+                          {viagem.cpfViajante}
+                        </span>
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </section>
@@ -204,9 +214,17 @@ const ViagemDetailDrawer = ({
                                 {passagem.idaDestinoCidade || "-"}
                               </p>
                               <p className="mt-1 text-muted-foreground">
+                                {passagem.idaOrigemUf || "-"} / {passagem.idaOrigemPais || "-"}
+                                {" -> "}
+                                {passagem.idaDestinoUf || "-"} / {passagem.idaDestinoPais || "-"}
+                              </p>
+                              <p className="mt-1 text-muted-foreground">
                                 volta {passagem.voltaOrigemCidade || "-"}
                                 {" -> "}
                                 {passagem.voltaDestinoCidade || "-"}
+                              </p>
+                              <p className="mt-1 text-muted-foreground">
+                                pcdp {passagem.pcdp || "-"} | processo {passagem.processoId || "-"}
                               </p>
                             </div>
                             <div className="text-right text-xs">
@@ -215,6 +233,9 @@ const ViagemDetailDrawer = ({
                               </p>
                               <p className="mt-1 text-muted-foreground">
                                 taxa {formatCents(passagem.taxaServicoCents)}
+                              </p>
+                              <p className="mt-1 text-muted-foreground">
+                                emissao {formatDate(passagem.emissaoData)} {passagem.emissaoHora || ""}
                               </p>
                             </div>
                           </div>
@@ -248,12 +269,18 @@ const ViagemDetailDrawer = ({
                               <p className="mt-1 text-muted-foreground">
                                 {pagamento.ugPagadoraNome || "UG pagadora nao informada"}
                               </p>
+                              <p className="mt-1 text-muted-foreground">
+                                superior {pagamento.orgaoSuperiorNome || "-"} | processo {pagamento.processoId || "-"}
+                              </p>
                             </div>
                             <div className="text-right text-xs">
                               <p className="font-semibold text-foreground">
                                 {formatCents(pagamento.valorCents)}
                               </p>
                               <p className="mt-1 text-muted-foreground">ano {pagamento.ano || "-"}</p>
+                              <p className="mt-1 text-muted-foreground">
+                                ug {pagamento.ugPagadoraCodigo || "-"} | orgao {pagamento.orgaoPagadorCodigo || "-"}
+                              </p>
                             </div>
                           </div>
                         </article>
@@ -286,6 +313,11 @@ const ViagemDetailDrawer = ({
                                 {trecho.destinoCidade || "-"}
                               </p>
                               <p className="mt-1 text-muted-foreground">
+                                {trecho.origemUf || "-"} / {trecho.origemPais || "-"}
+                                {" -> "}
+                                {trecho.destinoUf || "-"} / {trecho.destinoPais || "-"}
+                              </p>
+                              <p className="mt-1 text-muted-foreground">
                                 {formatDate(trecho.origemData)} ate {formatDate(trecho.destinoData)}
                               </p>
                             </div>
@@ -295,6 +327,9 @@ const ViagemDetailDrawer = ({
                               </p>
                               <p className="mt-1 text-muted-foreground">
                                 {trecho.numeroDiarias ?? 0} diarias
+                              </p>
+                              <p className="mt-1 text-muted-foreground">
+                                pcdp {trecho.pcdp || "-"} | processo {trecho.processoId || "-"}
                               </p>
                             </div>
                           </div>

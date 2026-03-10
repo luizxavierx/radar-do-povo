@@ -41,6 +41,14 @@ const DEFAULT_FILTERS: ViagensFilterState = {
   orgaoSolicitanteCodigo: "",
   search: "",
   situacao: "",
+  processoId: "",
+  pcdp: "",
+  cpfViajante: "",
+  nomeViajante: "",
+  cargo: "",
+  funcao: "",
+  destino: "",
+  motivo: "",
 };
 
 const recorteMeta: Record<
@@ -94,6 +102,14 @@ function buildFilterState(searchParams: URLSearchParams): ViagensFilterState {
     orgaoSolicitanteCodigo: searchParams.get("orgaoSolicitanteCodigo") || "",
     search: searchParams.get("search") || "",
     situacao: searchParams.get("situacao") || "",
+    processoId: searchParams.get("processoId") || "",
+    pcdp: searchParams.get("pcdp") || "",
+    cpfViajante: searchParams.get("cpfViajante") || "",
+    nomeViajante: searchParams.get("nomeViajante") || "",
+    cargo: searchParams.get("cargo") || "",
+    funcao: searchParams.get("funcao") || "",
+    destino: searchParams.get("destino") || "",
+    motivo: searchParams.get("motivo") || "",
   };
 }
 
@@ -115,6 +131,30 @@ function toSearchParams(filter: ViagensFilterState, page: number) {
   }
   if (filter.situacao.trim()) {
     params.set("situacao", filter.situacao.trim());
+  }
+  if (filter.processoId.trim()) {
+    params.set("processoId", filter.processoId.trim());
+  }
+  if (filter.pcdp.trim()) {
+    params.set("pcdp", filter.pcdp.trim());
+  }
+  if (filter.cpfViajante.trim()) {
+    params.set("cpfViajante", filter.cpfViajante.trim());
+  }
+  if (filter.nomeViajante.trim()) {
+    params.set("nomeViajante", filter.nomeViajante.trim());
+  }
+  if (filter.cargo.trim()) {
+    params.set("cargo", filter.cargo.trim());
+  }
+  if (filter.funcao.trim()) {
+    params.set("funcao", filter.funcao.trim());
+  }
+  if (filter.destino.trim()) {
+    params.set("destino", filter.destino.trim());
+  }
+  if (filter.motivo.trim()) {
+    params.set("motivo", filter.motivo.trim());
   }
 
   return params;
@@ -139,6 +179,14 @@ const ViagensPage = () => {
         orgaoSolicitanteCodigo: filters.orgaoSolicitanteCodigo,
         search: filters.search,
         situacao: filters.situacao,
+        processoId: filters.processoId,
+        pcdp: filters.pcdp,
+        cpfViajante: filters.cpfViajante,
+        nomeViajante: filters.nomeViajante,
+        cargo: filters.cargo,
+        funcao: filters.funcao,
+        destino: filters.destino,
+        motivo: filters.motivo,
       }),
     [filters]
   );
@@ -150,6 +198,14 @@ const ViagensPage = () => {
   const hasAdvancedFilters = Boolean(
     filters.search ||
       filters.situacao ||
+      filters.processoId ||
+      filters.pcdp ||
+      filters.cpfViajante ||
+      filters.nomeViajante ||
+      filters.cargo ||
+      filters.funcao ||
+      filters.destino ||
+      filters.motivo ||
       filters.orgaoSuperiorCodigo ||
       filters.orgaoSolicitanteCodigo
   );
@@ -165,6 +221,8 @@ const ViagensPage = () => {
     selectedViagem
       ? {
           processoId: selectedViagem.processoId || "",
+          pcdp: selectedViagem.pcdp,
+          cpfViajante: selectedViagem.cpfViajante,
           nomeViajante: selectedViagem.nomeViajante,
           anoInicio: filters.anoInicio,
           anoFim: filters.anoFim,
@@ -195,6 +253,14 @@ const ViagensPage = () => {
     filters.orgaoSolicitanteCodigo,
     filters.search,
     filters.situacao,
+    filters.processoId,
+    filters.pcdp,
+    filters.cpfViajante,
+    filters.nomeViajante,
+    filters.cargo,
+    filters.funcao,
+    filters.destino,
+    filters.motivo,
     currentPage,
   ]);
 

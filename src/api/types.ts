@@ -59,6 +59,14 @@ export interface RankingViagemFiltroInput {
   orgaoSolicitanteCodigo?: string;
   search?: string;
   situacao?: string;
+  processoId?: string;
+  pcdp?: string;
+  cpfViajante?: string;
+  nomeViajante?: string;
+  cargo?: string;
+  funcao?: string;
+  destino?: string;
+  motivo?: string;
   apenasParlamentares?: boolean;
   cargoParlamentar?: CargoParlamentar;
 }
@@ -84,37 +92,63 @@ export interface ResumoViagens {
 // ─── Viagens ───
 export interface Passagem {
   id?: string;
+  processoId?: string;
+  pcdp?: string;
   valorPassagemCents?: string;
   taxaServicoCents?: string;
   meioTransporte?: string;
   emissaoData?: string;
+  emissaoHora?: string;
+  idaOrigemPais?: string;
+  idaOrigemUf?: string;
   idaOrigemCidade?: string;
+  idaDestinoPais?: string;
+  idaDestinoUf?: string;
   idaDestinoCidade?: string;
+  voltaOrigemPais?: string;
+  voltaOrigemUf?: string;
   voltaOrigemCidade?: string;
+  voltaDestinoPais?: string;
+  voltaDestinoUf?: string;
   voltaDestinoCidade?: string;
   ano?: number;
+  importedAt?: string;
 }
 
 export interface Pagamento {
   id?: string;
+  processoId?: string;
+  pcdp?: string;
+  orgaoSuperiorCodigo?: string;
+  orgaoSuperiorNome?: string;
+  orgaoPagadorCodigo?: string;
   tipoPagamento?: string;
   valorCents?: string;
   orgaoPagadorNome?: string;
+  ugPagadoraCodigo?: string;
   ugPagadoraNome?: string;
   ano?: number;
+  importedAt?: string;
 }
 
 export interface Trecho {
   id?: string;
+  processoId?: string;
+  pcdp?: string;
   sequencia?: number;
   origemData?: string;
+  origemPais?: string;
+  origemUf?: string;
   origemCidade?: string;
   destinoData?: string;
+  destinoPais?: string;
+  destinoUf?: string;
   destinoCidade?: string;
   meioTransporte?: string;
   numeroDiarias?: number;
   missao?: string;
   ano?: number;
+  importedAt?: string;
 }
 
 export interface Viagem {
