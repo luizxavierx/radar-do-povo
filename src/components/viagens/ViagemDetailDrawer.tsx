@@ -199,10 +199,14 @@ const ViagemDetailDrawer = ({
                                 {passagem.meioTransporte || "Transporte nao informado"}
                               </p>
                               <p className="mt-1 text-muted-foreground">
-                                {passagem.idaOrigemCidade || "-"} -> {passagem.idaDestinoCidade || "-"}
+                                {passagem.idaOrigemCidade || "-"}
+                                {" -> "}
+                                {passagem.idaDestinoCidade || "-"}
                               </p>
                               <p className="mt-1 text-muted-foreground">
-                                volta {passagem.voltaOrigemCidade || "-"} -> {passagem.voltaDestinoCidade || "-"}
+                                volta {passagem.voltaOrigemCidade || "-"}
+                                {" -> "}
+                                {passagem.voltaDestinoCidade || "-"}
                               </p>
                             </div>
                             <div className="text-right text-xs">
@@ -277,7 +281,9 @@ const ViagemDetailDrawer = ({
                                 trecho {trecho.sequencia || index + 1}
                               </p>
                               <p className="mt-1 text-muted-foreground">
-                                {trecho.origemCidade || "-"} -> {trecho.destinoCidade || "-"}
+                                {trecho.origemCidade || "-"}
+                                {" -> "}
+                                {trecho.destinoCidade || "-"}
                               </p>
                               <p className="mt-1 text-muted-foreground">
                                 {formatDate(trecho.origemData)} ate {formatDate(trecho.destinoData)}
