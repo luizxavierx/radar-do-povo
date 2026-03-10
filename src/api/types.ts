@@ -50,6 +50,37 @@ export interface GastosAgregados {
   periodo?: { anoInicio?: number; anoFim?: number };
 }
 
+export type CargoParlamentar = "DEPUTADO" | "SENADOR";
+
+export interface RankingViagemFiltroInput {
+  anoInicio?: number;
+  anoFim?: number;
+  orgaoSuperiorCodigo?: string;
+  orgaoSolicitanteCodigo?: string;
+  search?: string;
+  situacao?: string;
+  apenasParlamentares?: boolean;
+  cargoParlamentar?: CargoParlamentar;
+}
+
+export interface ResumoViagens {
+  totalViagens?: number;
+  totalViajantes?: number;
+  totalOrgaosSuperiores?: number;
+  totalOrgaosSolicitantes?: number;
+  totalTrechos?: number;
+  totalDiariasCents?: string;
+  totalPassagensCents?: string;
+  totalPagamentosCents?: string;
+  totalOutrosGastosCents?: string;
+  totalDevolucaoCents?: string;
+  totalGastoBrutoCents?: string;
+  totalGastoLiquidoCents?: string;
+  ticketMedioViagemCents?: string;
+  gastoMedioViajanteCents?: string;
+  periodo?: { anoInicio?: number; anoFim?: number };
+}
+
 // ─── Viagens ───
 export interface Passagem {
   id?: string;
@@ -91,22 +122,69 @@ export interface Viagem {
   pcdp?: string;
   situacao?: string;
   viagemUrgente?: boolean;
+  justificativaUrgencia?: string;
+  orgaoSuperiorCodigo?: string;
   orgaoSuperiorNome?: string;
+  orgaoSolicitanteCodigo?: string;
   orgaoSolicitanteNome?: string;
+  cpfViajante?: string;
   dataInicio?: string;
   dataFim?: string;
   destinos?: string;
   nomeViajante?: string;
   cargo?: string;
+  funcao?: string;
+  descricaoFuncao?: string;
   motivo?: string;
   valorDiariasCents?: string;
   valorPassagensCents?: string;
   valorOutrosGastosCents?: string;
   valorDevolucaoCents?: string;
   ano?: number;
+  importedAt?: string;
   passagens?: Connection<Passagem>;
   pagamentos?: Connection<Pagamento>;
   trechos?: Connection<Trecho>;
+}
+
+export interface ViagemPessoaRanking {
+  cpfViajante?: string;
+  nomeViajante?: string;
+  cargo?: string;
+  funcao?: string;
+  descricaoFuncao?: string;
+  totalViagens?: number;
+  totalTrechos?: number;
+  totalDiariasCents?: string;
+  totalPassagensCents?: string;
+  totalPagamentosCents?: string;
+  totalOutrosGastosCents?: string;
+  totalDevolucaoCents?: string;
+  totalGastoBrutoCents?: string;
+  totalGastoLiquidoCents?: string;
+}
+
+export interface ViagemOrgaoRanking {
+  codigoOrgao?: string;
+  nomeOrgao?: string;
+  totalViagens?: number;
+  totalViajantes?: number;
+  totalTrechos?: number;
+  totalDiariasCents?: string;
+  totalPassagensCents?: string;
+  totalPagamentosCents?: string;
+  totalOutrosGastosCents?: string;
+  totalDevolucaoCents?: string;
+  totalGastoBrutoCents?: string;
+  totalGastoLiquidoCents?: string;
+}
+
+export interface ViagemAnoRanking {
+  nomeViajante?: string;
+  cargo?: string;
+  totalViagens?: number;
+  totalPagamentosCents?: string;
+  totalGastoLiquidoCents?: string;
 }
 
 // ─── Emendas ───
@@ -181,7 +259,7 @@ export interface RankingEmendaFiltroInput {
   tipoEmenda?: string;
   pais?: string;
   apenasParlamentares?: boolean;
-  cargoParlamentar?: "DEPUTADO" | "SENADOR";
+  cargoParlamentar?: CargoParlamentar;
 }
 
 // ─── Perfil Externo ───

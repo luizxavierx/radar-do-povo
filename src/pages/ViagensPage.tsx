@@ -1,869 +1,489 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useQueries, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Activity, BadgeCheck, Building2, Clock3, Plane, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import {
-  ArrowUpDown,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Plane,
-  Receipt,
-  Route,
-  Search,
-  Wallet,
-} from "lucide-react";
-import { toast } from "sonner";
 
 import AppSidebar from "@/components/AppSidebar";
-import SearchBar from "@/components/SearchBar";
-import StatsCard from "@/components/StatsCard";
+import TopGastadoresCard from "@/components/viagens/TopGastadoresCard";
+import TopOrgaosCard from "@/components/viagens/TopOrgaosCard";
+import TopViajantesCard from "@/components/viagens/TopViajantesCard";
+import ViagemDetailDrawer from "@/components/viagens/ViagemDetailDrawer";
+import ViagensFilters, { type ViagensFilterState } from "@/components/viagens/ViagensFilters";
+import ViagensKpis from "@/components/viagens/ViagensKpis";
+import ViagensTable, { type ViagensSortKey } from "@/components/viagens/ViagensTable";
+import { normalizePagination } from "@/hooks/queryShared";
+import { useDetalheViagem } from "@/hooks/useDetalheViagem";
+import { useResumoViagens } from "@/hooks/useResumoViagens";
+import { useTopGastadoresViagens } from "@/hooks/useTopGastadoresViagens";
+import { useTopOrgaosSolicitantesViagens } from "@/hooks/useTopOrgaosSolicitantesViagens";
+import { useTopOrgaosSuperioresViagens } from "@/hooks/useTopOrgaosSuperioresViagens";
+import { useTopViajantes } from "@/hooks/useTopViajantes";
+import { useViagensPainel } from "@/hooks/useViagensPainel";
+import type { RankingViagemFiltroInput, Viagem } from "@/api/types";
+import { formatCents, toBigInt } from "@/lib/formatters";
 import {
-  EmptyState,
-  ErrorStateWithRetry,
-  LoadingState,
-} from "@/components/StateViews";
-import { Skeleton } from "@/components/ui/skeleton";
-import { GraphQLRequestError, graphqlRequest } from "@/api/graphqlClient";
-import { VIAGENS_LISTA_QUERY, VIAGENS_RESUMO_QUERY } from "@/api/queries";
-import type {
-  Connection,
-  GastosAgregados,
-  PoliticoResumo,
-  Viagem,
-} from "@/api/types";
-import { formatCents, formatDate, toBigInt } from "@/lib/formatters";
-import {
-  useDetalheViagem,
-  useListaViagens,
-  usePoliticoBusca,
-  useResumoViagens,
-} from "@/hooks/useViagens";
+  applyRecorteToViagensFilter,
+  fetchViagensPainel,
+  normalizeViagensFilter,
+  type ViagensRecorte,
+} from "@/services/viagensService";
 
-const PAGE_LIMIT = 10;
-const years = Array.from({ length: 8 }, (_, i) => 2026 - i);
+const DEFAULT_YEAR = 2025;
+const TABLE_LIMIT = 20;
+const RANKING_LIMIT = 10;
+const DEFAULT_SORT: ViagensSortKey = "data_desc";
 
-type SortKey = "data_desc" | "data_asc" | "valor_desc" | "valor_asc";
+const DEFAULT_FILTERS: ViagensFilterState = {
+  recorte: "geral",
+  anoInicio: DEFAULT_YEAR,
+  anoFim: DEFAULT_YEAR,
+  orgaoSuperiorCodigo: "",
+  orgaoSolicitanteCodigo: "",
+  search: "",
+  situacao: "",
+};
 
-const travelSpotlight = [
-  {
-    key: "lula",
-    search: "lula",
-    nome: "Luiz Inacio Lula da Silva",
-    foto:
-      "https://upload.wikimedia.org/wikipedia/commons/8/86/Lula_-_foto_oficial_2023-01-09.jpg",
+const recorteMeta: Record<
+  ViagensRecorte,
+  { label: string; description: string; eyebrow: string }
+> = {
+  geral: {
+    label: "Painel geral de parlamentares",
+    description:
+      "Ranking anual otimizado quando o filtro e de um unico ano e sem refinamentos extras.",
+    eyebrow: "Recorte Geral",
   },
-  {
-    key: "bolsonaro",
-    search: "bolsonaro",
-    nome: "Jair Messias Bolsonaro",
-    foto:
-      "https://upload.wikimedia.org/wikipedia/commons/9/93/Jair_Bolsonaro_2019_Portrait.jpg",
+  deputados: {
+    label: "Painel exclusivo de deputados",
+    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar DEPUTADO.",
+    eyebrow: "Camara Federal",
   },
-  {
-    key: "arthur-lira",
-    search: "arthur lira",
-    nome: "Arthur Lira",
-    foto: "https://www.camara.leg.br/internet/deputado/bandep/160594.jpg",
+  senadores: {
+    label: "Painel exclusivo de senadores",
+    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar SENADOR.",
+    eyebrow: "Senado Federal",
   },
-  {
-    key: "davi-alcolumbre",
-    search: "davi alcolumbre",
-    nome: "Davi Alcolumbre",
-    foto: "https://www.senado.leg.br/senadores/img/fotos-oficiais/senador5765.jpg",
-  },
-  {
-    key: "simone-tebet",
-    search: "simone tebet",
-    nome: "Simone Tebet",
-    foto:
-      "https://upload.wikimedia.org/wikipedia/commons/8/89/Simone_Tebet_%28cropped%29.jpg",
-  },
-  {
-    key: "flavio-dino",
-    search: "flavio dino",
-    nome: "Flavio Dino",
-    foto:
-      "https://upload.wikimedia.org/wikipedia/commons/0/0f/Flavio_Dino_%28cropped%29.jpg",
-  },
-];
+};
 
-function useErrorToast(error: unknown, scope: string) {
-  const lastErrorRef = useRef<string>("");
+function parseYear(value: string | null, fallback: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 2019 && parsed <= 2026 ? parsed : fallback;
+}
 
-  useEffect(() => {
-    if (!error || !(error instanceof Error)) return;
+function parsePage(value: string | null) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
 
-    const requestId =
-      error instanceof GraphQLRequestError ? error.requestId : undefined;
-    const fingerprint = `${scope}|${error.message}|${requestId || "-"}`;
-    if (lastErrorRef.current === fingerprint) return;
+function parseRecorte(value: string | null): ViagensRecorte {
+  if (value === "deputados" || value === "senadores" || value === "geral") {
+    return value;
+  }
+  return DEFAULT_FILTERS.recorte;
+}
 
-    lastErrorRef.current = fingerprint;
+function buildFilterState(searchParams: URLSearchParams): ViagensFilterState {
+  const anoInicio = parseYear(searchParams.get("anoInicio"), DEFAULT_FILTERS.anoInicio);
+  const anoFim = parseYear(searchParams.get("anoFim"), DEFAULT_FILTERS.anoFim);
 
-    const description = requestId
-      ? `${error.message} (request_id: ${requestId})`
-      : error.message;
+  return {
+    recorte: parseRecorte(searchParams.get("recorte")),
+    anoInicio: Math.min(anoInicio, anoFim),
+    anoFim: Math.max(anoInicio, anoFim),
+    orgaoSuperiorCodigo: searchParams.get("orgaoSuperiorCodigo") || "",
+    orgaoSolicitanteCodigo: searchParams.get("orgaoSolicitanteCodigo") || "",
+    search: searchParams.get("search") || "",
+    situacao: searchParams.get("situacao") || "",
+  };
+}
 
-    toast.error(scope, { description });
-  }, [error, scope]);
+function toSearchParams(filter: ViagensFilterState, page: number) {
+  const params = new URLSearchParams();
+  params.set("recorte", filter.recorte);
+  params.set("anoInicio", String(filter.anoInicio));
+  params.set("anoFim", String(filter.anoFim));
+  params.set("page", String(page));
+
+  if (filter.orgaoSuperiorCodigo.trim()) {
+    params.set("orgaoSuperiorCodigo", filter.orgaoSuperiorCodigo.trim());
+  }
+  if (filter.orgaoSolicitanteCodigo.trim()) {
+    params.set("orgaoSolicitanteCodigo", filter.orgaoSolicitanteCodigo.trim());
+  }
+  if (filter.search.trim()) {
+    params.set("search", filter.search.trim());
+  }
+  if (filter.situacao.trim()) {
+    params.set("situacao", filter.situacao.trim());
+  }
+
+  return params;
 }
 
 const ViagensPage = () => {
   const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
-  const initialSearch = searchParams.get("search") || "";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [sortBy, setSortBy] = useState<ViagensSortKey>(DEFAULT_SORT);
+  const [selectedViagem, setSelectedViagem] = useState<Viagem | null>(null);
 
-  const [searchInputSeed, setSearchInputSeed] = useState(initialSearch);
-  const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [selectedPolitico, setSelectedPolitico] =
-    useState<PoliticoResumo | null>(null);
-  const [anoInicio, setAnoInicio] = useState(2024);
-  const [anoFim, setAnoFim] = useState(2026);
-  const [offset, setOffset] = useState(0);
-  const [sortBy, setSortBy] = useState<SortKey>("data_desc");
-  const [expandedOffset, setExpandedOffset] = useState<number | null>(null);
+  const filters = useMemo(() => buildFilterState(searchParams), [searchParams]);
+  const currentPage = parsePage(searchParams.get("page"));
+  const offset = (currentPage - 1) * TABLE_LIMIT;
 
-  const searchQuery = usePoliticoBusca(searchTerm);
-  const resumoQuery = useResumoViagens(selectedPolitico?.id, anoInicio, anoFim);
-  const listaQuery = useListaViagens(selectedPolitico?.id, {
-    anoInicio,
-    anoFim,
-    pagination: { limit: PAGE_LIMIT, offset },
-  });
-  const rankingCandidates = (searchQuery.data?.nodes || []).slice(0, 5);
-  const rankingQueries = useQueries({
-    queries: rankingCandidates.map((politico) => ({
-      queryKey: ["ranking-viagens-resumo", politico.id, anoInicio, anoFim],
-      queryFn: ({ signal }) =>
-        graphqlRequest<{
-          politico: (PoliticoResumo & { gastos?: GastosAgregados }) | null;
-        }>(
-          VIAGENS_RESUMO_QUERY,
-          { id: politico.id, anoInicio, anoFim },
-          { signal, timeoutMs: 12_000 }
-        ).then((d) => ({
-          politico,
-          gastos: d.politico?.gastos,
-        })),
-      staleTime: 60_000,
-      gcTime: 30 * 60_000,
-      enabled: rankingCandidates.length > 0,
-    })),
-  });
+  const apiFilter = useMemo<RankingViagemFiltroInput>(
+    () =>
+      applyRecorteToViagensFilter(filters.recorte, {
+        anoInicio: filters.anoInicio,
+        anoFim: filters.anoFim,
+        orgaoSuperiorCodigo: filters.orgaoSuperiorCodigo,
+        orgaoSolicitanteCodigo: filters.orgaoSolicitanteCodigo,
+        search: filters.search,
+        situacao: filters.situacao,
+      }),
+    [filters]
+  );
 
-  useErrorToast(searchQuery.error, "Erro na busca de politicos");
-  useErrorToast(resumoQuery.error, "Erro no resumo de viagens");
-  useErrorToast(listaQuery.error, "Erro na lista de viagens");
-  useErrorToast(
-    rankingQueries.find((query) => query.error)?.error,
-    "Erro no ranking de viagens da busca"
+  const rankingPagination = useMemo(() => ({ limit: RANKING_LIMIT, offset: 0 }), []);
+  const tablePagination = useMemo(() => ({ limit: TABLE_LIMIT, offset }), [offset]);
+  const normalizedFilter = useMemo(() => normalizeViagensFilter(apiFilter), [apiFilter]);
+  const recorteInfo = recorteMeta[filters.recorte];
+  const hasAdvancedFilters = Boolean(
+    filters.search ||
+      filters.situacao ||
+      filters.orgaoSuperiorCodigo ||
+      filters.orgaoSolicitanteCodigo
+  );
+  const usingAnnualShortcuts = filters.anoInicio === filters.anoFim && !hasAdvancedFilters;
+
+  const resumoQuery = useResumoViagens(apiFilter);
+  const topViajantesQuery = useTopViajantes(apiFilter, rankingPagination);
+  const topGastadoresQuery = useTopGastadoresViagens(apiFilter, rankingPagination);
+  const topOrgaosSuperioresQuery = useTopOrgaosSuperioresViagens(apiFilter, rankingPagination);
+  const topOrgaosSolicitantesQuery = useTopOrgaosSolicitantesViagens(apiFilter, rankingPagination);
+  const viagensPainelQuery = useViagensPainel(apiFilter, tablePagination);
+  const detalheQuery = useDetalheViagem(
+    selectedViagem
+      ? {
+          processoId: selectedViagem.processoId || "",
+          nomeViajante: selectedViagem.nomeViajante,
+          anoInicio: filters.anoInicio,
+          anoFim: filters.anoFim,
+        }
+      : undefined,
+    Boolean(selectedViagem)
   );
 
   useEffect(() => {
-    if (selectedPolitico || !searchQuery.data?.nodes?.length) return;
-    setSelectedPolitico(searchQuery.data.nodes[0]);
-  }, [searchQuery.data, selectedPolitico]);
+    const hasBaseParams =
+      Boolean(searchParams.get("recorte")) &&
+      Boolean(searchParams.get("anoInicio")) &&
+      Boolean(searchParams.get("anoFim")) &&
+      Boolean(searchParams.get("page"));
+
+    if (!hasBaseParams) {
+      setSearchParams(toSearchParams(filters, currentPage), { replace: true });
+    }
+  }, [currentPage, filters, searchParams, setSearchParams]);
 
   useEffect(() => {
-    setOffset(0);
-    setExpandedOffset(null);
-  }, [selectedPolitico?.id, anoInicio, anoFim]);
-
-  useEffect(() => {
-    if (!selectedPolitico?.id || !listaQuery.data) return;
-
-    const nextOffset = offset + PAGE_LIMIT;
-    if (nextOffset >= listaQuery.data.total) return;
-
-    const nextPagination = { limit: PAGE_LIMIT, offset: nextOffset };
-    queryClient.prefetchQuery({
-      queryKey: [
-        "lista-viagens",
-        selectedPolitico.id,
-        anoInicio,
-        anoFim,
-        nextPagination,
-      ],
-      queryFn: ({ signal }) =>
-        graphqlRequest<{ politico: { viagens?: Connection<Viagem> } | null }>(
-          VIAGENS_LISTA_QUERY,
-          {
-            id: selectedPolitico.id,
-            anoInicio,
-            anoFim,
-            limit: nextPagination.limit,
-            offset: nextPagination.offset,
-          },
-          { signal, timeoutMs: 15_000 }
-        ).then((d) => {
-          if (d.politico?.viagens) return d.politico.viagens;
-          return {
-            total: 0,
-            limit: nextPagination.limit,
-            offset: nextPagination.offset,
-            nodes: [],
-          } as Connection<Viagem>;
-        }),
-      staleTime: 60_000,
-    });
+    setSelectedViagem(null);
   }, [
-    selectedPolitico?.id,
-    listaQuery.data,
-    offset,
-    anoInicio,
-    anoFim,
-    queryClient,
+    filters.recorte,
+    filters.anoInicio,
+    filters.anoFim,
+    filters.orgaoSuperiorCodigo,
+    filters.orgaoSolicitanteCodigo,
+    filters.search,
+    filters.situacao,
+    currentPage,
   ]);
 
-  const gastos = resumoQuery.data?.gastos;
-  const totalViagens = listaQuery.data?.total ?? 0;
-  const currentPage = Math.floor(offset / PAGE_LIMIT) + 1;
-  const totalPages = totalViagens ? Math.ceil(totalViagens / PAGE_LIMIT) : 1;
+  useEffect(() => {
+    const data = viagensPainelQuery.data;
+    if (!data) return;
 
-  const totalInvestidoCents = useMemo(() => {
-    if (!gastos) return 0n;
-    const total =
-      toBigInt(gastos.totalDiariasCents) +
-      toBigInt(gastos.totalPassagensCents) +
-      toBigInt(gastos.totalPagamentosCents) +
-      toBigInt(gastos.totalOutrosGastosCents) -
-      toBigInt(gastos.totalDevolucaoCents);
-    return total > 0n ? total : 0n;
-  }, [gastos]);
+    const nextOffset = data.offset + data.limit;
+    if (nextOffset >= data.total) return;
 
-  const rows = useMemo(() => {
-    const nodes = listaQuery.data?.nodes ?? [];
+    const nextPagination = normalizePagination(
+      { limit: data.limit, offset: nextOffset },
+      TABLE_LIMIT
+    );
 
-    const mapped = nodes.map((viagem, index) => {
-      const rawTotal =
-        toBigInt(viagem.valorDiariasCents) +
-        toBigInt(viagem.valorPassagensCents) +
-        toBigInt(viagem.valorOutrosGastosCents) -
-        toBigInt(viagem.valorDevolucaoCents);
-
-      return {
-        viagem,
-        serverOffset: offset + index,
-        valorTotal: rawTotal > 0n ? rawTotal : 0n,
-      };
+    queryClient.prefetchQuery({
+      queryKey: ["viagens-painel", normalizedFilter, nextPagination],
+      queryFn: ({ signal }) =>
+        fetchViagensPainel(normalizedFilter, nextPagination, { signal }),
+      staleTime: 60_000,
     });
+  }, [normalizedFilter, queryClient, viagensPainelQuery.data]);
 
-    mapped.sort((a, b) => {
-      const aDate = a.viagem.dataInicio ? new Date(a.viagem.dataInicio).getTime() : 0;
-      const bDate = b.viagem.dataInicio ? new Date(b.viagem.dataInicio).getTime() : 0;
+  const updateFilters = (patch: Partial<ViagensFilterState>) => {
+    const next: ViagensFilterState = {
+      ...filters,
+      ...patch,
+    };
 
-      if (sortBy === "data_asc") return aDate - bDate;
-      if (sortBy === "data_desc") return bDate - aDate;
-      if (sortBy === "valor_asc") return a.valorTotal < b.valorTotal ? -1 : 1;
-      return a.valorTotal > b.valorTotal ? -1 : 1;
-    });
+    if (patch.anoInicio !== undefined && next.anoInicio > next.anoFim) {
+      next.anoFim = next.anoInicio;
+    }
+    if (patch.anoFim !== undefined && next.anoFim < next.anoInicio) {
+      next.anoInicio = next.anoFim;
+    }
 
-    return mapped;
-  }, [listaQuery.data?.nodes, offset, sortBy]);
+    setSearchParams(toSearchParams(next, 1), { replace: true });
+  };
 
-  const topViagensRanking = useMemo(() => {
-    const items = rankingQueries
-      .map((query) => query.data)
-      .filter(
-        (item): item is { politico: PoliticoResumo; gastos?: GastosAgregados } =>
-          Boolean(item?.politico)
-      );
+  const handleReset = () => {
+    setSortBy(DEFAULT_SORT);
+    setSearchParams(toSearchParams(DEFAULT_FILTERS, 1), { replace: true });
+  };
 
-    return items
-      .map((item) => {
-        const gastos = item?.gastos;
-        const rawTotal =
-          toBigInt(gastos?.totalDiariasCents) +
-          toBigInt(gastos?.totalPassagensCents) +
-          toBigInt(gastos?.totalPagamentosCents) +
-          toBigInt(gastos?.totalOutrosGastosCents) -
-          toBigInt(gastos?.totalDevolucaoCents);
+  const handlePageChange = (nextOffset: number) => {
+    const nextPage = Math.floor(nextOffset / TABLE_LIMIT) + 1;
+    setSearchParams(toSearchParams(filters, nextPage), { replace: true });
+  };
 
-        return {
-          politico: item.politico,
-          total: rawTotal > 0n ? rawTotal : 0n,
-          totalViagens: gastos?.totalViagens ?? 0,
-        };
-      })
-      .sort((a, b) => (a.total > b.total ? -1 : 1))
-      .slice(0, 5);
-  }, [rankingQueries]);
+  const selectedTotal =
+    viagensPainelQuery.data?.nodes.reduce((acc, item) => {
+      const bruto =
+        toBigInt(item.valorDiariasCents) +
+        toBigInt(item.valorPassagensCents) +
+        toBigInt(item.valorOutrosGastosCents) -
+        toBigInt(item.valorDevolucaoCents);
+
+      return acc + (bruto > 0n ? bruto : 0n);
+    }, 0n) || 0n;
 
   return (
     <div className="min-h-screen bg-grid-pattern">
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
-          <section className="animate-fade-up rounded-3xl border border-white/70 bg-card/90 p-7 shadow-elevated backdrop-blur-sm sm:p-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+        <div className="mx-auto w-full max-w-[1320px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+          <section className="rounded-[34px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,248,255,0.9))] p-6 shadow-elevated backdrop-blur-sm sm:p-8">
+            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="space-y-4">
+                <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                   <Plane className="h-3.5 w-3.5" />
-                  Area de Viagens Oficiais
+                  Area de Viagens
                 </p>
-                <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">
-                  Monitoramento de viagens{" "}
-                  <span className="text-gradient-primary">com detalhe sob demanda</span>
-                </h1>
-                <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
-                  Fluxo em blocos para performance real: perfil basico, resumo de gastos, lista paginada
-                  e detalhe de passagens/pagamentos/trechos somente ao expandir a viagem.
-                </p>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-card">
-                  <Calendar className="h-3.5 w-3.5 text-primary" />
-                  Inicio
-                  <select
-                    value={anoInicio}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      if (value > anoFim) return;
-                      setAnoInicio(value);
-                    }}
-                    className="bg-transparent text-xs outline-none"
-                  >
-                    {years.map((year) => (
-                      <option key={`start-${year}`} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-card">
-                  <Calendar className="h-3.5 w-3.5 text-primary" />
-                  Fim
-                  <select
-                    value={anoFim}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      if (value < anoInicio) return;
-                      setAnoFim(value);
-                    }}
-                    className="bg-transparent text-xs outline-none"
-                  >
-                    {years.map((year) => (
-                      <option key={`end-${year}`} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </div>
-          </section>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      {recorteInfo.eyebrow}
+                    </p>
+                    <h1 className="mt-2 max-w-4xl text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">
+                      Painel de viagens oficiais com{" "}
+                      <span className="bg-gradient-to-r from-cyan-600 via-sky-600 to-slate-900 bg-clip-text text-transparent">
+                        blocos independentes, cache e detalhe sob demanda
+                      </span>
+                    </h1>
+                  </div>
+                  <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                    {recorteInfo.label}. {recorteInfo.description} A pagina nao faz query monolitica:
+                    KPIs, rankings, tabela e detalhe possuem loading, retry e timeout separados.
+                  </p>
+                </div>
 
-          <section className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-            <div className="rounded-3xl border border-border/75 bg-card/85 p-5 shadow-card sm:p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-base font-bold sm:text-lg">Buscar politico</h2>
-                <span className="text-[11px] text-muted-foreground">Debounce 300ms + cancelamento por signal</span>
-              </div>
-
-              <SearchBar
-                onSearch={(value) => setSearchTerm(value)}
-                isLoading={searchQuery.isLoading}
-                placeholder="Digite nome do politico para carregar viagens"
-                submitLabel="Pesquisar"
-                autoSearch
-                debounceMs={300}
-                defaultValue={searchInputSeed}
-              />
-
-              <div className="mt-5">
-                {searchTerm.trim().length < 2 ? (
-                  <EmptyState message="Digite ao menos 2 caracteres para iniciar a busca." />
-                ) : null}
-
-                {searchQuery.isLoading && searchTerm.trim().length >= 2 ? (
-                  <SearchSkeleton />
-                ) : null}
-
-                {searchQuery.error ? (
-                  <ErrorStateWithRetry
-                    error={searchQuery.error as Error}
-                    onRetry={() => searchQuery.refetch()}
-                  />
-                ) : null}
-
-                {!searchQuery.isLoading &&
-                !searchQuery.error &&
-                searchTerm.trim().length >= 2 &&
-                !searchQuery.data?.nodes?.length ? (
-                  <EmptyState message="Nenhum politico encontrado na busca atual." />
-                ) : null}
-
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                  {searchQuery.data?.nodes?.map((politico) => {
-                    const active = selectedPolitico?.id === politico.id;
-                    const foto = politico.fotoUrl || buildAvatarUrl(politico.nomeCanonico);
-                    return (
-                      <button
-                        key={politico.id}
-                        onClick={() => setSelectedPolitico(politico)}
-                        className={`rounded-2xl border px-3 py-3 text-left transition-all ${
-                          active
-                            ? "border-primary/35 bg-primary/10 shadow-card"
-                            : "border-border/75 bg-background/90 hover:border-primary/20 hover:bg-muted/30"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={foto}
-                            alt={politico.nomeCompleto || politico.nomeCanonico}
-                            className="h-10 w-10 rounded-full border border-border object-cover"
-                          />
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-bold uppercase tracking-wide text-foreground">
-                              {politico.nomeCompleto || politico.nomeCanonico}
-                            </p>
-                            <p className="truncate text-[11px] text-muted-foreground">
-                              {[politico.partido, politico.uf].filter(Boolean).join(" - ") || "Sem sigla"}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    request_id exposto em erro
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
+                    <Activity className="h-3.5 w-3.5 text-primary" />
+                    stale-while-revalidate ativo
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
+                    <Clock3 className="h-3.5 w-3.5 text-primary" />
+                    busca antiga cancelada
+                  </span>
                 </div>
               </div>
-            </div>
 
-            <section className="rounded-3xl border border-border/75 bg-card/85 p-5 shadow-card sm:p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-base font-bold sm:text-lg">Perfis populares</h2>
-                <Search className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <p className="mb-4 text-xs text-muted-foreground">
-                Atalhos com foto para iniciar investigacao rapida de gastos com viagens.
-              </p>
-              <div className="space-y-2.5">
-                {travelSpotlight.map((item) => (
-                  <button
-                    key={item.key}
-                    onClick={() => {
-                      setSearchInputSeed(item.search);
-                      setSearchTerm(item.search);
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-2xl border border-border/75 bg-background/90 px-3 py-2.5 text-left transition-all hover:border-primary/20 hover:bg-muted/30"
-                  >
-                    <img
-                      src={item.foto}
-                      alt={item.nome}
-                      className="h-9 w-9 rounded-full border border-border object-cover"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
-                        {item.nome}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Periodo Ativo
+                  </p>
+                  <p className="mt-3 text-2xl font-extrabold text-foreground">
+                    {filters.anoInicio} - {filters.anoFim}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Filtro sincronizado com a URL e aplicado em todos os blocos.
+                  </p>
+                </article>
+
+                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Ranking Mode
+                  </p>
+                  <p className="mt-3 text-2xl font-extrabold text-foreground">
+                    {usingAnnualShortcuts ? "Anual otimizado" : "Filtro composto"}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {usingAnnualShortcuts
+                      ? "Usando rankings anuais prontos da API sempre que possivel."
+                      : "Usando filtros completos por orgao, situacao e busca."}
+                  </p>
+                </article>
+
+                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Tabela Atual
+                  </p>
+                  <p className="mt-3 text-2xl font-extrabold text-foreground">
+                    {(viagensPainelQuery.data?.total ?? 0).toLocaleString("pt-BR")}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Registros no recorte atual com pagina de {TABLE_LIMIT} itens.
+                  </p>
+                </article>
+
+                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Blocos Ativos
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <BadgeCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-extrabold text-foreground">6 + detalhe</p>
+                      <p className="text-sm text-muted-foreground">
+                        resumo, rankings, orgaos e tabela principal
                       </p>
-                      <p className="text-[10px] text-muted-foreground">Abrir busca por nome</p>
                     </div>
-                  </button>
-                ))}
+                  </div>
+                </article>
               </div>
-            </section>
-          </section>
-
-          <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatsCard
-              label="Total investido em viagens"
-              value={formatCents(totalInvestidoCents.toString())}
-              description={`Periodo ${anoInicio}-${anoFim}`}
-              icon={Wallet}
-              variant="green"
-            />
-            <StatsCard
-              label="Viagens no periodo"
-              value={String(gastos?.totalViagens ?? totalViagens)}
-              description="Contagem oficial da API"
-              icon={Plane}
-              variant="blue"
-            />
-            <StatsCard
-              label="Trechos registrados"
-              value={String(gastos?.totalTrechos ?? 0)}
-              description="Total de deslocamentos"
-              icon={Route}
-              variant="yellow"
-            />
-            <StatsCard
-              label="Passagens (total)"
-              value={formatCents(gastos?.totalPassagensCents)}
-              description="Soma em BRL"
-              icon={Receipt}
-              variant="blue"
-            />
-          </section>
-
-          {topViagensRanking.length ? (
-            <section className="mt-8 rounded-3xl border border-border/75 bg-card/85 p-5 shadow-card sm:p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-base font-bold sm:text-lg">Top gastos com viagens (busca atual)</h2>
-                <span className="text-[11px] text-muted-foreground">Base: 5 primeiros da busca</span>
-              </div>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
-                {topViagensRanking.map((item, index) => (
-                  <button
-                    key={item.politico.id}
-                    onClick={() => setSelectedPolitico(item.politico)}
-                    className="rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card"
-                  >
-                    <div className="mb-2 inline-flex rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                      #{index + 1}
-                    </div>
-                    <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
-                      {item.politico.nomeCompleto || item.politico.nomeCanonico}
-                    </p>
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      {item.totalViagens.toLocaleString("pt-BR")} viagens
-                    </p>
-                    <p className="mt-2 text-xs font-bold text-primary">
-                      {formatCents(item.total.toString())}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          <section className="mt-8 rounded-3xl border border-border/75 bg-card/85 p-5 shadow-card sm:p-6">
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-base font-bold sm:text-lg">Lista de viagens oficiais</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Paginacao server-side (limit 10) com ordenacao local da pagina atual.
-                </p>
-              </div>
-
-              <label className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold">
-                <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
-                Ordenacao
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortKey)}
-                  className="bg-transparent outline-none"
-                >
-                  <option value="data_desc">Data (mais recente)</option>
-                  <option value="data_asc">Data (mais antiga)</option>
-                  <option value="valor_desc">Valor (maior)</option>
-                  <option value="valor_asc">Valor (menor)</option>
-                </select>
-              </label>
             </div>
-
-            {!selectedPolitico ? (
-              <EmptyState message="Selecione um politico para carregar a area de viagens." />
-            ) : null}
-
-            {selectedPolitico && resumoQuery.isLoading ? (
-              <div className="mb-4">
-                <LoadingState message="Carregando resumo de gastos..." />
-              </div>
-            ) : null}
-
-            {selectedPolitico && resumoQuery.error ? (
-              <div className="mb-4">
-                <ErrorStateWithRetry
-                  error={resumoQuery.error as Error}
-                  onRetry={() => resumoQuery.refetch()}
-                />
-              </div>
-            ) : null}
-
-            {selectedPolitico && listaQuery.isLoading ? (
-              <ViagensSkeleton />
-            ) : null}
-
-            {selectedPolitico && listaQuery.error ? (
-              <ErrorStateWithRetry
-                error={listaQuery.error as Error}
-                onRetry={() => listaQuery.refetch()}
-              />
-            ) : null}
-
-            {selectedPolitico &&
-            !listaQuery.isLoading &&
-            !listaQuery.error &&
-            (listaQuery.data?.total ?? 0) === 0 ? (
-              <EmptyState message="Nenhuma viagem encontrada para esse politico no periodo filtrado." />
-            ) : null}
-
-            {selectedPolitico &&
-            !listaQuery.isLoading &&
-            !listaQuery.error &&
-            rows.length > 0 ? (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[980px] text-xs">
-                    <thead>
-                      <tr className="border-b border-border/80 text-left text-muted-foreground">
-                        <th className="pb-2 pr-4 font-semibold">Periodo</th>
-                        <th className="pb-2 pr-4 font-semibold">Viajante</th>
-                        <th className="pb-2 pr-4 font-semibold">Orgao solicitante</th>
-                        <th className="pb-2 pr-4 font-semibold">Motivo</th>
-                        <th className="pb-2 pr-4 text-right font-semibold">Total da viagem</th>
-                        <th className="pb-2 text-right font-semibold">Detalhes</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/60">
-                      {rows.map(({ viagem, serverOffset, valorTotal }) => (
-                        <ViagemRow
-                          key={viagem.processoId || serverOffset}
-                          viagem={viagem}
-                          serverOffset={serverOffset}
-                          valorTotal={valorTotal}
-                          expanded={expandedOffset === serverOffset}
-                          onToggle={() =>
-                            setExpandedOffset((current) =>
-                              current === serverOffset ? null : serverOffset
-                            )
-                          }
-                          politicoId={selectedPolitico.id}
-                          anoInicio={anoInicio}
-                          anoFim={anoFim}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {totalViagens > PAGE_LIMIT ? (
-                  <section className="mt-6 flex items-center justify-center gap-3">
-                    <button
-                      onClick={() => setOffset(Math.max(0, offset - PAGE_LIMIT))}
-                      disabled={offset === 0}
-                      className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Anterior
-                    </button>
-                    <span className="rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-                      Pagina {currentPage} de {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setOffset(offset + PAGE_LIMIT)}
-                      disabled={offset + PAGE_LIMIT >= totalViagens}
-                      className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Proxima
-                    </button>
-                  </section>
-                ) : null}
-              </>
-            ) : null}
           </section>
+
+          <div className="mt-6 space-y-6">
+            <ViagensFilters value={filters} onChange={updateFilters} onReset={handleReset} />
+
+            <ViagensKpis
+              data={resumoQuery.data}
+              isLoading={resumoQuery.isLoading}
+              error={(resumoQuery.error as Error | null) || null}
+              onRetry={() => void resumoQuery.refetch()}
+            />
+
+            <section className="grid gap-4 xl:grid-cols-4">
+              <TopGastadoresCard
+                data={topGastadoresQuery.data}
+                isLoading={topGastadoresQuery.isLoading}
+                error={(topGastadoresQuery.error as Error | null) || null}
+                onRetry={() => void topGastadoresQuery.refetch()}
+              />
+              <TopViajantesCard
+                data={topViajantesQuery.data}
+                isLoading={topViajantesQuery.isLoading}
+                error={(topViajantesQuery.error as Error | null) || null}
+                onRetry={() => void topViajantesQuery.refetch()}
+              />
+              <TopOrgaosCard
+                title="Top orgaos superiores"
+                description="Quem mais concentrou viagens pelo orgao superior"
+                data={topOrgaosSuperioresQuery.data}
+                isLoading={topOrgaosSuperioresQuery.isLoading}
+                error={(topOrgaosSuperioresQuery.error as Error | null) || null}
+                onRetry={() => void topOrgaosSuperioresQuery.refetch()}
+              />
+              <TopOrgaosCard
+                title="Top orgaos solicitantes"
+                description="Orgaos solicitantes com maior gasto liquido"
+                data={topOrgaosSolicitantesQuery.data}
+                isLoading={topOrgaosSolicitantesQuery.isLoading}
+                error={(topOrgaosSolicitantesQuery.error as Error | null) || null}
+                onRetry={() => void topOrgaosSolicitantesQuery.refetch()}
+              />
+            </section>
+
+            <section className="grid gap-4 xl:grid-cols-[1fr_320px]">
+              <ViagensTable
+                data={viagensPainelQuery.data}
+                isLoading={viagensPainelQuery.isLoading}
+                error={(viagensPainelQuery.error as Error | null) || null}
+                onRetry={() => void viagensPainelQuery.refetch()}
+                onOpenDetail={setSelectedViagem}
+                selectedProcessoId={selectedViagem?.processoId}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                onPageChange={handlePageChange}
+              />
+
+              <aside className="space-y-4">
+                <section className="rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-foreground">Painel rapido</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Leitura do recorte e da pagina atual
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        Recorte
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-foreground">{recorteInfo.label}</p>
+                    </div>
+                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        Pagina atual
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-foreground">{currentPage}</p>
+                    </div>
+                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        Soma da pagina
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-foreground">
+                        {formatCents(selectedTotal.toString())}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-[28px] border border-border/75 bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-5 shadow-card">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Estrategia de carregamento
+                  </p>
+                  <div className="mt-4 space-y-3 text-sm text-muted-foreground">
+                    <p>1. KPIs e rankings carregam em paralelo.</p>
+                    <p>2. Tabela usa pagina 20 e prefetch da proxima pagina.</p>
+                    <p>3. Drawer so abre detalhe real quando o usuario pede.</p>
+                    <p>4. Todas as chamadas passam timeout, retry curto e cancelamento.</p>
+                  </div>
+                </section>
+              </aside>
+            </section>
+          </div>
         </div>
       </main>
-    </div>
-  );
-};
 
-const ViagemRow = ({
-  viagem,
-  serverOffset,
-  valorTotal,
-  expanded,
-  onToggle,
-  politicoId,
-  anoInicio,
-  anoFim,
-}: {
-  viagem: Viagem;
-  serverOffset: number;
-  valorTotal: bigint;
-  expanded: boolean;
-  onToggle: () => void;
-  politicoId: string;
-  anoInicio: number;
-  anoFim: number;
-}) => (
-  <>
-    <tr className="hover:bg-muted/30">
-      <td className="py-2.5 pr-4 text-muted-foreground">
-        {formatDate(viagem.dataInicio)} - {formatDate(viagem.dataFim)}
-      </td>
-      <td className="py-2.5 pr-4 text-foreground">
-        <p className="font-semibold">{viagem.nomeViajante || "-"}</p>
-        <p className="text-[11px] text-muted-foreground">{viagem.cargo || "-"}</p>
-      </td>
-      <td className="max-w-[220px] truncate py-2.5 pr-4 text-muted-foreground">
-        {viagem.orgaoSolicitanteNome || "-"}
-      </td>
-      <td className="max-w-[300px] truncate py-2.5 pr-4 text-muted-foreground">
-        {viagem.motivo || "-"}
-      </td>
-      <td className="py-2.5 pr-4 text-right font-bold text-primary">
-        {formatCents(valorTotal.toString())}
-      </td>
-      <td className="py-2.5 text-right">
-        <button
-          onClick={onToggle}
-          className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-[11px] font-semibold text-foreground hover:bg-muted"
-        >
-          {expanded ? (
-            <>
-              Fechar <ChevronUp className="h-3.5 w-3.5" />
-            </>
-          ) : (
-            <>
-              Ver detalhes <ChevronDown className="h-3.5 w-3.5" />
-            </>
-          )}
-        </button>
-      </td>
-    </tr>
-    {expanded ? (
-      <tr className="bg-muted/20">
-        <td className="px-3 py-3" colSpan={6}>
-          <ViagemDetalheExpanded
-            politicoId={politicoId}
-            anoInicio={anoInicio}
-            anoFim={anoFim}
-            offsetViagens={serverOffset}
-          />
-        </td>
-      </tr>
-    ) : null}
-  </>
-);
-
-const ViagemDetalheExpanded = ({
-  politicoId,
-  anoInicio,
-  anoFim,
-  offsetViagens,
-}: {
-  politicoId: string;
-  anoInicio: number;
-  anoFim: number;
-  offsetViagens: number;
-}) => {
-  const detalheQuery = useDetalheViagem(politicoId, {
-    anoInicio,
-    anoFim,
-    offsetViagens,
-    enabled: true,
-  });
-
-  useErrorToast(detalheQuery.error, "Erro ao carregar detalhe da viagem");
-
-  if (detalheQuery.isLoading) {
-    return (
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-28 w-full rounded-2xl" />
-      </div>
-    );
-  }
-
-  if (detalheQuery.error) {
-    return (
-      <ErrorStateWithRetry
-        error={detalheQuery.error as Error}
-        onRetry={() => detalheQuery.refetch()}
-      />
-    );
-  }
-
-  const viagem = detalheQuery.data;
-  if (!viagem) {
-    return <EmptyState message="Nao foi possivel carregar os detalhes desta viagem." />;
-  }
-
-  const passagens = viagem.passagens?.nodes || [];
-  const pagamentos = viagem.pagamentos?.nodes || [];
-  const trechos = viagem.trechos?.nodes || [];
-
-  return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      <DetailCard
-        title={`Passagens (${viagem.passagens?.total ?? passagens.length})`}
-        rows={passagens.map((item) => ({
-          primary: `${item.meioTransporte || "Transporte"} - ${formatCents(
-            item.valorPassagemCents
-          )}`,
-          secondary: `${item.idaOrigemCidade || "-"} -> ${item.idaDestinoCidade || "-"}`,
-        }))}
-        emptyMessage="Sem passagens neste recorte."
-      />
-      <DetailCard
-        title={`Pagamentos (${viagem.pagamentos?.total ?? pagamentos.length})`}
-        rows={pagamentos.map((item) => ({
-          primary: `${item.tipoPagamento || "Pagamento"} - ${formatCents(item.valorCents)}`,
-          secondary: item.orgaoPagadorNome || "-",
-        }))}
-        emptyMessage="Sem pagamentos neste recorte."
-      />
-      <DetailCard
-        title={`Trechos (${viagem.trechos?.total ?? trechos.length})`}
-        rows={trechos.map((item) => ({
-          primary: `${item.origemCidade || "-"} -> ${item.destinoCidade || "-"}`,
-          secondary: `${item.meioTransporte || "Nao informado"} | ${item.numeroDiarias || 0} diarias`,
-        }))}
-        emptyMessage="Sem trechos neste recorte."
+      <ViagemDetailDrawer
+        open={Boolean(selectedViagem)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedViagem(null);
+        }}
+        viagemBase={selectedViagem}
+        detail={detalheQuery.data}
+        isLoading={detalheQuery.isLoading}
+        error={(detalheQuery.error as Error | null) || null}
+        onRetry={() => void detalheQuery.refetch()}
       />
     </div>
   );
 };
-
-const DetailCard = ({
-  title,
-  rows,
-  emptyMessage,
-}: {
-  title: string;
-  rows: { primary: string; secondary: string }[];
-  emptyMessage: string;
-}) => (
-  <article className="rounded-2xl border border-border/75 bg-card/80 p-3">
-    <h4 className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-      {title}
-    </h4>
-    {!rows.length ? (
-      <p className="text-xs text-muted-foreground">{emptyMessage}</p>
-    ) : (
-      <div className="space-y-1.5">
-        {rows.map((row, index) => (
-          <div key={index} className="rounded-xl border border-border/70 bg-background/90 px-2.5 py-2">
-            <p className="truncate text-[11px] font-semibold text-foreground">{row.primary}</p>
-            <p className="truncate text-[10px] text-muted-foreground">{row.secondary}</p>
-          </div>
-        ))}
-      </div>
-    )}
-  </article>
-);
-
-const SearchSkeleton = () => (
-  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-    {Array.from({ length: 4 }).map((_, index) => (
-      <div key={index} className="rounded-2xl border border-border/75 bg-background/90 px-3 py-3">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-3 w-40" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
-const ViagensSkeleton = () => (
-  <div className="space-y-3">
-    {Array.from({ length: 5 }).map((_, index) => (
-      <Skeleton key={index} className="h-14 w-full rounded-xl" />
-    ))}
-  </div>
-);
-
-function buildAvatarUrl(value: string): string {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    value
-  )}&background=e7f6f6&color=0f766e&size=128&format=png`;
-}
 
 export default ViagensPage;
