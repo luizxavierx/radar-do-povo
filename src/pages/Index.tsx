@@ -73,36 +73,42 @@ const featuredFallback = [
   {
     key: "lula",
     search: "lula",
+    nomeCanonico: "lula",
     nome: "Luiz Inacio Lula da Silva",
     foto: "https://upload.wikimedia.org/wikipedia/commons/8/86/Lula_-_foto_oficial_2023-01-09.jpg",
   },
   {
     key: "bolsonaro",
     search: "bolsonaro",
+    nomeCanonico: "bolsonaro",
     nome: "Jair Messias Bolsonaro",
     foto: "https://upload.wikimedia.org/wikipedia/commons/9/93/Jair_Bolsonaro_2019_Portrait.jpg",
   },
   {
     key: "arthurLira",
     search: "arthur lira",
+    nomeCanonico: "arthur-lira",
     nome: "Arthur Lira",
     foto: "https://www.camara.leg.br/internet/deputado/bandep/160594.jpg",
   },
   {
     key: "daviAlcolumbre",
     search: "davi alcolumbre",
+    nomeCanonico: "davi-alcolumbre",
     nome: "Davi Alcolumbre",
     foto: "https://www.senado.leg.br/senadores/img/fotos-oficiais/senador5765.jpg",
   },
   {
     key: "flavioDino",
     search: "flavio dino",
+    nomeCanonico: "flavio-dino",
     nome: "Flavio Dino",
     foto: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Flavio_Dino_%28cropped%29.jpg",
   },
   {
     key: "simoneTebet",
     search: "simone tebet",
+    nomeCanonico: "simone-tebet",
     nome: "Simone Tebet",
     foto: "https://upload.wikimedia.org/wikipedia/commons/8/89/Simone_Tebet_%28cropped%29.jpg",
   },
@@ -167,6 +173,10 @@ const Index = () => {
   const topPais = paisesQuery.data?.nodes?.[0];
   const featuredPhotoMap = useMemo<Record<string, string>>(
     () => Object.fromEntries(featuredFallback.map((item) => [item.key, item.foto])),
+    []
+  );
+  const featuredFallbackMap = useMemo(
+    () => Object.fromEntries(featuredFallback.map((item) => [item.key, item])),
     []
   );
   const featuredPoliticos: { key: string; search: string; politico?: PoliticoResumo }[] =
@@ -362,40 +372,56 @@ const Index = () => {
             <section className="mt-8 rounded-3xl border border-border/75 bg-card/85 p-6 shadow-card sm:p-7">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="text-base font-bold sm:text-lg">Area de viagens oficiais</h2>
+                  <h2 className="text-base font-bold sm:text-lg">Top buscas</h2>
                   <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                    Abra a area dedicada de viagens para ver resumo, lista paginada e detalhes sob demanda.
+                    Atalhos diretos para abrir o perfil completo dos nomes mais procurados.
                   </p>
                 </div>
                 <button
-                  onClick={() => navigate("/viagens")}
+                  onClick={() => navigate("/busca")}
                   className="inline-flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
                 >
-                  <Plane className="h-3.5 w-3.5" />
-                  Abrir area de viagens
+                  <Search className="h-3.5 w-3.5" />
+                  Abrir busca completa
                 </button>
               </div>
 
               <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                {featuredFallback.slice(0, 4).map((item) => (
-                  <button
-                    key={item.key}
-                    onClick={() => navigate(`/viagens?search=${encodeURIComponent(item.search)}`)}
+                {featuredPoliticos.slice(0, 4).map((perfil) => {
+                  const politico = perfil.politico;
+                  const fallbackPerfil = featuredFallbackMap[perfil.key];
+                  const nome =
+                    politico?.nomeCompleto || politico?.nomeCanonico || fallbackPerfil?.nome || perfil.search;
+                  const imageUrl =
+                    politico?.fotoUrl || featuredPhotoMap[perfil.key] || buildAvatarUrl(nome);
+                  const profileSlug = politico?.nomeCanonico || fallbackPerfil?.nomeCanonico;
+
+                  return (
+                    <button
+                      key={perfil.key}
+                      onClick={() =>
+                        profileSlug
+                          ? navigate(`/politico/${encodeURIComponent(profileSlug)}`)
+                          : handleSearch(perfil.search)
+                      }
                     className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
                   >
                     <img
-                      src={item.foto}
-                      alt={item.nome}
+                      src={imageUrl}
+                      alt={nome}
                       className="h-9 w-9 flex-shrink-0 rounded-full border border-border object-cover"
                     />
                     <div className="min-w-0">
                       <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
-                        {item.nome}
+                        {nome}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">Investigar gastos de viagens</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Abrir perfil completo
+                      </p>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ) : null}
