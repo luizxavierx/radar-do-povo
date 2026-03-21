@@ -414,8 +414,8 @@ const ViagensPage = () => {
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1320px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
-          <section className="rounded-[34px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,248,255,0.9))] p-6 shadow-elevated backdrop-blur-sm sm:p-8">
+        <div className="mx-auto w-full max-w-[1320px] px-3 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+          <section className="rounded-[30px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,248,255,0.9))] p-5 shadow-elevated backdrop-blur-sm sm:rounded-[34px] sm:p-8">
             <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
               <div className="space-y-4">
                 <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -428,7 +428,7 @@ const ViagensPage = () => {
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       {recorteInfo.eyebrow}
                     </p>
-                    <h1 className="mt-2 max-w-4xl text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">
+                    <h1 className="mt-2 max-w-4xl text-2xl font-extrabold leading-tight text-foreground sm:text-4xl">
                       Painel de viagens oficiais com{" "}
                       <span className="bg-gradient-to-r from-cyan-600 via-sky-600 to-slate-900 bg-clip-text text-transparent">
                         blocos independentes, cache e detalhe sob demanda
@@ -441,7 +441,7 @@ const ViagensPage = () => {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
                   <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     request_id exposto em erro
@@ -457,12 +457,12 @@ const ViagensPage = () => {
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Periodo Ativo
                   </p>
-                  <p className="mt-3 text-2xl font-extrabold text-foreground">
+                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
                     {filters.anoInicio} - {filters.anoFim}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
@@ -470,11 +470,11 @@ const ViagensPage = () => {
                   </p>
                 </article>
 
-                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
+                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Consulta
                   </p>
-                  <p className="mt-3 text-2xl font-extrabold text-foreground">
+                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
                     Endpoints gerais
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
@@ -482,11 +482,11 @@ const ViagensPage = () => {
                   </p>
                 </article>
 
-                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
+                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Tabela Atual
                   </p>
-                  <p className="mt-3 text-2xl font-extrabold text-foreground">
+                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
                     {totalViagensPainel.toLocaleString("pt-BR")}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
@@ -494,7 +494,7 @@ const ViagensPage = () => {
                   </p>
                 </article>
 
-                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
+                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Blocos Ativos
                   </p>
@@ -530,7 +530,30 @@ const ViagensPage = () => {
               }}
             />
 
-            <section className="grid gap-4 xl:grid-cols-4">
+            <section className="grid gap-3 md:grid-cols-3 xl:hidden">
+              <article className="rounded-[24px] border border-border/75 bg-card/92 p-4 shadow-card">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Recorte ativo
+                </p>
+                <p className="mt-2 text-sm font-bold text-foreground">{recorteInfo.label}</p>
+              </article>
+              <article className="rounded-[24px] border border-border/75 bg-card/92 p-4 shadow-card">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Pagina atual
+                </p>
+                <p className="mt-2 text-sm font-bold text-foreground">{currentPage}</p>
+              </article>
+              <article className="rounded-[24px] border border-border/75 bg-card/92 p-4 shadow-card">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Soma da pagina
+                </p>
+                <p className="mt-2 text-sm font-bold text-foreground">
+                  {formatCents(selectedTotal.toString())}
+                </p>
+              </article>
+            </section>
+
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <TopGastadoresCard
                 data={topGastadoresQuery.data}
                 isLoading={topGastadoresQuery.isLoading}
@@ -574,7 +597,7 @@ const ViagensPage = () => {
                 onPageChange={handlePageChange}
               />
 
-              <aside className="space-y-4">
+              <aside className="hidden space-y-4 xl:sticky xl:top-6 xl:block xl:self-start">
                 <section className="rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card">
                   <div className="flex items-center gap-3">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
