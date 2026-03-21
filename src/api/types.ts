@@ -385,6 +385,22 @@ export interface PoliticoDossieCompleto extends PoliticoResumo {
   emendas?: Connection<Emenda>;
 }
 
+export interface NewsItem {
+  title: string;
+  link: string;
+  summary?: string;
+  publishedAt?: string;
+  sourceName: string;
+  sourceKey: string;
+}
+
+export interface PoliticoNewsResponse {
+  politico: string;
+  total: number;
+  fetchedAt?: string;
+  items: NewsItem[];
+}
+
 export interface PoliticoFinanceiroResumo {
   gastos: GastosAgregados;
   emendasResumo: EmendasResumo;

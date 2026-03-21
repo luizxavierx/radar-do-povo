@@ -20,9 +20,10 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } 
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
-import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
+import { EmptyState, ErrorState } from "@/components/StateViews";
+import { PoliticoNewsSection } from "@/components/politicos/PoliticoNewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePoliticoDossieCompleto } from "@/hooks/usePoliticos";
+import { usePoliticoDossieCompleto, usePoliticoNoticias } from "@/hooks/usePoliticos";
 import { centsToNumber, formatCents, formatDate, toBigInt } from "@/lib/formatters";
 import type { Emenda, PerfilExterno } from "@/api/types";
 
@@ -45,6 +46,15 @@ const PoliticoDetalhe = () => {
     anoInicio,
     anoFim
   );
+  const nomePoliticoNoticias = politico
+    ? politico.nomeCompleto || politico.nomeCanonico?.replace(/-/g, " ") || nomeBusca.replace(/-/g, " ")
+    : "";
+  const {
+    data: noticias,
+    isLoading: isNoticiasLoading,
+    error: noticiasError,
+    refetch: refetchNoticias,
+  } = usePoliticoNoticias(nomePoliticoNoticias, 6);
 
   const gastos = politico?.gastos;
   const viagensNodes = politico?.viagens?.nodes ?? [];
@@ -226,6 +236,17 @@ const PoliticoDetalhe = () => {
                   icon={Landmark}
                 />
               </section>
+
+              <PoliticoNewsSection
+                politico={nomePoliticoNoticias}
+                items={noticias?.items ?? []}
+                total={noticias?.total ?? 0}
+                isLoading={isNoticiasLoading}
+                error={noticiasError as Error | null}
+                onRetry={() => {
+                  void refetchNoticias();
+                }}
+              />
 
               <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">

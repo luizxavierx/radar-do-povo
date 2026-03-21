@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { graphqlRequest, checkApiHealth } from "@/api/graphqlClient";
 import { restRequest } from "@/api/restClient";
+import { fetchPoliticoNews } from "@/services/newsService";
 import {
   FEATURED_POLITICOS_QUERY,
   HEALTH_QUERY,
@@ -209,6 +210,18 @@ export function useFeaturedPoliticos() {
         }))
       ),
     staleTime: 15 * 60_000,
+    gcTime: QUERY_GC_TIME,
+  });
+}
+
+export function usePoliticoNoticias(nome?: string, limit = 6) {
+  const search = (nome || "").trim();
+
+  return useQuery({
+    queryKey: ["politico-noticias", search, limit],
+    queryFn: ({ signal }) => fetchPoliticoNews(search, signal, limit),
+    enabled: Boolean(search),
+    staleTime: 10 * 60_000,
     gcTime: QUERY_GC_TIME,
   });
 }
