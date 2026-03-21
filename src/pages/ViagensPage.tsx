@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Activity, BadgeCheck, Building2, Clock3, Plane, ShieldCheck } from "lucide-react";
+import { Plane } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import AppSidebar from "@/components/AppSidebar";
@@ -58,18 +58,17 @@ const recorteMeta: Record<
 > = {
   geral: {
     label: "Painel geral de viagens",
-    description:
-      "KPIs, rankings e tabela principal sempre consultados pelos endpoints gerais da API.",
+    description: "Visao completa das viagens oficiais sem filtro por cargo parlamentar.",
     eyebrow: "Recorte Geral",
   },
   deputados: {
     label: "Recorte de deputados",
-    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar DEPUTADO.",
+    description: "Visao das viagens oficiais filtradas para deputados.",
     eyebrow: "Camara Federal",
   },
   senadores: {
     label: "Recorte de senadores",
-    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar SENADOR.",
+    description: "Visao das viagens oficiais filtradas para senadores.",
     eyebrow: "Senado Federal",
   },
 };
@@ -429,30 +428,24 @@ const ViagensPage = () => {
                       {recorteInfo.eyebrow}
                     </p>
                     <h1 className="mt-2 max-w-4xl text-2xl font-extrabold leading-tight text-foreground sm:text-4xl">
-                      Painel de viagens oficiais com{" "}
+                      Viagens oficiais com{" "}
                       <span className="bg-gradient-to-r from-cyan-600 via-sky-600 to-slate-900 bg-clip-text text-transparent">
-                        blocos independentes, cache e detalhe sob demanda
+                        filtros reais, leitura rapida e detalhe sob demanda
                       </span>
                     </h1>
                   </div>
                   <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                    {recorteInfo.label}. {recorteInfo.description} A pagina nao faz query monolitica:
-                    KPIs, rankings, tabela e detalhe possuem loading, retry e timeout separados.
+                    {recorteInfo.label}. {recorteInfo.description} Tudo fica sincronizado com a URL,
+                    com ranking, resumo e tabela respondendo ao mesmo recorte.
                   </p>
                 </div>
 
                 <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
                   <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    request_id exposto em erro
+                    dados oficiais consolidados
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
-                    <Activity className="h-3.5 w-3.5 text-primary" />
-                    stale-while-revalidate ativo
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
-                    <Clock3 className="h-3.5 w-3.5 text-primary" />
-                    busca antiga cancelada
+                    detalhe sob demanda por processo
                   </span>
                 </div>
               </div>
@@ -460,55 +453,50 @@ const ViagensPage = () => {
               <div className="min-w-0 grid gap-3 sm:grid-cols-2 sm:gap-4">
                 <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Periodo Ativo
+                    Recorte ativo
+                  </p>
+                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
+                    {recorteInfo.label}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Mesmo recorte aplicado no resumo, rankings e tabela.
+                  </p>
+                </article>
+
+                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Periodo ativo
                   </p>
                   <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
                     {filters.anoInicio} - {filters.anoFim}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Filtro sincronizado com a URL e aplicado em todos os blocos.
+                    Filtro sincronizado com a URL e aplicado em toda a pagina.
                   </p>
                 </article>
 
                 <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Consulta
-                  </p>
-                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
-                    Endpoints gerais
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Rankings e KPIs usam os endpoints gerais com filtros reais do banco.
-                  </p>
-                </article>
-
-                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Tabela Atual
+                    Total no recorte
                   </p>
                   <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
                     {totalViagensPainel.toLocaleString("pt-BR")}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Registros no recorte atual com pagina de {TABLE_LIMIT} itens.
+                    Quantidade de viagens retornadas para o recorte atual.
                   </p>
                 </article>
 
                 <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Blocos Ativos
+                    Soma da pagina
                   </p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <BadgeCheck className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-extrabold text-foreground">6 + detalhe</p>
-                      <p className="text-sm text-muted-foreground">
-                        resumo, rankings, orgaos e tabela principal
-                      </p>
-                    </div>
-                  </div>
+                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
+                    {formatCents(selectedTotal.toString())}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Soma estimada dos itens exibidos na pagina atual.
+                  </p>
                 </article>
               </div>
             </div>
@@ -529,29 +517,6 @@ const ViagensPage = () => {
                 }
               }}
             />
-
-            <section className="grid gap-3 md:grid-cols-3 xl:hidden">
-              <article className="rounded-[24px] border border-border/75 bg-card/92 p-4 shadow-card">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Recorte ativo
-                </p>
-                <p className="mt-2 text-sm font-bold text-foreground">{recorteInfo.label}</p>
-              </article>
-              <article className="rounded-[24px] border border-border/75 bg-card/92 p-4 shadow-card">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Pagina atual
-                </p>
-                <p className="mt-2 text-sm font-bold text-foreground">{currentPage}</p>
-              </article>
-              <article className="rounded-[24px] border border-border/75 bg-card/92 p-4 shadow-card">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Soma da pagina
-                </p>
-                <p className="mt-2 text-sm font-bold text-foreground">
-                  {formatCents(selectedTotal.toString())}
-                </p>
-              </article>
-            </section>
 
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <TopGastadoresCard
@@ -584,7 +549,7 @@ const ViagensPage = () => {
               />
             </section>
 
-            <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <section className="min-w-0">
               <ViagensTable
                 data={viagensTableData}
                 isLoading={viagensPainelQuery.isLoading}
@@ -596,57 +561,6 @@ const ViagensPage = () => {
                 onSortChange={setSortBy}
                 onPageChange={handlePageChange}
               />
-
-              <aside className="hidden min-w-0 space-y-4 xl:sticky xl:top-6 xl:block xl:self-start">
-                <section className="rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">Painel rapido</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Leitura do recorte e da pagina atual
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        Recorte
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-foreground">{recorteInfo.label}</p>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        Pagina atual
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-foreground">{currentPage}</p>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        Soma da pagina
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-foreground">
-                        {formatCents(selectedTotal.toString())}
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="rounded-[28px] border border-border/75 bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-5 shadow-card">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Estrategia de carregamento
-                  </p>
-                  <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                    <p>1. Resumo rapido e tabela principal carregam primeiro.</p>
-                    <p>2. Rankings de pessoas entram depois, seguidos pelos orgaos.</p>
-                    <p>3. Totais pesados de pagamentos e trechos entram por ultimo.</p>
-                    <p>4. Drawer so abre detalhe real quando o usuario pede.</p>
-                  </div>
-                </section>
-              </aside>
             </section>
           </div>
         </div>
