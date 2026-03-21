@@ -27,8 +27,13 @@ export interface ViagemDetalheResult {
 export const DEFAULT_VIAGENS_TABLE_LIMIT = 20;
 export const DEFAULT_VIAGENS_RANKING_LIMIT = 5;
 export const DEFAULT_VIAGENS_DETAIL_LIMIT = 10;
-const TRAVEL_DASHBOARD_TIMEOUT_MS = 45_000;
-const TRAVEL_DETAIL_TIMEOUT_MS = 30_000;
+const TRAVEL_DASHBOARD_TIMEOUT_MS = 75_000;
+const TRAVEL_DETAIL_TIMEOUT_MS = 45_000;
+
+interface ViagensRequestOptions {
+  signal?: AbortSignal;
+  includeTotal?: boolean;
+}
 
 function trimOrUndefined(value?: string): string | undefined {
   const normalized = (value || "").trim();
@@ -140,7 +145,7 @@ export async function fetchResumoViagens(
 export async function fetchViagensPainel(
   filtro?: RankingViagemFiltroInput,
   pagination?: PaginationInput,
-  options?: { signal?: AbortSignal }
+  options?: ViagensRequestOptions
 ) {
   const normalizedFilter = normalizeViagensFilter(filtro);
   const normalizedPagination = normalizePagination(
@@ -152,6 +157,7 @@ export async function fetchViagensPainel(
       ...filtroParams(normalizedFilter),
       limit: normalizedPagination.limit,
       offset: normalizedPagination.offset,
+      includeTotal: options?.includeTotal ?? false,
     },
     signal: options?.signal,
     timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS,

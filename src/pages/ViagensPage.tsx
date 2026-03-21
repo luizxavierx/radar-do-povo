@@ -200,7 +200,9 @@ const ViagensPage = () => {
   const recorteInfo = recorteMeta[filters.recorte];
 
   const resumoQuery = useResumoViagens(apiFilter);
-  const viagensPainelQuery = useViagensPainel(apiFilter, tablePagination);
+  const viagensPainelQuery = useViagensPainel(apiFilter, tablePagination, {
+    includeTotal: false,
+  });
   const topViajantesQuery = useTopViajantes(apiFilter, rankingPagination, {
     enabled: peopleRankingsReady,
   });
@@ -306,12 +308,28 @@ const ViagensPage = () => {
     );
 
     queryClient.prefetchQuery({
-      queryKey: ["viagens-painel", normalizedFilter, nextPagination],
+      queryKey: ["viagens-painel", normalizedFilter, nextPagination, false],
       queryFn: ({ signal }) =>
-        fetchViagensPainel(normalizedFilter, nextPagination, { signal }),
+        fetchViagensPainel(normalizedFilter, nextPagination, { signal, includeTotal: false }),
       staleTime: 60_000,
     });
   }, [normalizedFilter, queryClient, viagensPainelQuery.data]);
+
+  const totalViagensPainel = resumoQuery.data?.totalViagens ?? viagensPainelQuery.data?.total ?? 0;
+  const viagensTableData = useMemo(() => {
+    if (!viagensPainelQuery.data) {
+      return undefined;
+    }
+
+    if (viagensPainelQuery.data.total > 0 || totalViagensPainel <= 0) {
+      return viagensPainelQuery.data;
+    }
+
+    return {
+      ...viagensPainelQuery.data,
+      total: totalViagensPainel,
+    };
+  }, [totalViagensPainel, viagensPainelQuery.data]);
 
   const updateFilters = (patch: Partial<ViagensFilterState>) => {
     const next: ViagensFilterState = {
@@ -428,7 +446,7 @@ const ViagensPage = () => {
                     Tabela Atual
                   </p>
                   <p className="mt-3 text-2xl font-extrabold text-foreground">
-                    {(viagensPainelQuery.data?.total ?? 0).toLocaleString("pt-BR")}
+                    {totalViagensPainel.toLocaleString("pt-BR")}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Registros no recorte atual com pagina de {TABLE_LIMIT} itens.
@@ -498,7 +516,7 @@ const ViagensPage = () => {
 
             <section className="grid gap-4 xl:grid-cols-[1fr_320px]">
               <ViagensTable
-                data={viagensPainelQuery.data}
+                data={viagensTableData}
                 isLoading={viagensPainelQuery.isLoading}
                 error={(viagensPainelQuery.error as Error | null) || null}
                 onRetry={() => void viagensPainelQuery.refetch()}
