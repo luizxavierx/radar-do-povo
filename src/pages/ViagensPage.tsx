@@ -410,14 +410,14 @@ const ViagensPage = () => {
     }, 0n) || 0n;
 
   return (
-    <div className="min-h-screen bg-grid-pattern">
+    <div className="min-h-screen overflow-x-hidden bg-grid-pattern">
       <AppSidebar />
 
-      <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1320px] px-3 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+      <main className="min-h-screen overflow-x-hidden lg:ml-72">
+        <div className="w-full px-3 pb-16 pt-20 sm:px-6 sm:pt-24 lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
           <section className="rounded-[30px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,248,255,0.9))] p-5 shadow-elevated backdrop-blur-sm sm:rounded-[34px] sm:p-8">
-            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="space-y-4">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+              <div className="min-w-0 space-y-4">
                 <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                   <Plane className="h-3.5 w-3.5" />
                   Area de Viagens
@@ -457,7 +457,7 @@ const ViagensPage = () => {
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+              <div className="min-w-0 grid gap-3 sm:grid-cols-2 sm:gap-4">
                 <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Periodo Ativo
@@ -584,7 +584,7 @@ const ViagensPage = () => {
               />
             </section>
 
-            <section className="grid gap-4 xl:grid-cols-[1fr_320px]">
+            <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
               <ViagensTable
                 data={viagensTableData}
                 isLoading={viagensPainelQuery.isLoading}
@@ -597,7 +597,7 @@ const ViagensPage = () => {
                 onPageChange={handlePageChange}
               />
 
-              <aside className="hidden space-y-4 xl:sticky xl:top-6 xl:block xl:self-start">
+              <aside className="hidden min-w-0 space-y-4 xl:sticky xl:top-6 xl:block xl:self-start">
                 <section className="rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card">
                   <div className="flex items-center gap-3">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">

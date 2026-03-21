@@ -91,7 +91,7 @@ const ViagensTable = ({
   const totalPages = data?.total ? Math.ceil(data.total / data.limit) : 1;
 
   return (
-    <section className="rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card sm:p-6">
+    <section className="min-w-0 rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card sm:p-6">
       <div className="flex flex-col gap-4 border-b border-border/70 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -281,7 +281,7 @@ const ViagensTable = ({
             })}
           </div>
 
-          <div className="mt-5 hidden overflow-hidden rounded-3xl border border-border/70 bg-background/80 lg:block">
+          <div className="mt-5 hidden min-w-0 overflow-hidden rounded-3xl border border-border/70 bg-background/80 lg:block">
             <Table>
               <TableHeader>
                 <TableRow className="border-border/70 bg-muted/25 hover:bg-muted/25">
