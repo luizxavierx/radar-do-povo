@@ -1,0 +1,641 @@
+"""
+Schema GraphQL principal da API Radar do Povo.
+"""
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+scalar Date @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Date")
+scalar BigInt @scalar(class: "App\\GraphQL\\Scalars\\BigInt")
+
+type Query {
+  politico(id: ID, nomeCanonico: String): Politico
+    @field(resolver: "App\\GraphQL\\Queries\\PoliticoQuery@politico")
+
+  politicos(filter: PoliticoFilterInput, pagination: PaginationInput): PoliticoConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\PoliticoQuery@politicos")
+
+  gastosPolitico(input: GastoPoliticoInput!): GastoResumo!
+    @field(resolver: "App\\GraphQL\\Queries\\GastoQuery@gastosPolitico")
+
+  viagensPolitico(input: ViagensPoliticoInput!, pagination: PaginationInput): ViagemConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@viagensPolitico")
+
+  resumoViagens(filtro: RankingViagemFiltroInput): ResumoViagensPainel!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@resumoViagens")
+
+  viagensPainel(filtro: RankingViagemFiltroInput, pagination: PaginationInput): ViagemConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@viagensPainel")
+
+  topViajantes(filtro: RankingViagemFiltroInput, pagination: PaginationInput): TopViagemPessoaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topViajantes")
+
+  topGastadoresViagens(filtro: RankingViagemFiltroInput, pagination: PaginationInput): TopViagemPessoaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topGastadoresViagens")
+
+  topViajantesAno(ano: Int!, pagination: PaginationInput): TopViagemPessoaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topViajantesAno")
+
+  topGastadoresViagensAno(ano: Int!, pagination: PaginationInput): TopViagemPessoaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topGastadoresViagensAno")
+
+  topDeputadosViajantesAno(ano: Int!, pagination: PaginationInput): TopViagemPessoaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topDeputadosViajantesAno")
+
+  topSenadoresViajantesAno(ano: Int!, pagination: PaginationInput): TopViagemPessoaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topSenadoresViajantesAno")
+
+  topDeputadosGastadoresViagensAno(ano: Int!, pagination: PaginationInput): TopViagemPessoaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topDeputadosGastadoresViagensAno")
+
+  topSenadoresGastadoresViagensAno(ano: Int!, pagination: PaginationInput): TopViagemPessoaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topSenadoresGastadoresViagensAno")
+
+  topOrgaosSuperioresViagens(filtro: RankingViagemFiltroInput, pagination: PaginationInput): TopViagemOrgaoConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topOrgaosSuperioresViagens")
+
+  topOrgaosSolicitantesViagens(filtro: RankingViagemFiltroInput, pagination: PaginationInput): TopViagemOrgaoConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\ViagemQuery@topOrgaosSolicitantesViagens")
+
+  emendasResumoPolitico(input: EmendasPoliticoInput!): EmendaResumo!
+    @field(resolver: "App\\GraphQL\\Queries\\EmendaQuery@emendasResumoPolitico")
+
+  emendasPolitico(input: EmendasPoliticoInput!, pagination: PaginationInput): EmendaConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\EmendaQuery@emendasPolitico")
+
+  topGastadoresEmendas(filtro: RankingEmendaFiltroInput, pagination: PaginationInput): TopEmendaGastadorConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\EmendaQuery@topGastadoresEmendas")
+
+  topGastadoresEmendasAno(ano: Int!, pagination: PaginationInput): TopEmendaGastadorConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\EmendaQuery@topGastadoresEmendasAno")
+
+  topDeputadosEmendasAno(ano: Int!, pagination: PaginationInput): TopEmendaGastadorConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\EmendaQuery@topDeputadosEmendasAno")
+
+  topSenadoresEmendasAno(ano: Int!, pagination: PaginationInput): TopEmendaGastadorConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\EmendaQuery@topSenadoresEmendasAno")
+
+  topEmendasPorPais(filtro: RankingEmendaFiltroInput, pagination: PaginationInput): TopEmendaPaisConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\EmendaQuery@topEmendasPorPais")
+
+  topEmendasPorPaisAno(ano: Int!, pagination: PaginationInput): TopEmendaPaisConnection!
+    @field(resolver: "App\\GraphQL\\Queries\\EmendaQuery@topEmendasPorPaisAno")
+
+  health: HealthStatus!
+    @field(resolver: "App\\GraphQL\\Queries\\HealthQuery@health")
+}
+
+input PoliticoFilterInput {
+  search: String
+  partido: String
+  uf: String
+  cargoAtual: String
+}
+
+input GastoFiltroInput {
+  anoInicio: Int
+  anoFim: Int
+}
+
+input GastoPoliticoInput {
+  politicoId: ID!
+  filtro: GastoFiltroInput
+}
+
+input ViagensPoliticoInput {
+  politicoId: ID!
+  anoInicio: Int
+  anoFim: Int
+}
+
+input EmendaFiltroInput {
+  anoInicio: Int
+  anoFim: Int
+  uf: String
+  tipoEmenda: String
+  pais: String
+  apenasParlamentares: Boolean
+}
+
+input RankingEmendaFiltroInput {
+  anoInicio: Int
+  anoFim: Int
+  uf: String
+  tipoEmenda: String
+  pais: String
+  apenasParlamentares: Boolean = true
+  cargoParlamentar: CargoParlamentarFiltro
+}
+
+input RankingViagemFiltroInput {
+  anoInicio: Int
+  anoFim: Int
+  orgaoSuperiorCodigo: String
+  orgaoSolicitanteCodigo: String
+  search: String
+  situacao: String
+  processoId: String
+  pcdp: String
+  cpfViajante: String
+  nomeViajante: String
+  cargo: String
+  funcao: String
+  destino: String
+  motivo: String
+  apenasParlamentares: Boolean = false
+  cargoParlamentar: CargoParlamentarFiltro
+}
+
+enum CargoParlamentarFiltro {
+  DEPUTADO
+  SENADOR
+}
+
+input EmendasPoliticoInput {
+  politicoId: ID!
+  filtro: EmendaFiltroInput
+}
+
+input PaginationInput {
+  limit: Int = 20
+  offset: Int = 0
+}
+
+type PoliticoConnection {
+  nodes: [Politico!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type ViagemConnection {
+  nodes: [Viagem!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type EmendaConnection {
+  nodes: [Emenda!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type PassagemConnection {
+  nodes: [Passagem!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type PagamentoConnection {
+  nodes: [Pagamento!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type TrechoConnection {
+  nodes: [Trecho!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type EmendaConvenioConnection {
+  nodes: [EmendaConvenio!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type EmendaFavorecidoConnection {
+  nodes: [EmendaFavorecido!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type TopEmendaGastadorConnection {
+  nodes: [TopEmendaGastador!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type TopEmendaPaisConnection {
+  nodes: [TopEmendaPais!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type TopViagemPessoaConnection {
+  nodes: [TopViagemPessoa!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type TopViagemOrgaoConnection {
+  nodes: [TopViagemOrgao!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type Politico {
+  id: ID!
+  nomeBusca: String @rename(attribute: "nome_busca")
+  nomeCanonico: String! @rename(attribute: "nome_canonico")
+  nomeCompleto: String @rename(attribute: "nome_completo")
+  resumo: String
+  fotoUrl: String @rename(attribute: "foto_url")
+  wikipediaUrl: String @rename(attribute: "wikipedia_url")
+  camaraUrl: String @rename(attribute: "camara_url")
+  tseUrl: String @rename(attribute: "tse_url")
+  globoUrl: String @rename(attribute: "globo_url")
+  partido: String
+  cargoAtual: String @rename(attribute: "cargo_atual")
+  uf: String
+  dataNascimento: Date @rename(attribute: "data_nascimento")
+  nacionalidade: String
+  fontePrincipal: String @rename(attribute: "fonte_principal")
+  fontesJson: String @rename(attribute: "fontes_json")
+  dadosBrutosJson: String @rename(attribute: "dados_brutos_json")
+  createdAt: DateTime! @rename(attribute: "created_at")
+  updatedAt: DateTime! @rename(attribute: "updated_at")
+
+  gastos(filtro: GastoFiltroInput): GastoResumo!
+    @field(resolver: "App\\GraphQL\\Resolvers\\PoliticoFieldResolver@gastos")
+
+  perfilExterno: PerfilExterno!
+    @field(resolver: "App\\GraphQL\\Resolvers\\PoliticoFieldResolver@perfilExterno")
+
+  viagens(anoInicio: Int, anoFim: Int, pagination: PaginationInput): ViagemConnection!
+    @field(resolver: "App\\GraphQL\\Resolvers\\PoliticoFieldResolver@viagens")
+
+  emendasResumo(filtro: EmendaFiltroInput): EmendaResumo!
+    @field(resolver: "App\\GraphQL\\Resolvers\\PoliticoFieldResolver@emendasResumo")
+
+  emendas(filtro: EmendaFiltroInput, pagination: PaginationInput): EmendaConnection!
+    @field(resolver: "App\\GraphQL\\Resolvers\\PoliticoFieldResolver@emendas")
+}
+
+type Viagem {
+  processoId: String! @rename(attribute: "processo_id")
+  pcdp: String
+  situacao: String
+  viagemUrgente: String @rename(attribute: "viagem_urgente")
+  justificativaUrgencia: String @rename(attribute: "justificativa_urgencia")
+  orgaoSuperiorCodigo: String @rename(attribute: "orgao_superior_codigo")
+  orgaoSuperiorNome: String @rename(attribute: "orgao_superior_nome")
+  orgaoSolicitanteCodigo: String @rename(attribute: "orgao_solicitante_codigo")
+  orgaoSolicitanteNome: String @rename(attribute: "orgao_solicitante_nome")
+  cpfViajante: String @rename(attribute: "cpf_viajante")
+  nomeViajante: String @rename(attribute: "nome_viajante")
+  cargo: String
+  funcao: String
+  descricaoFuncao: String @rename(attribute: "descricao_funcao")
+  dataInicio: Date @rename(attribute: "data_inicio")
+  dataFim: Date @rename(attribute: "data_fim")
+  destinos: String
+  motivo: String
+  valorDiariasCents: BigInt! @rename(attribute: "valor_diarias_cents")
+  valorPassagensCents: BigInt! @rename(attribute: "valor_passagens_cents")
+  valorDevolucaoCents: BigInt! @rename(attribute: "valor_devolucao_cents")
+  valorOutrosGastosCents: BigInt! @rename(attribute: "valor_outros_gastos_cents")
+  ano: Int!
+  importedAt: DateTime @rename(attribute: "imported_at")
+
+  passagens(pagination: PaginationInput): PassagemConnection!
+    @field(resolver: "App\\GraphQL\\Resolvers\\ViagemFieldResolver@passagens")
+
+  pagamentos(pagination: PaginationInput): PagamentoConnection!
+    @field(resolver: "App\\GraphQL\\Resolvers\\ViagemFieldResolver@pagamentos")
+
+  trechos(pagination: PaginationInput): TrechoConnection!
+    @field(resolver: "App\\GraphQL\\Resolvers\\ViagemFieldResolver@trechos")
+}
+
+type Passagem {
+  id: ID!
+  processoId: String @rename(attribute: "processo_id")
+  pcdp: String
+  meioTransporte: String @rename(attribute: "meio_transporte")
+  idaOrigemPais: String @rename(attribute: "ida_origem_pais")
+  idaOrigemUf: String @rename(attribute: "ida_origem_uf")
+  idaOrigemCidade: String @rename(attribute: "ida_origem_cidade")
+  idaDestinoPais: String @rename(attribute: "ida_destino_pais")
+  idaDestinoUf: String @rename(attribute: "ida_destino_uf")
+  idaDestinoCidade: String @rename(attribute: "ida_destino_cidade")
+  voltaOrigemPais: String @rename(attribute: "volta_origem_pais")
+  voltaOrigemUf: String @rename(attribute: "volta_origem_uf")
+  voltaOrigemCidade: String @rename(attribute: "volta_origem_cidade")
+  voltaDestinoPais: String @rename(attribute: "volta_destino_pais")
+  voltaDestinoUf: String @rename(attribute: "volta_destino_uf")
+  voltaDestinoCidade: String @rename(attribute: "volta_destino_cidade")
+  valorPassagemCents: BigInt! @rename(attribute: "valor_passagem_cents")
+  taxaServicoCents: BigInt! @rename(attribute: "taxa_servico_cents")
+  emissaoData: Date @rename(attribute: "emissao_data")
+  emissaoHora: String @rename(attribute: "emissao_hora")
+  ano: Int
+  importedAt: DateTime @rename(attribute: "imported_at")
+}
+
+type Pagamento {
+  id: ID!
+  processoId: String @rename(attribute: "processo_id")
+  pcdp: String
+  orgaoSuperiorCodigo: String @rename(attribute: "orgao_superior_codigo")
+  orgaoSuperiorNome: String @rename(attribute: "orgao_superior_nome")
+  orgaoPagadorCodigo: String @rename(attribute: "orgao_pagador_codigo")
+  orgaoPagadorNome: String @rename(attribute: "orgao_pagador_nome")
+  ugPagadoraCodigo: String @rename(attribute: "ug_pagadora_codigo")
+  ugPagadoraNome: String @rename(attribute: "ug_pagadora_nome")
+  tipoPagamento: String @rename(attribute: "tipo_pagamento")
+  valorCents: BigInt! @rename(attribute: "valor_cents")
+  ano: Int
+  importedAt: DateTime @rename(attribute: "imported_at")
+}
+
+type Trecho {
+  id: ID!
+  processoId: String @rename(attribute: "processo_id")
+  pcdp: String
+  sequencia: Int
+  origemData: Date @rename(attribute: "origem_data")
+  origemPais: String @rename(attribute: "origem_pais")
+  origemUf: String @rename(attribute: "origem_uf")
+  origemCidade: String @rename(attribute: "origem_cidade")
+  destinoData: Date @rename(attribute: "destino_data")
+  destinoPais: String @rename(attribute: "destino_pais")
+  destinoUf: String @rename(attribute: "destino_uf")
+  destinoCidade: String @rename(attribute: "destino_cidade")
+  meioTransporte: String @rename(attribute: "meio_transporte")
+  numeroDiarias: Float @rename(attribute: "numero_diarias")
+  missao: String
+  ano: Int
+  importedAt: DateTime @rename(attribute: "imported_at")
+}
+
+type GastoResumo {
+  totalViagens: Int!
+  totalTrechos: Int!
+  totalDiariasCents: BigInt!
+  totalPassagensCents: BigInt!
+  totalPagamentosCents: BigInt!
+  totalOutrosGastosCents: BigInt!
+  totalDevolucaoCents: BigInt!
+  periodo: Periodo
+}
+
+type ResumoViagensPainel {
+  totalViagens: Int! @rename(attribute: "total_viagens")
+  totalViajantes: Int! @rename(attribute: "total_viajantes")
+  totalOrgaosSuperiores: Int! @rename(attribute: "total_orgaos_superiores")
+  totalOrgaosSolicitantes: Int! @rename(attribute: "total_orgaos_solicitantes")
+  totalTrechos: Int! @rename(attribute: "total_trechos")
+  totalDiariasCents: BigInt! @rename(attribute: "total_diarias_cents")
+  totalPassagensCents: BigInt! @rename(attribute: "total_passagens_cents")
+  totalPagamentosCents: BigInt! @rename(attribute: "total_pagamentos_cents")
+  totalOutrosGastosCents: BigInt! @rename(attribute: "total_outros_gastos_cents")
+  totalDevolucaoCents: BigInt! @rename(attribute: "total_devolucao_cents")
+  totalGastoBrutoCents: BigInt! @rename(attribute: "total_gasto_bruto_cents")
+  totalGastoLiquidoCents: BigInt! @rename(attribute: "total_gasto_liquido_cents")
+  ticketMedioViagemCents: BigInt! @rename(attribute: "ticket_medio_viagem_cents")
+  gastoMedioViajanteCents: BigInt! @rename(attribute: "gasto_medio_viajante_cents")
+  periodo: Periodo
+}
+
+type EmendaResumo {
+  totalEmendas: Int!
+  totalEmpenhadoCents: BigInt!
+  totalLiquidadoCents: BigInt!
+  totalPagoCents: BigInt!
+  totalRpInscritosCents: BigInt!
+  totalRpCanceladosCents: BigInt!
+  totalRpPagosCents: BigInt!
+  totalRecebidoFavorecidosCents: BigInt!
+  totalFavorecidos: Int!
+  periodo: Periodo
+}
+
+type Emenda {
+  id: ID!
+  codigoEmenda: String @rename(attribute: "codigo_emenda")
+  anoEmenda: Int @rename(attribute: "ano_emenda")
+  tipoEmenda: String @rename(attribute: "tipo_emenda")
+  codigoAutorEmenda: String @rename(attribute: "codigo_autor_emenda")
+  nomeAutorEmenda: String @rename(attribute: "nome_autor_emenda")
+  numeroEmenda: String @rename(attribute: "numero_emenda")
+  localidadeAplicacao: String @rename(attribute: "localidade_aplicacao")
+  codigoMunicipioIbge: String @rename(attribute: "codigo_municipio_ibge")
+  municipio: String
+  codigoUfIbge: String @rename(attribute: "codigo_uf_ibge")
+  uf: String
+  regiao: String
+  codigoFuncao: String @rename(attribute: "codigo_funcao")
+  nomeFuncao: String @rename(attribute: "nome_funcao")
+  codigoSubfuncao: String @rename(attribute: "codigo_subfuncao")
+  nomeSubfuncao: String @rename(attribute: "nome_subfuncao")
+  codigoPrograma: String @rename(attribute: "codigo_programa")
+  nomePrograma: String @rename(attribute: "nome_programa")
+  codigoAcao: String @rename(attribute: "codigo_acao")
+  nomeAcao: String @rename(attribute: "nome_acao")
+  codigoPlanoOrcamentario: String @rename(attribute: "codigo_plano_orcamentario")
+  nomePlanoOrcamentario: String @rename(attribute: "nome_plano_orcamentario")
+  valorEmpenhadoCents: BigInt! @rename(attribute: "valor_empenhado_cents")
+  valorLiquidadoCents: BigInt! @rename(attribute: "valor_liquidado_cents")
+  valorPagoCents: BigInt! @rename(attribute: "valor_pago_cents")
+  valorRpInscritosCents: BigInt! @rename(attribute: "valor_rp_inscritos_cents")
+  valorRpCanceladosCents: BigInt! @rename(attribute: "valor_rp_cancelados_cents")
+  valorRpPagosCents: BigInt! @rename(attribute: "valor_rp_pagos_cents")
+  importedAt: DateTime @rename(attribute: "imported_at")
+
+  convenios(pagination: PaginationInput): EmendaConvenioConnection!
+    @field(resolver: "App\\GraphQL\\Resolvers\\EmendaFieldResolver@convenios")
+
+  favorecidos(pagination: PaginationInput): EmendaFavorecidoConnection!
+    @field(resolver: "App\\GraphQL\\Resolvers\\EmendaFieldResolver@favorecidos")
+}
+
+type EmendaConvenio {
+  id: ID!
+  codigoEmenda: String @rename(attribute: "codigo_emenda")
+  codigoFuncao: String @rename(attribute: "codigo_funcao")
+  nomeFuncao: String @rename(attribute: "nome_funcao")
+  codigoSubfuncao: String @rename(attribute: "codigo_subfuncao")
+  nomeSubfuncao: String @rename(attribute: "nome_subfuncao")
+  localidadeGasto: String @rename(attribute: "localidade_gasto")
+  tipoEmenda: String @rename(attribute: "tipo_emenda")
+  dataPublicacaoConvenio: Date @rename(attribute: "data_publicacao_convenio")
+  convenente: String
+  objetoConvenio: String @rename(attribute: "objeto_convenio")
+  numeroConvenio: String @rename(attribute: "numero_convenio")
+  valorConvenioCents: BigInt! @rename(attribute: "valor_convenio_cents")
+  importedAt: DateTime @rename(attribute: "imported_at")
+}
+
+type EmendaFavorecido {
+  id: ID!
+  codigoEmenda: String @rename(attribute: "codigo_emenda")
+  codigoAutorEmenda: String @rename(attribute: "codigo_autor_emenda")
+  nomeAutorEmenda: String @rename(attribute: "nome_autor_emenda")
+  numeroEmenda: String @rename(attribute: "numero_emenda")
+  tipoEmenda: String @rename(attribute: "tipo_emenda")
+  anoMes: String @rename(attribute: "ano_mes")
+  codigoFavorecido: String @rename(attribute: "codigo_favorecido")
+  favorecido: String
+  naturezaJuridica: String @rename(attribute: "natureza_juridica")
+  tipoFavorecido: String @rename(attribute: "tipo_favorecido")
+  ufFavorecido: String @rename(attribute: "uf_favorecido")
+  municipioFavorecido: String @rename(attribute: "municipio_favorecido")
+  valorRecebidoCents: BigInt! @rename(attribute: "valor_recebido_cents")
+  importedAt: DateTime @rename(attribute: "imported_at")
+}
+
+type TopEmendaGastador {
+  codigoAutorEmenda: String @rename(attribute: "codigo_autor_emenda")
+  nomeAutorEmenda: String @rename(attribute: "nome_autor_emenda")
+  totalEmendas: Int! @rename(attribute: "total_emendas")
+  totalEmpenhadoCents: BigInt! @rename(attribute: "total_empenhado_cents")
+  totalLiquidadoCents: BigInt! @rename(attribute: "total_liquidado_cents")
+  totalPagoCents: BigInt! @rename(attribute: "total_pago_cents")
+  totalRpInscritosCents: BigInt! @rename(attribute: "total_rp_inscritos_cents")
+  totalRpCanceladosCents: BigInt! @rename(attribute: "total_rp_cancelados_cents")
+  totalRpPagosCents: BigInt! @rename(attribute: "total_rp_pagos_cents")
+}
+
+type TopEmendaPais {
+  pais: String!
+  totalEmendas: Int! @rename(attribute: "total_emendas")
+  totalEmpenhadoCents: BigInt! @rename(attribute: "total_empenhado_cents")
+  totalLiquidadoCents: BigInt! @rename(attribute: "total_liquidado_cents")
+  totalPagoCents: BigInt! @rename(attribute: "total_pago_cents")
+  totalRpInscritosCents: BigInt! @rename(attribute: "total_rp_inscritos_cents")
+  totalRpCanceladosCents: BigInt! @rename(attribute: "total_rp_cancelados_cents")
+  totalRpPagosCents: BigInt! @rename(attribute: "total_rp_pagos_cents")
+}
+
+type TopViagemPessoa {
+  cpfViajante: String @rename(attribute: "cpf_viajante")
+  nomeViajante: String! @rename(attribute: "nome_viajante")
+  cargo: String
+  funcao: String
+  descricaoFuncao: String @rename(attribute: "descricao_funcao")
+  totalViagens: Int! @rename(attribute: "total_viagens")
+  totalTrechos: Int! @rename(attribute: "total_trechos")
+  totalDiariasCents: BigInt! @rename(attribute: "total_diarias_cents")
+  totalPassagensCents: BigInt! @rename(attribute: "total_passagens_cents")
+  totalPagamentosCents: BigInt! @rename(attribute: "total_pagamentos_cents")
+  totalOutrosGastosCents: BigInt! @rename(attribute: "total_outros_gastos_cents")
+  totalDevolucaoCents: BigInt! @rename(attribute: "total_devolucao_cents")
+  totalGastoBrutoCents: BigInt! @rename(attribute: "total_gasto_bruto_cents")
+  totalGastoLiquidoCents: BigInt! @rename(attribute: "total_gasto_liquido_cents")
+}
+
+type TopViagemOrgao {
+  codigoOrgao: String @rename(attribute: "codigo_orgao")
+  nomeOrgao: String @rename(attribute: "nome_orgao")
+  totalViagens: Int! @rename(attribute: "total_viagens")
+  totalViajantes: Int! @rename(attribute: "total_viajantes")
+  totalTrechos: Int! @rename(attribute: "total_trechos")
+  totalDiariasCents: BigInt! @rename(attribute: "total_diarias_cents")
+  totalPassagensCents: BigInt! @rename(attribute: "total_passagens_cents")
+  totalPagamentosCents: BigInt! @rename(attribute: "total_pagamentos_cents")
+  totalOutrosGastosCents: BigInt! @rename(attribute: "total_outros_gastos_cents")
+  totalDevolucaoCents: BigInt! @rename(attribute: "total_devolucao_cents")
+  totalGastoBrutoCents: BigInt! @rename(attribute: "total_gasto_bruto_cents")
+  totalGastoLiquidoCents: BigInt! @rename(attribute: "total_gasto_liquido_cents")
+}
+
+type Periodo {
+  anoInicio: Int
+  anoFim: Int
+}
+
+type PerfilExterno {
+  camara: CamaraPerfil!
+  wikipedia: WikipediaPerfil!
+  senado: SenadoPerfil!
+  tse: TsePerfil!
+  lexml: LexmlResultado!
+  brasilIo: BrasilIoResultado!
+}
+
+type CamaraPerfil {
+  id: String
+  nome: String
+  siglaPartido: String
+  siglaUf: String
+  urlFoto: String
+  email: String
+  uri: String
+  fonte: String!
+}
+
+type WikipediaPerfil {
+  titulo: String
+  resumo: String
+  url: String
+  fonte: String!
+}
+
+type SenadoPerfil {
+  codigo: String
+  nome: String
+  nomeCompleto: String
+  siglaPartido: String
+  uf: String
+  email: String
+  urlFoto: String
+  urlPagina: String
+  afastadoAtual: Boolean
+  fonte: String!
+}
+
+type TsePerfil {
+  termoBusca: String
+  datasetCandidatosUrl: String
+  datasetResultadosUrl: String
+  candidatosCdnBaseUrl: String
+  divulgaCandContasUrl: String
+  fonte: String!
+}
+
+type LexmlResultado {
+  total: Int!
+  documentos: [LexmlDocumento!]!
+}
+
+type LexmlDocumento {
+  titulo: String
+  identificador: String
+  tipo: String
+  data: String
+  url: String
+  fonte: String!
+}
+
+type BrasilIoResultado {
+  total: Int!
+  candidatos: [BrasilIoCandidato!]!
+}
+
+type BrasilIoCandidato {
+  anoEleicao: Int
+  siglaUf: String
+  nomeUrna: String
+  nomeCompleto: String
+  numeroCandidato: String
+  siglaPartido: String
+  descricaoCargo: String
+  situacaoCandidatura: String
+  fonte: String!
+}
+
+type HealthStatus {
+  status: String!
+  db: String!
+  redis: String!
+  timestamp: DateTime!
+}
