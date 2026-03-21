@@ -173,7 +173,7 @@ export async function checkApiHealth(): Promise<boolean> {
 
     try {
       const res = await fetch(endpoint, { signal: controller.signal });
-      if (res.ok) return true;
+      if (res.ok || res.status === 503) return true;
     } catch {
       // Try the next fallback endpoint.
     } finally {
