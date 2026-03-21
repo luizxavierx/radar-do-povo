@@ -1,10 +1,11 @@
 import type { GraphQLResponse, GraphQLError } from "./types";
 
-const GRAPHQL_ENDPOINT = __RADAR_API_BASE__;
-const HEALTH_ENDPOINTS = [
-  __RADAR_API_BASE__.replace(/\/graphql\/?$/, "/api/healthz"),
-  __RADAR_API_BASE__.replace(/\/graphql\/?$/, "/healthz"),
-];
+const RAW_RADAR_API_BASE = __RADAR_API_BASE__.replace(/\/+$/, "");
+const RADAR_API_ROOT = RAW_RADAR_API_BASE.replace(/\/graphql\/?$/, "");
+const GRAPHQL_ENDPOINT = /\/graphql\/?$/.test(RAW_RADAR_API_BASE)
+  ? RAW_RADAR_API_BASE
+  : `${RAW_RADAR_API_BASE}/graphql`;
+const HEALTH_ENDPOINTS = [`${RADAR_API_ROOT}/healthz`];
 const REQUEST_TIMEOUT = 15_000;
 const DEFAULT_RETRIES = 1;
 
