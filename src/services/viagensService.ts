@@ -332,6 +332,9 @@ export function normalizeViagensFilter(
     return { apenasParlamentares: false };
   }
 
+  const apenasParlamentares = filtro.apenasParlamentares === true;
+  const cargoParlamentar = apenasParlamentares ? filtro.cargoParlamentar : undefined;
+
   const normalized: RankingViagemFiltroInput = {
     anoInicio: filtro.anoInicio,
     anoFim: filtro.anoFim,
@@ -347,8 +350,8 @@ export function normalizeViagensFilter(
     funcao: trimOrUndefined(filtro.funcao),
     destino: trimOrUndefined(filtro.destino),
     motivo: trimOrUndefined(filtro.motivo),
-    apenasParlamentares: false,
-    cargoParlamentar: filtro.cargoParlamentar,
+    apenasParlamentares,
+    cargoParlamentar,
   };
 
   const hasValue = Object.values(normalized).some((value) => value !== undefined);
@@ -362,17 +365,26 @@ export function applyRecorteToViagensFilter(
   const base: RankingViagemFiltroInput = {
     ...filtro,
     apenasParlamentares: false,
+    cargoParlamentar: undefined,
   };
 
   if (recorte === "deputados") {
-    return { ...base, cargoParlamentar: "DEPUTADO" };
+    return {
+      ...base,
+      apenasParlamentares: true,
+      cargoParlamentar: "DEPUTADO",
+    };
   }
 
   if (recorte === "senadores") {
-    return { ...base, cargoParlamentar: "SENADOR" };
+    return {
+      ...base,
+      apenasParlamentares: true,
+      cargoParlamentar: "SENADOR",
+    };
   }
 
-  return { ...base, cargoParlamentar: undefined };
+  return base;
 }
 
 export async function fetchResumoViagens(

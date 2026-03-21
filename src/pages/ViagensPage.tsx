@@ -28,7 +28,8 @@ import {
   type ViagensRecorte,
 } from "@/services/viagensService";
 
-const DEFAULT_YEAR = 2025;
+const CURRENT_YEAR = new Date().getFullYear();
+const DEFAULT_YEAR = CURRENT_YEAR - 1;
 const TABLE_LIMIT = 20;
 const RANKING_LIMIT = 10;
 const DEFAULT_SORT: ViagensSortKey = "data_desc";
@@ -63,19 +64,19 @@ const recorteMeta: Record<
   },
   deputados: {
     label: "Recorte de deputados",
-    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar DEPUTADO, mantendo apenasParlamentares em false.",
+    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar DEPUTADO.",
     eyebrow: "Camara Federal",
   },
   senadores: {
     label: "Recorte de senadores",
-    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar SENADOR, mantendo apenasParlamentares em false.",
+    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar SENADOR.",
     eyebrow: "Senado Federal",
   },
 };
 
 function parseYear(value: string | null, fallback: number) {
   const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 2019 && parsed <= 2026 ? parsed : fallback;
+  return Number.isInteger(parsed) && parsed >= 2019 && parsed <= CURRENT_YEAR ? parsed : fallback;
 }
 
 function parsePage(value: string | null) {

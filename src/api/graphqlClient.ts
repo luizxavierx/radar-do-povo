@@ -5,7 +5,7 @@ const RADAR_API_ROOT = RAW_RADAR_API_BASE.replace(/\/graphql\/?$/, "");
 const GRAPHQL_ENDPOINT = /\/graphql\/?$/.test(RAW_RADAR_API_BASE)
   ? RAW_RADAR_API_BASE
   : `${RAW_RADAR_API_BASE}/graphql`;
-const HEALTH_ENDPOINTS = [`${RADAR_API_ROOT}/healthz`];
+const HEALTH_ENDPOINTS = [`${RADAR_API_ROOT}/api/healthz`, `${RADAR_API_ROOT}/healthz`];
 const REQUEST_TIMEOUT = 15_000;
 const DEFAULT_RETRIES = 1;
 

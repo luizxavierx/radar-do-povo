@@ -155,7 +155,7 @@ export interface Viagem {
   processoId?: string;
   pcdp?: string;
   situacao?: string;
-  viagemUrgente?: boolean;
+  viagemUrgente?: boolean | string;
   justificativaUrgencia?: string;
   orgaoSuperiorCodigo?: string;
   orgaoSuperiorNome?: string;

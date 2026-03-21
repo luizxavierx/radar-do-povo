@@ -88,7 +88,9 @@ const fieldMeta: { key: TextFilterKey; label: string; placeholder: string }[] = 
   },
 ];
 
-export const travelYears = Array.from({ length: 10 }, (_, index) => 2026 - index);
+const currentYear = new Date().getFullYear();
+
+export const travelYears = Array.from({ length: 10 }, (_, index) => currentYear - index);
 
 function pickTextFilters(value: ViagensFilterState): Record<TextFilterKey, string> {
   return {
