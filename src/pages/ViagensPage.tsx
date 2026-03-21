@@ -58,7 +58,7 @@ const recorteMeta: Record<
   geral: {
     label: "Painel geral de viagens",
     description:
-      "Ranking anual otimizado quando o filtro e de um unico ano e sem refinamentos extras.",
+      "KPIs, rankings e tabela principal sempre consultados pelos endpoints gerais da API.",
     eyebrow: "Recorte Geral",
   },
   deputados: {
@@ -195,21 +195,6 @@ const ViagensPage = () => {
   const tablePagination = useMemo(() => ({ limit: TABLE_LIMIT, offset }), [offset]);
   const normalizedFilter = useMemo(() => normalizeViagensFilter(apiFilter), [apiFilter]);
   const recorteInfo = recorteMeta[filters.recorte];
-  const hasAdvancedFilters = Boolean(
-    filters.search ||
-      filters.situacao ||
-      filters.processoId ||
-      filters.pcdp ||
-      filters.cpfViajante ||
-      filters.nomeViajante ||
-      filters.cargo ||
-      filters.funcao ||
-      filters.destino ||
-      filters.motivo ||
-      filters.orgaoSuperiorCodigo ||
-      filters.orgaoSolicitanteCodigo
-  );
-  const usingAnnualShortcuts = filters.anoInicio === filters.anoFim && !hasAdvancedFilters;
 
   const resumoQuery = useResumoViagens(apiFilter);
   const topViajantesQuery = useTopViajantes(apiFilter, rankingPagination);
@@ -384,15 +369,13 @@ const ViagensPage = () => {
 
                 <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Ranking Mode
+                    Consulta
                   </p>
                   <p className="mt-3 text-2xl font-extrabold text-foreground">
-                    {usingAnnualShortcuts ? "Anual otimizado" : "Filtro composto"}
+                    Endpoints gerais
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {usingAnnualShortcuts
-                      ? "Usando rankings anuais prontos da API sempre que possivel."
-                      : "Usando filtros completos por orgao, situacao e busca."}
+                    Rankings e KPIs usam os endpoints gerais com filtros reais do banco.
                   </p>
                 </article>
 
