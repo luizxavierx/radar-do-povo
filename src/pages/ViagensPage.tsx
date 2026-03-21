@@ -31,7 +31,7 @@ import {
 const CURRENT_YEAR = new Date().getFullYear();
 const DEFAULT_YEAR = CURRENT_YEAR - 1;
 const TABLE_LIMIT = 20;
-const RANKING_LIMIT = 10;
+const RANKING_LIMIT = 5;
 const DEFAULT_SORT: ViagensSortKey = "data_desc";
 
 const DEFAULT_FILTERS: ViagensFilterState = {

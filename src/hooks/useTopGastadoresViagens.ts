@@ -15,7 +15,7 @@ export function useTopGastadoresViagens(
   options?: { enabled?: boolean }
 ) {
   const normalizedFilter = normalizeViagensFilter(filtro);
-  const normalizedPagination = normalizePagination(pagination, 10);
+  const normalizedPagination = normalizePagination(pagination, 5);
 
   return useQuery({
     queryKey: ["top-gastadores-viagens", normalizedFilter, normalizedPagination],

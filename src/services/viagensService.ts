@@ -94,9 +94,6 @@ const VIAGENS_PAINEL_QUERY = `
 const TOP_VIAJANTES_QUERY = `
   query TopViajantes($filtro: RankingViagemFiltroInput, $limit: Int!, $offset: Int!) {
     topViajantes(filtro: $filtro, pagination: { limit: $limit, offset: $offset }) {
-      total
-      limit
-      offset
       nodes {
         cpfViajante
         nomeViajante
@@ -114,9 +111,6 @@ const TOP_VIAJANTES_QUERY = `
 const TOP_GASTADORES_VIAGENS_QUERY = `
   query TopGastadoresViagens($filtro: RankingViagemFiltroInput, $limit: Int!, $offset: Int!) {
     topGastadoresViagens(filtro: $filtro, pagination: { limit: $limit, offset: $offset }) {
-      total
-      limit
-      offset
       nodes {
         cpfViajante
         nomeViajante
@@ -133,9 +127,6 @@ const TOP_GASTADORES_VIAGENS_QUERY = `
 const TOP_ORGAOS_SUPERIORES_QUERY = `
   query TopOrgaosSuperioresViagens($filtro: RankingViagemFiltroInput, $limit: Int!, $offset: Int!) {
     topOrgaosSuperioresViagens(filtro: $filtro, pagination: { limit: $limit, offset: $offset }) {
-      total
-      limit
-      offset
       nodes {
         codigoOrgao
         nomeOrgao
@@ -149,9 +140,6 @@ const TOP_ORGAOS_SUPERIORES_QUERY = `
 const TOP_ORGAOS_SOLICITANTES_QUERY = `
   query TopOrgaosSolicitantesViagens($filtro: RankingViagemFiltroInput, $limit: Int!, $offset: Int!) {
     topOrgaosSolicitantesViagens(filtro: $filtro, pagination: { limit: $limit, offset: $offset }) {
-      total
-      limit
-      offset
       nodes {
         codigoOrgao
         nomeOrgao
