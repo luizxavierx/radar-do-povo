@@ -1,7 +1,8 @@
 import type { GraphQLResponse, GraphQLError } from "./types";
+import { ApiRequestError } from "./requestError";
 
 const RAW_RADAR_API_BASE = __RADAR_API_BASE__.replace(/\/+$/, "");
-const RADAR_API_ROOT = RAW_RADAR_API_BASE.replace(/\/graphql\/?$/, "");
+export const RADAR_API_ROOT = RAW_RADAR_API_BASE.replace(/\/graphql\/?$/, "");
 const GRAPHQL_ENDPOINT = /\/graphql\/?$/.test(RAW_RADAR_API_BASE)
   ? RAW_RADAR_API_BASE
   : `${RAW_RADAR_API_BASE}/graphql`;
@@ -9,7 +10,7 @@ const HEALTH_ENDPOINTS = [`${RADAR_API_ROOT}/api/healthz`, `${RADAR_API_ROOT}/he
 const REQUEST_TIMEOUT = 15_000;
 const DEFAULT_RETRIES = 1;
 
-export class GraphQLRequestError extends Error {
+export class GraphQLRequestError extends ApiRequestError {
   public requestId?: string;
   public graphqlErrors?: GraphQLError[];
   public statusCode?: number;
@@ -18,7 +19,7 @@ export class GraphQLRequestError extends Error {
     message: string,
     opts?: { requestId?: string; graphqlErrors?: GraphQLError[]; statusCode?: number }
   ) {
-    super(message);
+    super(message, { requestId: opts?.requestId, statusCode: opts?.statusCode });
     this.name = "GraphQLRequestError";
     this.requestId = opts?.requestId;
     this.graphqlErrors = opts?.graphqlErrors;

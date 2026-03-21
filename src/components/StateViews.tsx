@@ -1,5 +1,5 @@
 import { Loader2, AlertTriangle, Inbox } from "lucide-react";
-import { GraphQLRequestError } from "@/api/graphqlClient";
+import { ApiRequestError } from "@/api/requestError";
 
 export const LoadingState = ({ message = "Carregando dados..." }: { message?: string }) => (
   <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-card/70 py-14 text-center shadow-card">
@@ -12,7 +12,7 @@ export const LoadingState = ({ message = "Carregando dados..." }: { message?: st
 );
 
 export const ErrorState = ({ error }: { error: Error | null }) => {
-  const requestId = error instanceof GraphQLRequestError ? error.requestId : undefined;
+  const requestId = error instanceof ApiRequestError ? error.requestId : undefined;
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 py-14 text-center shadow-card">
@@ -41,7 +41,7 @@ export const ErrorStateWithRetry = ({
   onRetry: () => void;
   retryLabel?: string;
 }) => {
-  const requestId = error instanceof GraphQLRequestError ? error.requestId : undefined;
+  const requestId = error instanceof ApiRequestError ? error.requestId : undefined;
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 py-14 text-center shadow-card">

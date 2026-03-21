@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { graphqlRequest, checkApiHealth } from "@/api/graphqlClient";
+import { restRequest } from "@/api/restClient";
 import {
   FEATURED_POLITICOS_QUERY,
   HEALTH_QUERY,
   POLITICO_BASICO_QUERY,
-  POLITICO_DOSSIE_COMPLETO_QUERY,
   POLITICO_PERFIL_EXTERNO_QUERY,
   POLITICOS_LIST_QUERY,
 } from "@/api/queries";
@@ -138,11 +138,27 @@ export function usePoliticoDossieCompleto(
   return useQuery({
     queryKey: ["politico-dossie-completo", search, anoInicio, anoFim],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ politicos: Connection<PoliticoDossieCompleto> }>(
-        POLITICO_DOSSIE_COMPLETO_QUERY,
-        { nome: search, anoInicio, anoFim },
-        { signal, timeoutMs: 20_000 }
-      ).then((d) => d.politicos.nodes[0]),
+      restRequest<PoliticoDossieCompleto>(
+        `/api/politicos/${encodeURIComponent(search)}/dossie`,
+        {
+          params: {
+            anoInicio,
+            anoFim,
+            viagensLimit: 50,
+            viagensOffset: 0,
+            emendasLimit: 50,
+            emendasOffset: 0,
+            passagensLimit: 30,
+            pagamentosLimit: 30,
+            trechosLimit: 30,
+            conveniosLimit: 30,
+            favorecidosLimit: 30,
+          },
+          signal,
+          timeoutMs: 20_000,
+          retries: 0,
+        }
+      ),
     enabled: Boolean(search),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
