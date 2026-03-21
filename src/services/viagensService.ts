@@ -25,10 +25,10 @@ export interface ViagemDetalheResult {
 }
 
 export const DEFAULT_VIAGENS_TABLE_LIMIT = 20;
-export const DEFAULT_VIAGENS_RANKING_LIMIT = 10;
+export const DEFAULT_VIAGENS_RANKING_LIMIT = 5;
 export const DEFAULT_VIAGENS_DETAIL_LIMIT = 10;
-const TRAVEL_DASHBOARD_TIMEOUT_MS = 25_000;
-const TRAVEL_DETAIL_TIMEOUT_MS = 20_000;
+const TRAVEL_DASHBOARD_TIMEOUT_MS = 45_000;
+const TRAVEL_DETAIL_TIMEOUT_MS = 30_000;
 
 const RESUMO_VIAGENS_QUERY = `
   query ResumoViagens($filtro: RankingViagemFiltroInput) {
@@ -369,7 +369,7 @@ export async function fetchResumoViagens(
   const data = await graphqlRequest<{ resumoViagens: ResumoViagens }>(
     RESUMO_VIAGENS_QUERY,
     { filtro: normalized },
-    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS }
+    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS, retries: 0 }
   );
   return data.resumoViagens;
 }
@@ -391,7 +391,7 @@ export async function fetchViagensPainel(
       limit: normalizedPagination.limit,
       offset: normalizedPagination.offset,
     },
-    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS }
+    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS, retries: 0 }
   );
   return toConnection(data.viagensPainel, normalizedPagination);
 }
@@ -411,7 +411,7 @@ export async function fetchTopViajantes(
       limit: normalizedPagination.limit,
       offset: normalizedPagination.offset,
     },
-    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS }
+    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS, retries: 0 }
   );
 
   return toConnection(data.topViajantes, normalizedPagination);
@@ -432,7 +432,7 @@ export async function fetchTopGastadoresViagens(
       limit: normalizedPagination.limit,
       offset: normalizedPagination.offset,
     },
-    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS }
+    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS, retries: 0 }
   );
 
   return toConnection(data.topGastadoresViagens, normalizedPagination);
@@ -454,7 +454,7 @@ export async function fetchTopOrgaosSuperioresViagens(
       limit: normalizedPagination.limit,
       offset: normalizedPagination.offset,
     },
-    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS }
+    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS, retries: 0 }
   );
 
   return toConnection(data.topOrgaosSuperioresViagens, normalizedPagination);
@@ -476,7 +476,7 @@ export async function fetchTopOrgaosSolicitantesViagens(
       limit: normalizedPagination.limit,
       offset: normalizedPagination.offset,
     },
-    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS }
+    { signal: options?.signal, timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS, retries: 0 }
   );
 
   return toConnection(data.topOrgaosSolicitantesViagens, normalizedPagination);
@@ -503,7 +503,7 @@ export async function fetchDetalheViagemPorProcesso(
       limit: 1,
       offset: 0,
     },
-    { signal: options?.signal, timeoutMs: TRAVEL_DETAIL_TIMEOUT_MS }
+    { signal: options?.signal, timeoutMs: TRAVEL_DETAIL_TIMEOUT_MS, retries: 0 }
   );
 
   const viagem = data.viagensPainel?.nodes?.[0];

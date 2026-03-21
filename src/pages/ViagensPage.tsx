@@ -166,6 +166,8 @@ const ViagensPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sortBy, setSortBy] = useState<ViagensSortKey>(DEFAULT_SORT);
   const [selectedViagem, setSelectedViagem] = useState<Viagem | null>(null);
+  const [peopleRankingsReady, setPeopleRankingsReady] = useState(false);
+  const [orgaoRankingsReady, setOrgaoRankingsReady] = useState(false);
 
   const filters = useMemo(() => buildFilterState(searchParams), [searchParams]);
   const currentPage = parsePage(searchParams.get("page"));
@@ -198,11 +200,23 @@ const ViagensPage = () => {
   const recorteInfo = recorteMeta[filters.recorte];
 
   const resumoQuery = useResumoViagens(apiFilter);
-  const topViajantesQuery = useTopViajantes(apiFilter, rankingPagination);
-  const topGastadoresQuery = useTopGastadoresViagens(apiFilter, rankingPagination);
-  const topOrgaosSuperioresQuery = useTopOrgaosSuperioresViagens(apiFilter, rankingPagination);
-  const topOrgaosSolicitantesQuery = useTopOrgaosSolicitantesViagens(apiFilter, rankingPagination);
   const viagensPainelQuery = useViagensPainel(apiFilter, tablePagination);
+  const topViajantesQuery = useTopViajantes(apiFilter, rankingPagination, {
+    enabled: peopleRankingsReady,
+  });
+  const topGastadoresQuery = useTopGastadoresViagens(apiFilter, rankingPagination, {
+    enabled: peopleRankingsReady,
+  });
+  const topOrgaosSuperioresQuery = useTopOrgaosSuperioresViagens(apiFilter, rankingPagination, {
+    enabled: orgaoRankingsReady,
+  });
+  const topOrgaosSolicitantesQuery = useTopOrgaosSolicitantesViagens(
+    apiFilter,
+    rankingPagination,
+    {
+      enabled: orgaoRankingsReady,
+    }
+  );
   const detalheQuery = useDetalheViagem(
     selectedViagem
       ? {
@@ -228,6 +242,35 @@ const ViagensPage = () => {
       setSearchParams(toSearchParams(filters, currentPage), { replace: true });
     }
   }, [currentPage, filters, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    setPeopleRankingsReady(false);
+    setOrgaoRankingsReady(false);
+
+    const peopleTimer = window.setTimeout(() => setPeopleRankingsReady(true), 600);
+    const orgaoTimer = window.setTimeout(() => setOrgaoRankingsReady(true), 1400);
+
+    return () => {
+      window.clearTimeout(peopleTimer);
+      window.clearTimeout(orgaoTimer);
+    };
+  }, [
+    filters.recorte,
+    filters.anoInicio,
+    filters.anoFim,
+    filters.orgaoSuperiorCodigo,
+    filters.orgaoSolicitanteCodigo,
+    filters.search,
+    filters.situacao,
+    filters.processoId,
+    filters.pcdp,
+    filters.cpfViajante,
+    filters.nomeViajante,
+    filters.cargo,
+    filters.funcao,
+    filters.destino,
+    filters.motivo,
+  ]);
 
   useEffect(() => {
     setSelectedViagem(null);
@@ -509,10 +552,10 @@ const ViagensPage = () => {
                     Estrategia de carregamento
                   </p>
                   <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                    <p>1. KPIs e rankings carregam em paralelo.</p>
-                    <p>2. Tabela usa pagina 20 e prefetch da proxima pagina.</p>
-                    <p>3. Drawer so abre detalhe real quando o usuario pede.</p>
-                    <p>4. Todas as chamadas passam timeout, retry curto e cancelamento.</p>
+                    <p>1. KPIs e tabela principal carregam primeiro.</p>
+                    <p>2. Rankings entram em ondas curtas para evitar pico no backend.</p>
+                    <p>3. Tabela usa pagina 20 e prefetch da proxima pagina.</p>
+                    <p>4. Drawer so abre detalhe real quando o usuario pede.</p>
                   </div>
                 </section>
               </aside>

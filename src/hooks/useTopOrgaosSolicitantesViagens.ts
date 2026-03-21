@@ -11,7 +11,8 @@ import {
 
 export function useTopOrgaosSolicitantesViagens(
   filtro?: RankingViagemFiltroInput,
-  pagination?: PaginationInput
+  pagination?: PaginationInput,
+  options?: { enabled?: boolean }
 ) {
   const normalizedFilter = normalizeViagensFilter(filtro);
   const normalizedPagination = normalizePagination(pagination, 10);
@@ -22,6 +23,7 @@ export function useTopOrgaosSolicitantesViagens(
       fetchTopOrgaosSolicitantesViagens(normalizedFilter, normalizedPagination, {
         signal,
       }),
+    enabled: options?.enabled ?? true,
     ...paginatedQueryDefaults,
   });
 }

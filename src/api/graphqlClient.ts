@@ -74,6 +74,9 @@ function mergeWithTimeoutSignal(
 }
 
 function shouldRetry(error: GraphQLRequestError): boolean {
+  if (error.message.startsWith("Timeout:")) {
+    return false;
+  }
   if (error.graphqlErrors?.length) {
     return false;
   }
