@@ -175,7 +175,8 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
             </p>
             <h2 className="text-xl font-extrabold text-foreground">Recorte e filtros reais do banco</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Busca ampla e filtros exatos do contrato oficial, todos sincronizados com a URL.
+              Busca ampla, filtros exatos e filtros parciais do contrato oficial, todos sincronizados
+              com a URL.
             </p>
           </div>
 
@@ -272,9 +273,10 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
 
         <div className="rounded-3xl border border-border/70 bg-background/70 p-4">
           <div className="mb-4">
-            <h3 className="text-sm font-bold text-foreground">Filtros exatos</h3>
+            <h3 className="text-sm font-bold text-foreground">Filtros reais do banco</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Campos reais do banco para recortes mais precisos, com debounce para nao martelar a API.
+              Codigos, processo, PCDP e CPF funcionam como filtro exato. Nome, cargo, funcao,
+              destino, motivo e situacao usam busca parcial com debounce.
             </p>
           </div>
 
