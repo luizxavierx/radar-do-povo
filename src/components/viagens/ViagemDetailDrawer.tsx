@@ -90,8 +90,6 @@ const ViagemDetailDrawer = ({
               <DrawerDescription className="max-w-3xl text-sm text-muted-foreground">
                 {viagem?.cargo || viagem?.funcao || viagem?.descricaoFuncao || "Cargo nao informado"}
                 {" | "}
-                {detail?.politico?.partido || "Partido nao informado"}
-                {" | "}
                 processo {viagem?.processoId || "-"}
                 {viagem?.pcdp ? ` | pcdp ${viagem.pcdp}` : ""}
               </DrawerDescription>
