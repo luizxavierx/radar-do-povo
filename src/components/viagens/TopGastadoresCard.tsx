@@ -74,8 +74,7 @@ const TopGastadoresCard = ({
             </div>
             <div className="mt-3 flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">
-                {(item.totalViagens ?? 0).toLocaleString("pt-BR")} viagens |{" "}
-                {(item.totalTrechos ?? 0).toLocaleString("pt-BR")} trechos
+                {(item.totalViagens ?? 0).toLocaleString("pt-BR")} viagens no recorte
               </span>
               <span className="font-semibold text-primary">
                 {formatCents(item.totalGastoLiquidoCents)}

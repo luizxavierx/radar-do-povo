@@ -35,6 +35,12 @@ interface ViagensRequestOptions {
   includeTotal?: boolean;
 }
 
+interface ResumoViagensRequestOptions {
+  signal?: AbortSignal;
+  includePagamentos?: boolean;
+  includeTrechos?: boolean;
+}
+
 function trimOrUndefined(value?: string): string | undefined {
   const normalized = (value || "").trim();
   return normalized || undefined;
@@ -132,10 +138,14 @@ export function applyRecorteToViagensFilter(
 
 export async function fetchResumoViagens(
   filtro?: RankingViagemFiltroInput,
-  options?: { signal?: AbortSignal }
+  options?: ResumoViagensRequestOptions
 ) {
   return restRequest<ResumoViagens>("/api/viagens/resumo", {
-    params: filtroParams(filtro),
+    params: {
+      ...filtroParams(filtro),
+      includePagamentos: options?.includePagamentos ?? true,
+      includeTrechos: options?.includeTrechos ?? true,
+    },
     signal: options?.signal,
     timeoutMs: TRAVEL_DASHBOARD_TIMEOUT_MS,
     retries: 0,

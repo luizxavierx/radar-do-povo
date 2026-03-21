@@ -64,7 +64,7 @@ const TopViajantesCard = ({
                   {item.nomeViajante || "-"}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  {item.cargo || item.funcao || item.descricaoFuncao || "Cargo nao informado"}
+                  {item.cargo || item.funcao || "Cargo nao informado"}
                 </p>
               </div>
               <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
@@ -74,8 +74,7 @@ const TopViajantesCard = ({
             </div>
             <div className="mt-3 flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">
-                {(item.totalViagens ?? 0).toLocaleString("pt-BR")} viagens |{" "}
-                {(item.totalTrechos ?? 0).toLocaleString("pt-BR")} trechos
+                {(item.totalViagens ?? 0).toLocaleString("pt-BR")} viagens no recorte
               </span>
               <span className="font-semibold text-primary">
                 {formatCents(item.totalGastoLiquidoCents)}

@@ -168,6 +168,7 @@ const ViagensPage = () => {
   const [selectedViagem, setSelectedViagem] = useState<Viagem | null>(null);
   const [peopleRankingsReady, setPeopleRankingsReady] = useState(false);
   const [orgaoRankingsReady, setOrgaoRankingsReady] = useState(false);
+  const [summaryComplementReady, setSummaryComplementReady] = useState(false);
 
   const filters = useMemo(() => buildFilterState(searchParams), [searchParams]);
   const currentPage = parsePage(searchParams.get("page"));
@@ -199,7 +200,10 @@ const ViagensPage = () => {
   const normalizedFilter = useMemo(() => normalizeViagensFilter(apiFilter), [apiFilter]);
   const recorteInfo = recorteMeta[filters.recorte];
 
-  const resumoQuery = useResumoViagens(apiFilter);
+  const resumoCoreQuery = useResumoViagens(apiFilter, {
+    includePagamentos: false,
+    includeTrechos: false,
+  });
   const viagensPainelQuery = useViagensPainel(apiFilter, tablePagination, {
     includeTotal: false,
   });
@@ -219,6 +223,11 @@ const ViagensPage = () => {
       enabled: orgaoRankingsReady,
     }
   );
+  const resumoComplementoQuery = useResumoViagens(apiFilter, {
+    enabled: summaryComplementReady,
+    includePagamentos: true,
+    includeTrechos: true,
+  });
   const detalheQuery = useDetalheViagem(
     selectedViagem
       ? {
@@ -248,14 +257,7 @@ const ViagensPage = () => {
   useEffect(() => {
     setPeopleRankingsReady(false);
     setOrgaoRankingsReady(false);
-
-    const peopleTimer = window.setTimeout(() => setPeopleRankingsReady(true), 600);
-    const orgaoTimer = window.setTimeout(() => setOrgaoRankingsReady(true), 1400);
-
-    return () => {
-      window.clearTimeout(peopleTimer);
-      window.clearTimeout(orgaoTimer);
-    };
+    setSummaryComplementReady(false);
   }, [
     filters.recorte,
     filters.anoInicio,
@@ -273,6 +275,32 @@ const ViagensPage = () => {
     filters.destino,
     filters.motivo,
   ]);
+
+  const baseWaveSettled = !resumoCoreQuery.isFetching && !viagensPainelQuery.isFetching;
+  const peopleWaveSettled =
+    peopleRankingsReady && !topViajantesQuery.isFetching && !topGastadoresQuery.isFetching;
+  const orgaoWaveSettled =
+    orgaoRankingsReady &&
+    !topOrgaosSuperioresQuery.isFetching &&
+    !topOrgaosSolicitantesQuery.isFetching;
+
+  useEffect(() => {
+    if (baseWaveSettled && !peopleRankingsReady) {
+      setPeopleRankingsReady(true);
+    }
+  }, [baseWaveSettled, peopleRankingsReady]);
+
+  useEffect(() => {
+    if (peopleWaveSettled && !orgaoRankingsReady) {
+      setOrgaoRankingsReady(true);
+    }
+  }, [orgaoRankingsReady, peopleWaveSettled]);
+
+  useEffect(() => {
+    if (orgaoWaveSettled && !summaryComplementReady) {
+      setSummaryComplementReady(true);
+    }
+  }, [orgaoWaveSettled, summaryComplementReady]);
 
   useEffect(() => {
     setSelectedViagem(null);
@@ -300,7 +328,9 @@ const ViagensPage = () => {
     if (!data) return;
 
     const nextOffset = data.offset + data.limit;
-    if (nextOffset >= data.total) return;
+    const totalForPrefetch =
+      data.total > 0 ? data.total : resumoCoreQuery.data?.totalViagens ?? 0;
+    if (nextOffset >= totalForPrefetch) return;
 
     const nextPagination = normalizePagination(
       { limit: data.limit, offset: nextOffset },
@@ -313,9 +343,20 @@ const ViagensPage = () => {
         fetchViagensPainel(normalizedFilter, nextPagination, { signal, includeTotal: false }),
       staleTime: 60_000,
     });
-  }, [normalizedFilter, queryClient, viagensPainelQuery.data]);
+  }, [normalizedFilter, queryClient, resumoCoreQuery.data?.totalViagens, viagensPainelQuery.data]);
 
-  const totalViagensPainel = resumoQuery.data?.totalViagens ?? viagensPainelQuery.data?.total ?? 0;
+  const resumoData = useMemo(
+    () =>
+      resumoComplementoQuery.data
+        ? {
+            ...resumoCoreQuery.data,
+            ...resumoComplementoQuery.data,
+          }
+        : resumoCoreQuery.data,
+    [resumoComplementoQuery.data, resumoCoreQuery.data]
+  );
+
+  const totalViagensPainel = resumoData?.totalViagens ?? viagensPainelQuery.data?.total ?? 0;
   const viagensTableData = useMemo(() => {
     if (!viagensPainelQuery.data) {
       return undefined;
@@ -477,10 +518,16 @@ const ViagensPage = () => {
             <ViagensFilters value={filters} onChange={updateFilters} onReset={handleReset} />
 
             <ViagensKpis
-              data={resumoQuery.data}
-              isLoading={resumoQuery.isLoading}
-              error={(resumoQuery.error as Error | null) || null}
-              onRetry={() => void resumoQuery.refetch()}
+              data={resumoData}
+              isLoading={resumoCoreQuery.isLoading}
+              isComplementLoading={!summaryComplementReady || resumoComplementoQuery.isFetching}
+              error={(resumoCoreQuery.error as Error | null) || null}
+              onRetry={() => {
+                void resumoCoreQuery.refetch();
+                if (summaryComplementReady) {
+                  void resumoComplementoQuery.refetch();
+                }
+              }}
             />
 
             <section className="grid gap-4 xl:grid-cols-4">
@@ -570,9 +617,9 @@ const ViagensPage = () => {
                     Estrategia de carregamento
                   </p>
                   <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                    <p>1. KPIs e tabela principal carregam primeiro.</p>
-                    <p>2. Rankings entram em ondas curtas para evitar pico no backend.</p>
-                    <p>3. Tabela usa pagina 20 e prefetch da proxima pagina.</p>
+                    <p>1. Resumo rapido e tabela principal carregam primeiro.</p>
+                    <p>2. Rankings de pessoas entram depois, seguidos pelos orgaos.</p>
+                    <p>3. Totais pesados de pagamentos e trechos entram por ultimo.</p>
                     <p>4. Drawer so abre detalhe real quando o usuario pede.</p>
                   </div>
                 </section>

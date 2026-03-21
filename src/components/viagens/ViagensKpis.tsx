@@ -17,10 +17,33 @@ interface ViagensKpisProps {
   data?: ResumoViagens;
   isLoading: boolean;
   error?: Error | null;
+  isComplementLoading?: boolean;
   onRetry: () => void;
 }
 
-const ViagensKpis = ({ data, isLoading, error, onRetry }: ViagensKpisProps) => {
+function moneyValue(value?: string, isPending?: boolean) {
+  if (value !== undefined) {
+    return formatCents(value);
+  }
+
+  return isPending ? "..." : "R$ 0,00";
+}
+
+function countValue(value?: number, isPending?: boolean) {
+  if (value !== undefined) {
+    return value.toLocaleString("pt-BR");
+  }
+
+  return isPending ? "..." : "0";
+}
+
+const ViagensKpis = ({
+  data,
+  isLoading,
+  error,
+  isComplementLoading = false,
+  onRetry,
+}: ViagensKpisProps) => {
   if (isLoading) {
     return (
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -53,8 +76,12 @@ const ViagensKpis = ({ data, isLoading, error, onRetry }: ViagensKpisProps) => {
       />
       <StatsCard
         label="Pagamentos"
-        value={formatCents(data?.totalPagamentosCents)}
-        description="Total somado da tabela pagamentos"
+        value={moneyValue(data?.totalPagamentosCents, isComplementLoading)}
+        description={
+          isComplementLoading
+            ? "Complemento pesado carregando em segundo plano"
+            : "Total somado da tabela pagamentos"
+        }
         icon={Banknote}
         variant="green"
       />
@@ -88,8 +115,12 @@ const ViagensKpis = ({ data, isLoading, error, onRetry }: ViagensKpisProps) => {
       />
       <StatsCard
         label="Trechos"
-        value={(data?.totalTrechos ?? 0).toLocaleString("pt-BR")}
-        description="Total somado da tabela trechos"
+        value={countValue(data?.totalTrechos, isComplementLoading)}
+        description={
+          isComplementLoading
+            ? "Complemento pesado carregando em segundo plano"
+            : "Total somado da tabela trechos"
+        }
         icon={Building2}
         variant="green"
       />
