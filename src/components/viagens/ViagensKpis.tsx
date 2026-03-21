@@ -1,4 +1,5 @@
 import {
+  Banknote,
   Building2,
   CreditCard,
   Plane,
@@ -22,8 +23,8 @@ interface ViagensKpisProps {
 const ViagensKpis = ({ data, isLoading, error, onRetry }: ViagensKpisProps) => {
   if (isLoading) {
     return (
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, index) => (
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
           <Skeleton key={index} className="h-28 w-full rounded-2xl" />
         ))}
       </section>
@@ -35,7 +36,7 @@ const ViagensKpis = ({ data, isLoading, error, onRetry }: ViagensKpisProps) => {
   }
 
   return (
-    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatsCard
         label="Gasto liquido"
         value={formatCents(data?.totalGastoLiquidoCents)}
@@ -46,39 +47,51 @@ const ViagensKpis = ({ data, isLoading, error, onRetry }: ViagensKpisProps) => {
       <StatsCard
         label="Gasto bruto"
         value={formatCents(data?.totalGastoBrutoCents)}
-        description="Total agregado da API"
+        description="Diarias, passagens e outros gastos"
         icon={CreditCard}
         variant="blue"
       />
       <StatsCard
+        label="Pagamentos"
+        value={formatCents(data?.totalPagamentosCents)}
+        description="Total somado da tabela pagamentos"
+        icon={Banknote}
+        variant="green"
+      />
+      <StatsCard
+        label="Passagens"
+        value={formatCents(data?.totalPassagensCents)}
+        description="Valor informado nas viagens"
+        icon={CreditCard}
+        variant="blue"
+      />
+      <StatsCard
+        label="Diarias"
+        value={formatCents(data?.totalDiariasCents)}
+        description="Valor informado nas viagens"
+        icon={Route}
+        variant="yellow"
+      />
+      <StatsCard
         label="Viagens"
-        value={String(data?.totalViagens ?? 0)}
-        description="Quantidade total no recorte"
+        value={(data?.totalViagens ?? 0).toLocaleString("pt-BR")}
+        description="Processos distintos no recorte"
         icon={Plane}
         variant="yellow"
       />
       <StatsCard
         label="Viajantes"
-        value={String(data?.totalViajantes ?? 0)}
-        description="Pessoas no recorte"
+        value={(data?.totalViajantes ?? 0).toLocaleString("pt-BR")}
+        description="Chave distinta por CPF ou nome"
         icon={Users}
         variant="blue"
       />
       <StatsCard
-        label="Orgaos"
-        value={String(
-          (data?.totalOrgaosSuperiores ?? 0) + (data?.totalOrgaosSolicitantes ?? 0)
-        )}
-        description="Superiores e solicitantes"
+        label="Trechos"
+        value={(data?.totalTrechos ?? 0).toLocaleString("pt-BR")}
+        description="Total somado da tabela trechos"
         icon={Building2}
         variant="green"
-      />
-      <StatsCard
-        label="Ticket medio"
-        value={formatCents(data?.ticketMedioViagemCents)}
-        description={`${data?.totalTrechos ?? 0} trechos registrados`}
-        icon={Route}
-        variant="yellow"
       />
     </section>
   );
