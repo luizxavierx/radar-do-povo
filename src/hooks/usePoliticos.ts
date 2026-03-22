@@ -129,32 +129,46 @@ export function usePoliticoDetalhe(idOrNome?: { id?: string; nomeCanonico?: stri
   });
 }
 
+export interface PoliticoDossieQueryOptions {
+  anoInicio?: number;
+  anoFim?: number;
+  viagensLimit?: number;
+  viagensOffset?: number;
+  emendasLimit?: number;
+  emendasOffset?: number;
+  passagensLimit?: number;
+  pagamentosLimit?: number;
+  trechosLimit?: number;
+  conveniosLimit?: number;
+  favorecidosLimit?: number;
+}
+
 export function usePoliticoDossieCompleto(
   nome?: string,
-  anoInicio = 2019,
-  anoFim = 2026
+  options: PoliticoDossieQueryOptions = {}
 ) {
   const search = (nome || "").trim();
+  const normalized = {
+    anoInicio: options.anoInicio ?? 2019,
+    anoFim: options.anoFim ?? new Date().getFullYear(),
+    viagensLimit: options.viagensLimit ?? 20,
+    viagensOffset: options.viagensOffset ?? 0,
+    emendasLimit: options.emendasLimit ?? 20,
+    emendasOffset: options.emendasOffset ?? 0,
+    passagensLimit: options.passagensLimit ?? 12,
+    pagamentosLimit: options.pagamentosLimit ?? 12,
+    trechosLimit: options.trechosLimit ?? 12,
+    conveniosLimit: options.conveniosLimit ?? 12,
+    favorecidosLimit: options.favorecidosLimit ?? 12,
+  };
 
   return useQuery({
-    queryKey: ["politico-dossie-completo", search, anoInicio, anoFim],
+    queryKey: ["politico-dossie-completo", search, normalized],
     queryFn: ({ signal }) =>
       restRequest<PoliticoDossieCompleto>(
         `/api/politicos/${encodeURIComponent(search)}/dossie`,
         {
-          params: {
-            anoInicio,
-            anoFim,
-            viagensLimit: 50,
-            viagensOffset: 0,
-            emendasLimit: 50,
-            emendasOffset: 0,
-            passagensLimit: 30,
-            pagamentosLimit: 30,
-            trechosLimit: 30,
-            conveniosLimit: 30,
-            favorecidosLimit: 30,
-          },
+          params: normalized,
           signal,
           timeoutMs: 20_000,
           retries: 0,

@@ -35,7 +35,9 @@ import {
 import type { Emenda, PerfilExterno } from "@/api/types";
 
 const PAGE_SIZE = 10;
-const years = Array.from({ length: 8 }, (_, i) => 2026 - i);
+const CURRENT_YEAR = new Date().getFullYear();
+const DEFAULT_END_YEAR = Math.max(2019, CURRENT_YEAR - 1);
+const years = Array.from({ length: Math.max(CURRENT_YEAR - 2018, 1) }, (_, i) => CURRENT_YEAR - i);
 const pieColors = ["#0f766e", "#2563eb", "#f59e0b", "#ef4444"];
 
 const PoliticoDetalhe = () => {
@@ -43,16 +45,24 @@ const PoliticoDetalhe = () => {
   const navigate = useNavigate();
 
   const [anoInicio, setAnoInicio] = useState(2019);
-  const [anoFim, setAnoFim] = useState(2025);
+  const [anoFim, setAnoFim] = useState(DEFAULT_END_YEAR);
   const [viagensOffset, setViagensOffset] = useState(0);
   const [emendasOffset, setEmendasOffset] = useState(0);
 
   const nomeBusca = decodeURIComponent(id || "").trim();
-  const { data: politico, isLoading, error } = usePoliticoDossieCompleto(
-    nomeBusca,
+  const { data: politico, isLoading, error } = usePoliticoDossieCompleto(nomeBusca, {
     anoInicio,
-    anoFim
-  );
+    anoFim,
+    viagensLimit: PAGE_SIZE,
+    viagensOffset,
+    emendasLimit: PAGE_SIZE,
+    emendasOffset,
+    passagensLimit: 12,
+    pagamentosLimit: 12,
+    trechosLimit: 12,
+    conveniosLimit: 12,
+    favorecidosLimit: 12,
+  });
   const nomePoliticoNoticias = politico
     ? politico.nomeCompleto || politico.nomeCanonico?.replace(/-/g, " ") || nomeBusca.replace(/-/g, " ")
     : "";
@@ -64,17 +74,29 @@ const PoliticoDetalhe = () => {
   } = usePoliticoNoticias(nomePoliticoNoticias, 6);
 
   const gastos = politico?.gastos;
+  const totalDiariasCents = toBigInt(gastos?.totalDiariasCents);
+  const totalPassagensCents = toBigInt(gastos?.totalPassagensCents);
+  const totalOutrosGastosCents = toBigInt(gastos?.totalOutrosGastosCents);
+  const totalDevolucaoCents = toBigInt(gastos?.totalDevolucaoCents);
+  const totalPagamentosCents = toBigInt(gastos?.totalPagamentosCents);
+  const totalGastoBrutoCents =
+    totalDiariasCents + totalPassagensCents + totalOutrosGastosCents;
+  const totalGastoLiquidoCents = totalGastoBrutoCents - totalDevolucaoCents;
+
   const viagensNodes = politico?.viagens?.nodes ?? [];
   const viagensTotalApi = politico?.viagens?.total ?? viagensNodes.length;
-  const viagensTotalView = Math.min(viagensTotalApi, viagensNodes.length);
-  const viagensPage = viagensNodes.slice(viagensOffset, viagensOffset + PAGE_SIZE);
+  const viagensTotalView = viagensTotalApi;
+  const viagensPage = viagensNodes;
 
   const emendasNodes = politico?.emendas?.nodes ?? [];
   const emendasTotalApi = politico?.emendas?.total ?? emendasNodes.length;
-  const emendasTotalView = Math.min(emendasTotalApi, emendasNodes.length);
-  const emendasPage = emendasNodes.slice(emendasOffset, emendasOffset + PAGE_SIZE);
+  const emendasTotalView = emendasTotalApi;
+  const emendasPage = emendasNodes;
 
-  const emendasResumo = useMemo(() => buildEmendasResumo(emendasNodes), [emendasNodes]);
+  const emendasResumo = useMemo(
+    () => politico?.emendasResumo ?? buildEmendasResumo(emendasNodes),
+    [emendasNodes, politico?.emendasResumo]
+  );
 
   const fotoUrl =
     politico?.fotoUrl ||
@@ -85,25 +107,19 @@ const PoliticoDetalhe = () => {
     if (!gastos) return [];
 
     const source = [
-      { name: "Diarias", value: centsToNumber(gastos.totalDiariasCents) },
-      { name: "Passagens", value: centsToNumber(gastos.totalPassagensCents) },
-      { name: "Pagamentos", value: centsToNumber(gastos.totalPagamentosCents) },
-      { name: "Outros", value: centsToNumber(gastos.totalOutrosGastosCents) },
+      { name: "Diarias", value: centsToNumber(totalDiariasCents.toString()) },
+      { name: "Passagens", value: centsToNumber(totalPassagensCents.toString()) },
+      { name: "Outros", value: centsToNumber(totalOutrosGastosCents.toString()) },
     ];
 
     return source.filter((item) => item.value > 0);
-  }, [gastos]);
+  }, [gastos, totalDiariasCents, totalOutrosGastosCents, totalPassagensCents]);
 
   const totalGastos = useMemo(() => {
     if (!gastos) return "R$ 0,00";
-    const total =
-      toBigInt(gastos.totalDiariasCents) +
-      toBigInt(gastos.totalPassagensCents) +
-      toBigInt(gastos.totalPagamentosCents) +
-      toBigInt(gastos.totalOutrosGastosCents);
 
-    return formatCents(total.toString());
-  }, [gastos]);
+    return formatCents(totalGastoLiquidoCents.toString());
+  }, [gastos, totalGastoLiquidoCents]);
 
   const handlePeriodChange = (start: number, end: number) => {
     if (start > end) return;
@@ -227,8 +243,8 @@ const PoliticoDetalhe = () => {
 
               <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <MetricCard
-                  label="Total gastos"
-                  value={formatCentsCompact(totalGastosToCents(gastos))}
+                  label="Gasto liquido em viagens"
+                  value={formatCentsCompact(totalGastoLiquidoCents.toString())}
                   helper={totalGastos}
                   icon={Banknote}
                 />
@@ -266,42 +282,62 @@ const PoliticoDetalhe = () => {
               <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
                   <h2 className="mb-3 text-base font-bold">
-                    Composicao dos gastos ({anoInicio}-{anoFim})
+                    Composicao das viagens ({anoInicio}-{anoFim})
                   </h2>
 
                   {pieData.length === 0 ? (
                     <EmptyState message="Sem valores de gastos para este periodo." />
                   ) : (
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={92}
-                            innerRadius={50}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell
-                                key={entry.name}
-                                fill={pieColors[index % pieColors.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip
-                            formatter={(value: number) =>
-                              value.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL",
-                                maximumFractionDigits: 0,
-                              })
-                            }
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={pieData}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={92}
+                              innerRadius={50}
+                            >
+                              {pieData.map((entry, index) => (
+                                <Cell
+                                  key={entry.name}
+                                  fill={pieColors[index % pieColors.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip
+                              formatter={(value: number) =>
+                                value.toLocaleString("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL",
+                                  maximumFractionDigits: 0,
+                                })
+                              }
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      <div className="space-y-2">
+                        <SummaryRow
+                          label="Gasto bruto"
+                          value={formatCentsCompact(totalGastoBrutoCents.toString())}
+                          helper={formatCents(totalGastoBrutoCents.toString())}
+                        />
+                        <SummaryRow
+                          label="Devolucoes"
+                          value={formatCentsCompact(totalDevolucaoCents.toString())}
+                          helper={formatCents(totalDevolucaoCents.toString())}
+                        />
+                        <SummaryRow
+                          label="Pagamentos registrados"
+                          value={formatCentsCompact(totalPagamentosCents.toString())}
+                          helper={formatCents(totalPagamentosCents.toString())}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -514,26 +550,6 @@ const SummaryRow = ({
     </span>
   </div>
 );
-
-function totalGastosToCents(
-  gastos?:
-    | {
-        totalDiariasCents?: string;
-        totalPassagensCents?: string;
-        totalPagamentosCents?: string;
-        totalOutrosGastosCents?: string;
-      }
-    | undefined
-) {
-  if (!gastos) return "0";
-
-  return (
-    toBigInt(gastos.totalDiariasCents) +
-    toBigInt(gastos.totalPassagensCents) +
-    toBigInt(gastos.totalPagamentosCents) +
-    toBigInt(gastos.totalOutrosGastosCents)
-  ).toString();
-}
 
 const DossieSkeleton = () => (
   <div className="space-y-6">

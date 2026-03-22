@@ -381,6 +381,7 @@ export interface PoliticoDetalhe extends PoliticoResumo {
 export interface PoliticoDossieCompleto extends PoliticoResumo {
   perfilExterno?: PerfilExterno;
   gastos?: GastosAgregados;
+  emendasResumo?: EmendasResumo;
   viagens?: Connection<Viagem>;
   emendas?: Connection<Emenda>;
 }
