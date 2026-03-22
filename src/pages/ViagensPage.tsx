@@ -391,11 +391,14 @@ const ViagensPage = () => {
 
                 <div className="space-y-3">
                   <h1 className="max-w-4xl text-2xl font-extrabold leading-tight text-foreground sm:text-4xl">
-                    Viagens oficiais com leitura clara, gastos simplificados e detalhe sob demanda
+                    Viagens oficiais
+                    <span className="mt-1 block bg-gradient-to-r from-foreground via-primary to-sky-500 bg-clip-text text-transparent">
+                      em foco, com leitura clara e gasto sob medida
+                    </span>
                   </h1>
                   <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
                     Um painel direto para acompanhar quem viajou, quanto foi gasto e quais orgaos
-                    concentraram mais despesas no periodo escolhido.
+                    concentraram mais despesas no periodo escolhido, sem poluir a leitura.
                   </p>
                 </div>
 
@@ -405,6 +408,9 @@ const ViagensPage = () => {
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
                     leitura amigavel para mobile
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
+                    detalhe por processo
                   </span>
                 </div>
               </div>

@@ -10,6 +10,7 @@ import type { Connection, Viagem } from "@/api/types";
 import PaginationControls from "@/components/PaginationControls";
 import { EmptyState, ErrorStateWithRetry } from "@/components/StateViews";
 import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -117,11 +118,11 @@ const ViagensTable = ({
             </p>
             <div>
               <h3 className="text-xl font-extrabold text-foreground">
-                Viagens paginadas com detalhe sob demanda
+                Lista principal de viagens
               </h3>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Veja rapidamente quem viajou, por qual motivo e quanto foi gasto. O detalhe
-                completo fica disponivel so quando voce quiser aprofundar.
+                Veja nomes, orgaos, destinos e valores em uma grade clara. O detalhe completo
+                abre so quando fizer sentido aprofundar.
               </p>
             </div>
           </div>
@@ -216,269 +217,226 @@ const ViagensTable = ({
 
       {!isLoading && !error && rows.length ? (
         <>
-          <div className="mt-5 space-y-3 lg:hidden">
+          <div className="mt-5 overflow-hidden rounded-[28px] border border-border/70 bg-background/90 md:hidden">
             {rows.map((viagem) => {
               const isActive = selectedProcessoId === viagem.processoId;
               const total = getViagemTotalCents(viagem);
-              const breakdown = [
-                {
-                  label: "Diarias",
-                  value: formatCentsCompact(viagem.valorDiariasCents),
-                  helper: formatCents(viagem.valorDiariasCents),
-                },
-                {
-                  label: "Passagens",
-                  value: formatCentsCompact(viagem.valorPassagensCents),
-                  helper: formatCents(viagem.valorPassagensCents),
-                },
-                {
-                  label: "Outros",
-                  value: formatCentsCompact(viagem.valorOutrosGastosCents),
-                  helper: formatCents(viagem.valorOutrosGastosCents),
-                },
-                {
-                  label: "Devolucao",
-                  value: formatCentsCompact(viagem.valorDevolucaoCents),
-                  helper: formatCents(viagem.valorDevolucaoCents),
-                },
-              ];
 
               return (
-                <article
+                <button
                   key={viagem.processoId || `${viagem.nomeViajante}-${viagem.dataInicio}`}
-                  className={`overflow-hidden rounded-[28px] border p-4 shadow-sm transition-colors ${
+                  type="button"
+                  onClick={() => onOpenDetail(viagem)}
+                  className={`block w-full border-b border-border/70 p-4 text-left transition-colors last:border-b-0 ${
                     isActive
                       ? "border-primary/30 bg-primary/5"
-                      : "border-border/70 bg-background/85"
+                      : "bg-background/85 hover:bg-slate-50"
                   }`}
                 >
-                  <div className="rounded-[24px] border border-border/60 bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-foreground">
-                          {viagem.nomeViajante || "-"}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {viagem.cargo || viagem.funcao || viagem.descricaoFuncao || "Cargo nao informado"}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-base font-extrabold text-foreground">
-                          {formatCentsCompact(total.toString())}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {formatCents(total.toString())}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-                      {viagem.situacao ? (
-                        <span className="rounded-full border border-border bg-card px-2 py-1">
-                          {viagem.situacao}
-                        </span>
-                      ) : null}
-                      {viagem.viagemUrgente ? (
-                        <span className="rounded-full border border-amber-300/50 bg-amber-50 px-2 py-1 text-amber-700">
-                          urgente
-                        </span>
-                      ) : null}
-                      {viagem.ano ? (
-                        <span className="rounded-full border border-border bg-card px-2 py-1">
-                          ano {viagem.ano}
-                        </span>
-                      ) : null}
-                      {viagem.processoId ? (
-                        <span className="rounded-full border border-border bg-card px-2 py-1">
-                          processo {viagem.processoId}
-                        </span>
-                      ) : null}
-                      {viagem.pcdp ? (
-                        <span className="rounded-full border border-border bg-card px-2 py-1">
-                          pcdp {viagem.pcdp}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-3 rounded-[24px] border border-border/60 bg-card/70 p-4 text-xs">
-                    <div>
-                      <p className="font-semibold text-foreground">Periodo</p>
-                      <p className="mt-1 text-muted-foreground">
-                        {formatDate(viagem.dataInicio)} ate {formatDate(viagem.dataFim)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">Destino e motivo</p>
-                      <p className="mt-1 text-muted-foreground">
-                        {viagem.destinos || "Destino nao informado"}
-                      </p>
-                      <p className="mt-1 line-clamp-2 text-muted-foreground">
-                        {viagem.motivo || "Motivo nao informado"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">Orgaos</p>
-                      <p className="mt-1 text-muted-foreground">
-                        {viagem.orgaoSuperiorNome || "Orgao superior nao informado"}
-                      </p>
-                      <p className="mt-1 text-muted-foreground">
-                        {viagem.orgaoSolicitanteNome || "Orgao solicitante nao informado"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-[24px] border border-border/60 bg-background/80 p-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold text-foreground">Composicao dos custos</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {breakdown.map((item) => (
-                        <div
-                          key={item.label}
-                          className="rounded-2xl border border-border/60 bg-card/80 p-3"
-                        >
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                            {item.label}
+                  <div className="flex items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="line-clamp-2 text-sm font-bold text-foreground">
+                            {viagem.nomeViajante || "-"}
                           </p>
-                          <p className="mt-2 text-sm font-bold text-foreground">{item.value}</p>
-                          <p className="mt-1 text-[10px] text-muted-foreground">{item.helper}</p>
+                          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                            {viagem.cargo || viagem.funcao || viagem.descricaoFuncao || "Cargo nao informado"}
+                          </p>
                         </div>
-                      ))}
+
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-extrabold text-foreground">
+                            {formatCentsCompact(total.toString())}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {formatCents(total.toString())}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                        {viagem.situacao ? (
+                          <span className="rounded-full border border-border bg-card px-2 py-1">
+                            {viagem.situacao}
+                          </span>
+                        ) : null}
+                        {viagem.viagemUrgente ? (
+                          <span className="rounded-full border border-amber-300/50 bg-amber-50 px-2 py-1 text-amber-700">
+                            urgente
+                          </span>
+                        ) : null}
+                        {viagem.ano ? (
+                          <span className="rounded-full border border-border bg-card px-2 py-1">
+                            ano {viagem.ano}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-3 grid gap-3 rounded-[22px] border border-border/60 bg-white/85 p-3 text-xs sm:grid-cols-[1fr_auto] sm:items-start">
+                        <div className="space-y-2">
+                          <div>
+                            <p className="font-semibold text-foreground">Destino</p>
+                            <p className="mt-1 line-clamp-1 text-muted-foreground">
+                              {viagem.destinos || "Destino nao informado"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">Orgao</p>
+                            <p className="mt-1 line-clamp-1 text-muted-foreground">
+                              {viagem.orgaoSuperiorNome || "Orgao superior nao informado"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-left sm:text-right">
+                          <p className="font-semibold text-foreground">{formatDate(viagem.dataInicio)}</p>
+                          <p className="mt-1 text-muted-foreground">
+                            ate {formatDate(viagem.dataFim)}
+                          </p>
+                          <p className="mt-2 line-clamp-2 text-[11px] text-muted-foreground">
+                            {viagem.motivo || "Motivo nao informado"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="line-clamp-1 text-[11px] text-muted-foreground">
+                          {viagem.orgaoSolicitanteNome || "Orgao solicitante nao informado"}
+                        </p>
+
+                        <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                          Abrir detalhe
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-                    <Button
-                      variant={isActive ? "default" : "outline"}
-                      size="sm"
-                      className="w-full rounded-xl sm:w-auto"
-                      onClick={() => onOpenDetail(viagem)}
-                    >
-                      <ArrowUpRight className="h-4 w-4" />
-                      Abrir detalhe
-                    </Button>
-                  </div>
-                </article>
+                </button>
               );
             })}
           </div>
 
-          <div className="mt-5 hidden min-w-0 overflow-hidden rounded-3xl border border-border/70 bg-background/80 lg:block">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/70 bg-muted/25 hover:bg-muted/25">
-                  <TableHead>Viajante</TableHead>
-                  <TableHead>Orgaos</TableHead>
-                  <TableHead>Periodo</TableHead>
-                  <TableHead>Destino</TableHead>
-                  <TableHead className="text-right">Total estimado</TableHead>
-                  <TableHead className="w-[140px] text-right">Detalhe</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((viagem) => {
-                  const isActive = selectedProcessoId === viagem.processoId;
-                  const total = getViagemTotalCents(viagem);
-
-                  return (
-                    <TableRow
-                      key={viagem.processoId || `${viagem.nomeViajante}-${viagem.dataInicio}`}
-                      className={isActive ? "bg-primary/5" : ""}
-                    >
-                      <TableCell>
-                        <div className="min-w-[220px]">
-                          <p className="text-sm font-semibold text-foreground">
-                            {viagem.nomeViajante || "-"}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {viagem.cargo || viagem.funcao || viagem.descricaoFuncao || "Cargo nao informado"}
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-                            {viagem.situacao ? (
-                              <span className="rounded-full border border-border bg-card px-2 py-1">
-                                {viagem.situacao}
-                              </span>
-                            ) : null}
-                            {viagem.viagemUrgente ? (
-                              <span className="rounded-full border border-amber-300/50 bg-amber-50 px-2 py-1 text-amber-700">
-                                urgente
-                              </span>
-                            ) : null}
-                            {viagem.processoId ? (
-                              <span className="rounded-full border border-border bg-card px-2 py-1">
-                                processo {viagem.processoId}
-                              </span>
-                            ) : null}
-                            {viagem.pcdp ? (
-                              <span className="rounded-full border border-border bg-card px-2 py-1">
-                                pcdp {viagem.pcdp}
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="min-w-[220px] text-xs">
-                          <div className="flex items-center gap-2 text-foreground">
-                            <Landmark className="h-3.5 w-3.5 text-primary" />
-                            <span className="font-medium">
-                              {viagem.orgaoSuperiorNome || "Orgao superior nao informado"}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-muted-foreground">
-                            {viagem.orgaoSolicitanteNome || "Orgao solicitante nao informado"}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="min-w-[140px] text-xs">
-                          <p className="font-medium text-foreground">{formatDate(viagem.dataInicio)}</p>
-                          <p className="mt-1 text-muted-foreground">ate {formatDate(viagem.dataFim)}</p>
-                          {viagem.ano ? (
-                            <p className="mt-2 text-[11px] text-muted-foreground">ano {viagem.ano}</p>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[260px] text-xs">
-                          <p className="font-medium text-foreground">
-                            {viagem.destinos || "Destino nao informado"}
-                          </p>
-                          <p className="mt-1 line-clamp-2 text-muted-foreground">
-                            {viagem.motivo || "Motivo nao informado"}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="inline-flex flex-col items-end gap-1">
-                          <span className="text-sm font-bold text-foreground">
-                            {formatCentsCompact(total.toString())}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            {formatCents(total.toString())}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            passagens {formatCentsCompact(viagem.valorPassagensCents)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant={isActive ? "default" : "outline"}
-                          size="sm"
-                          className="rounded-xl"
-                          onClick={() => onOpenDetail(viagem)}
-                        >
-                          <ArrowUpRight className="h-4 w-4" />
-                          Abrir
-                        </Button>
-                      </TableCell>
+          <div className="mt-5 hidden overflow-hidden rounded-3xl border border-border/70 bg-background/80 md:block">
+            <ScrollArea className="w-full">
+              <div className="min-w-[980px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/70 bg-muted/25 hover:bg-muted/25">
+                      <TableHead>Viajante</TableHead>
+                      <TableHead>Orgaos</TableHead>
+                      <TableHead>Periodo</TableHead>
+                      <TableHead>Destino</TableHead>
+                      <TableHead className="text-right">Total estimado</TableHead>
+                      <TableHead className="w-[140px] text-right">Detalhe</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((viagem) => {
+                      const isActive = selectedProcessoId === viagem.processoId;
+                      const total = getViagemTotalCents(viagem);
+
+                      return (
+                        <TableRow
+                          key={viagem.processoId || `${viagem.nomeViajante}-${viagem.dataInicio}`}
+                          className={isActive ? "bg-primary/5" : ""}
+                        >
+                          <TableCell>
+                            <div className="min-w-[220px]">
+                              <p className="text-sm font-semibold text-foreground">
+                                {viagem.nomeViajante || "-"}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {viagem.cargo || viagem.funcao || viagem.descricaoFuncao || "Cargo nao informado"}
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+                                {viagem.situacao ? (
+                                  <span className="rounded-full border border-border bg-card px-2 py-1">
+                                    {viagem.situacao}
+                                  </span>
+                                ) : null}
+                                {viagem.viagemUrgente ? (
+                                  <span className="rounded-full border border-amber-300/50 bg-amber-50 px-2 py-1 text-amber-700">
+                                    urgente
+                                  </span>
+                                ) : null}
+                                {viagem.processoId ? (
+                                  <span className="rounded-full border border-border bg-card px-2 py-1">
+                                    processo {viagem.processoId}
+                                  </span>
+                                ) : null}
+                                {viagem.pcdp ? (
+                                  <span className="rounded-full border border-border bg-card px-2 py-1">
+                                    pcdp {viagem.pcdp}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="min-w-[220px] text-xs">
+                              <div className="flex items-center gap-2 text-foreground">
+                                <Landmark className="h-3.5 w-3.5 text-primary" />
+                                <span className="font-medium">
+                                  {viagem.orgaoSuperiorNome || "Orgao superior nao informado"}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-muted-foreground">
+                                {viagem.orgaoSolicitanteNome || "Orgao solicitante nao informado"}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="min-w-[140px] text-xs">
+                              <p className="font-medium text-foreground">{formatDate(viagem.dataInicio)}</p>
+                              <p className="mt-1 text-muted-foreground">ate {formatDate(viagem.dataFim)}</p>
+                              {viagem.ano ? (
+                                <p className="mt-2 text-[11px] text-muted-foreground">ano {viagem.ano}</p>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-[260px] text-xs">
+                              <p className="font-medium text-foreground">
+                                {viagem.destinos || "Destino nao informado"}
+                              </p>
+                              <p className="mt-1 line-clamp-2 text-muted-foreground">
+                                {viagem.motivo || "Motivo nao informado"}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex flex-col items-end gap-1">
+                              <span className="text-sm font-bold text-foreground">
+                                {formatCentsCompact(total.toString())}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground">
+                                {formatCents(total.toString())}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                passagens {formatCentsCompact(viagem.valorPassagensCents)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant={isActive ? "default" : "outline"}
+                              size="sm"
+                              className="rounded-xl"
+                              onClick={() => onOpenDetail(viagem)}
+                            >
+                              <ArrowUpRight className="h-4 w-4" />
+                              Abrir
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
 
           <div className="mt-4 rounded-2xl border border-border/70 bg-background/80 p-4">
