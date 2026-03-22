@@ -33,7 +33,7 @@ const StatsCard = ({
   icon: Icon,
 }: StatsCardProps) => (
   <div
-    className={`relative overflow-hidden rounded-2xl border bg-card p-5 shadow-card transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-elevated ${variantStyles[variant].shell}`}
+    className={`relative overflow-hidden rounded-[28px] border bg-card p-5 shadow-card transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-elevated sm:p-6 ${variantStyles[variant].shell}`}
   >
     <div className={`absolute inset-0 bg-gradient-to-br ${variantStyles[variant].gradient} opacity-80`} />
     <div className="relative">
@@ -42,14 +42,14 @@ const StatsCard = ({
           {label}
         </p>
         {Icon ? (
-          <span className="rounded-lg bg-white/70 p-1.5">
+          <span className="rounded-2xl bg-white/80 p-2 shadow-sm">
             <Icon className="h-4 w-4" />
           </span>
         ) : null}
       </div>
-      <p className="mt-2 text-2xl font-bold font-display text-foreground">{value}</p>
-      {helper ? <p className="mt-1 text-[11px] font-medium text-foreground/80">{helper}</p> : null}
-      {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
+      <p className="mt-4 text-2xl font-bold font-display tracking-tight text-foreground">{value}</p>
+      {helper ? <p className="mt-2 text-[11px] font-medium text-foreground/80">{helper}</p> : null}
+      {description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{description}</p> : null}
     </div>
   </div>
 );

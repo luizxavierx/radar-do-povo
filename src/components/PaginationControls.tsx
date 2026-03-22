@@ -1,40 +1,131 @@
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreHorizontal } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  LayoutGrid,
+  ListFilter,
+  MoreHorizontal,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+export type PaginationDensity = "comfortable" | "compact";
 
 interface PaginationControlsProps {
   total: number;
   limit: number;
   offset: number;
   onPageChange: (newOffset: number) => void;
+  density?: PaginationDensity;
+  onDensityChange?: (density: PaginationDensity) => void;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
-const PaginationControls = ({ total, limit, offset, onPageChange }: PaginationControlsProps) => {
+const PaginationControls = ({
+  total,
+  limit,
+  offset,
+  onPageChange,
+  density = "comfortable",
+  onDensityChange,
+  pageSizeOptions = [20, 40, 60],
+  onPageSizeChange,
+}: PaginationControlsProps) => {
   const currentPage = Math.floor(offset / limit) + 1;
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1 && !onDensityChange && !onPageSizeChange) return null;
 
   const pageItems = buildPageItems(currentPage, totalPages);
 
   return (
     <div className="mt-4 rounded-[24px] border border-border/70 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-3 shadow-sm sm:p-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Navegacao da lista
-          </p>
-          <p className="text-sm font-semibold text-foreground">
-            {offset + 1}-{Math.min(offset + limit, total)} de {total.toLocaleString("pt-BR")} viagens
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Pagina {currentPage} de {totalPages.toLocaleString("pt-BR")}
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Navegacao da lista
+            </p>
+            <p className="text-sm font-semibold text-foreground">
+              {total > 0
+                ? `${offset + 1}-${Math.min(offset + limit, total)} de ${total.toLocaleString("pt-BR")} viagens`
+                : "Nenhum resultado nesta pagina"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Pagina {currentPage} de {totalPages.toLocaleString("pt-BR")}
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-[minmax(160px,180px)_minmax(180px,220px)]">
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Itens por pagina
+              </label>
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => onPageSizeChange?.(Number(value))}
+              >
+                <SelectTrigger className="h-11 rounded-2xl bg-white">
+                  <SelectValue placeholder="Itens por pagina" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pageSizeOptions.map((option) => (
+                    <SelectItem key={option} value={String(option)}>
+                      {option} itens
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Densidade da lista
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onDensityChange?.("comfortable")}
+                  className={cn(
+                    "inline-flex h-11 items-center justify-center gap-2 rounded-2xl border bg-white px-3 text-sm font-semibold transition-colors",
+                    density === "comfortable"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border/70 text-foreground hover:bg-muted"
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  Conforto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDensityChange?.("compact")}
+                  className={cn(
+                    "inline-flex h-11 items-center justify-center gap-2 rounded-2xl border bg-white px-3 text-sm font-semibold transition-colors",
+                    density === "compact"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border/70 text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ListFilter className="h-4 w-4" />
+                  Compacta
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-3 lg:min-w-[560px]">
+        {totalPages > 1 ? (
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -112,7 +203,7 @@ const PaginationControls = ({ total, limit, offset, onPageChange }: PaginationCo
               <ChevronsRight className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );

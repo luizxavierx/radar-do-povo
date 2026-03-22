@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
-import { Calendar, ChevronDown, Filter, RefreshCcw, Search, SlidersHorizontal } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  Filter,
+  History,
+  RefreshCcw,
+  Save,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,6 +43,10 @@ interface ViagensFiltersProps {
   value: ViagensFilterState;
   onChange: (patch: Partial<ViagensFilterState>) => void;
   onReset: () => void;
+  onSaveView: () => void;
+  onComparePreviousPeriod: () => void;
+  canComparePreviousPeriod: boolean;
+  savedViewLabel?: string;
 }
 
 type TextFilterKey =
@@ -82,7 +97,6 @@ const fieldMeta: { key: TextFilterKey; label: string; placeholder: string }[] = 
 ];
 
 const currentYear = new Date().getFullYear();
-
 export const travelYears = Array.from({ length: 10 }, (_, index) => currentYear - index);
 
 function pickTextFilters(value: ViagensFilterState): Record<TextFilterKey, string> {
@@ -102,7 +116,15 @@ function pickTextFilters(value: ViagensFilterState): Record<TextFilterKey, strin
   };
 }
 
-const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
+const ViagensFilters = ({
+  value,
+  onChange,
+  onReset,
+  onSaveView,
+  onComparePreviousPeriod,
+  canComparePreviousPeriod,
+  savedViewLabel,
+}: ViagensFiltersProps) => {
   const [textDraft, setTextDraft] = useState<Record<TextFilterKey, string>>(() =>
     pickTextFilters(value)
   );
@@ -166,7 +188,7 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
     <div className="rounded-[28px] border border-border/70 bg-background/70 p-4 sm:p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-bold text-foreground">Filtros reais do banco</h3>
+          <h3 className="text-sm font-bold text-foreground">Campos avancados do banco</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Processo, PCDP, CPF e codigos funcionam como busca exata. Nome, cargo, funcao,
             destino, motivo e situacao usam busca parcial.
@@ -177,25 +199,6 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
           {activeFiltersCount} ativos
         </Badge>
       </div>
-
-      {activeFiltersCount ? (
-        <div className="mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
-          {activeBadges.slice(0, 6).map((badge) => (
-            <Badge
-              key={badge}
-              variant="outline"
-              className="border-border bg-card/80 text-foreground"
-            >
-              {badge}
-            </Badge>
-          ))}
-          {activeFiltersCount > 6 ? (
-            <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
-              +{activeFiltersCount - 6} filtros
-            </Badge>
-          ) : null}
-        </div>
-      ) : null}
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
         {fieldMeta.map((field) => (
@@ -212,6 +215,7 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
                 }))
               }
               placeholder={field.placeholder}
+              className="h-11 rounded-2xl border-border/70 bg-white"
             />
           </div>
         ))}
@@ -220,128 +224,235 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
   );
 
   return (
-    <section className="rounded-[28px] border border-border/75 bg-card/88 p-5 shadow-card sm:p-6">
+    <section className="rounded-[30px] border border-border/75 bg-card/90 p-5 shadow-card sm:p-6">
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-2xl">
             <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
               <Filter className="h-3.5 w-3.5" />
-              Filtros da Area
+              Console de filtros
             </p>
-            <h2 className="text-xl font-extrabold text-foreground">Filtros reais do banco</h2>
+            <h2 className="text-xl font-extrabold text-foreground sm:text-2xl">
+              Refine a leitura sem perder contexto
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Filtre por periodo, nome, processo, orgao e outros campos do contrato oficial sem
-              expor esses dados na URL.
+              Combine periodo, busca e campos oficiais do contrato para chegar rapido ao recorte
+              mais relevante, mantendo a pagina limpa e pronta para leitura comparativa.
             </p>
           </div>
 
-          <button
-            onClick={onReset}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted sm:w-auto"
-          >
-            <RefreshCcw className="h-3.5 w-3.5" />
-            Limpar filtros
-          </button>
+          <div className="grid gap-2 sm:grid-cols-3 xl:w-auto">
+            <Button
+              variant="outline"
+              className="justify-center rounded-2xl bg-white"
+              onClick={onComparePreviousPeriod}
+              disabled={!canComparePreviousPeriod}
+            >
+              <History className="h-4 w-4" />
+              Ano anterior
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-center rounded-2xl bg-white"
+              onClick={onSaveView}
+            >
+              <Save className="h-4 w-4" />
+              {savedViewLabel ? "Visao salva" : "Salvar visao"}
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-center rounded-2xl bg-white"
+              onClick={onReset}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Limpar filtros
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:hidden">
-          <article className="rounded-2xl border border-border/70 bg-background/80 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Periodo
-            </p>
-            <p className="mt-2 text-sm font-bold text-foreground">
-              {value.anoInicio} a {value.anoFim}
-            </p>
-          </article>
-          <article className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
-              Filtros ativos
-            </p>
-            <p className="mt-2 text-sm font-bold text-foreground">
-              {activeFiltersCount
-                ? `${activeFiltersCount} filtro(s) aplicados`
-                : "Nenhum filtro adicional alem do periodo"}
-            </p>
-          </article>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
+          <div className="rounded-[28px] border border-border/70 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Busca principal
+                </label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={textDraft.search}
+                    onChange={(event) =>
+                      setTextDraft((current) => ({ ...current, search: event.target.value }))
+                    }
+                    placeholder="Nome, destino, motivo, cargo, funcao ou orgao"
+                    className="h-11 rounded-2xl border-border/70 bg-white pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Ano inicial
+                </label>
+                <Select
+                  value={String(value.anoInicio)}
+                  onValueChange={(nextValue) => onChange({ anoInicio: Number(nextValue) })}
+                >
+                  <SelectTrigger className="h-11 rounded-2xl bg-white">
+                    <SelectValue placeholder="Selecione o ano inicial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {travelYears.map((year) => (
+                      <SelectItem key={`start-${year}`} value={String(year)}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Ano final
+                </label>
+                <Select
+                  value={String(value.anoFim)}
+                  onValueChange={(nextValue) => onChange({ anoFim: Number(nextValue) })}
+                >
+                  <SelectTrigger className="h-11 rounded-2xl bg-white">
+                    <SelectValue placeholder="Selecione o ano final" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {travelYears.map((year) => (
+                      <SelectItem key={`end-${year}`} value={String(year)}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Situacao
+                </label>
+                <Input
+                  value={textDraft.situacao}
+                  onChange={(event) =>
+                    setTextDraft((current) => ({ ...current, situacao: event.target.value }))
+                  }
+                  placeholder="Ex.: concluida"
+                  className="h-11 rounded-2xl border-border/70 bg-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-2">
+            <article className="rounded-2xl border border-border/70 bg-background/80 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Periodo
+              </p>
+              <p className="mt-2 text-sm font-bold text-foreground">
+                {value.anoInicio} a {value.anoFim}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Recorte base da analise</p>
+            </article>
+            <article className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+                Filtros ativos
+              </p>
+              <p className="mt-2 text-sm font-bold text-foreground">
+                {activeFiltersCount ? `${activeFiltersCount} aplicados` : "Nenhum"}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {savedViewLabel ? savedViewLabel : "Pronto para salvar a visao atual"}
+              </p>
+            </article>
+          </div>
         </div>
 
         <div className="rounded-[28px] border border-border/70 bg-background/60 p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h3 className="text-sm font-bold text-foreground">Busca e periodo base</h3>
+              <h3 className="text-sm font-bold text-foreground">Filtros de apoio</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Comece pelo periodo e pela busca ampla. O restante entra so quando voce precisar
-                refinar.
+                Use orgao, processo, CPF e campos textuais para refinar o recorte sem sobrecarregar
+                a leitura principal.
               </p>
             </div>
+
             {activeFiltersCount ? (
-              <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
-                {activeFiltersCount} filtros ativos
-              </Badge>
+              <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
+                <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                  <Calendar className="mr-1.5 h-3.5 w-3.5" />
+                  {value.anoInicio} a {value.anoFim}
+                </Badge>
+                {activeBadges.slice(0, 5).map((badge) => (
+                  <Badge
+                    key={badge}
+                    variant="outline"
+                    className="border-border bg-background text-foreground"
+                  >
+                    {badge}
+                  </Badge>
+                ))}
+                {activeFiltersCount > 5 ? (
+                  <Badge variant="outline" className="border-border bg-background text-foreground">
+                    +{activeFiltersCount - 5} filtros
+                  </Badge>
+                ) : null}
+              </div>
             ) : null}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="space-y-2 xl:col-span-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="space-y-2">
               <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Busca textual ampla
+                Orgao superior
               </label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={textDraft.search}
-                  onChange={(event) =>
-                    setTextDraft((current) => ({ ...current, search: event.target.value }))
-                  }
-                  placeholder="Nome, cargo, funcao, destino, motivo ou orgao"
-                  className="pl-9"
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Busca parcial com resposta mais suave no mobile.
-              </p>
+              <Input
+                value={textDraft.orgaoSuperiorCodigo}
+                onChange={(event) =>
+                  setTextDraft((current) => ({
+                    ...current,
+                    orgaoSuperiorCodigo: event.target.value,
+                  }))
+                }
+                placeholder="Ex.: 26000"
+                className="h-11 rounded-2xl border-border/70 bg-white"
+              />
             </div>
 
             <div className="space-y-2">
               <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Ano inicial
+                Orgao solicitante
               </label>
-              <Select
-                value={String(value.anoInicio)}
-                onValueChange={(nextValue) => onChange({ anoInicio: Number(nextValue) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o ano inicial" />
-                </SelectTrigger>
-                <SelectContent>
-                  {travelYears.map((year) => (
-                    <SelectItem key={`start-${year}`} value={String(year)}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={textDraft.orgaoSolicitanteCodigo}
+                onChange={(event) =>
+                  setTextDraft((current) => ({
+                    ...current,
+                    orgaoSolicitanteCodigo: event.target.value,
+                  }))
+                }
+                placeholder="Ex.: 26298"
+                className="h-11 rounded-2xl border-border/70 bg-white"
+              />
             </div>
 
             <div className="space-y-2">
               <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Ano final
+                Nome do viajante
               </label>
-              <Select
-                value={String(value.anoFim)}
-                onValueChange={(nextValue) => onChange({ anoFim: Number(nextValue) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o ano final" />
-                </SelectTrigger>
-                <SelectContent>
-                  {travelYears.map((year) => (
-                    <SelectItem key={`end-${year}`} value={String(year)}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={textDraft.nomeViajante}
+                onChange={(event) =>
+                  setTextDraft((current) => ({ ...current, nomeViajante: event.target.value }))
+                }
+                placeholder="Ex.: Kim Kataguiri"
+                className="h-11 rounded-2xl border-border/70 bg-white"
+              />
             </div>
           </div>
         </div>
@@ -354,11 +465,9 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
                   <SlidersHorizontal className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Filtros avancados</p>
+                  <p className="text-sm font-semibold text-foreground">Abrir filtros avancados</p>
                   <p className="text-[11px] text-muted-foreground">
-                    {activeFiltersCount
-                      ? `${activeFiltersCount} filtros aplicados`
-                      : "Abra para filtrar processo, CPF, orgaos e mais"}
+                    Processo, PCDP, CPF, cargo, funcao, destino e motivo
                   </p>
                 </div>
               </div>
@@ -380,11 +489,9 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
                   <SlidersHorizontal className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Filtros avancados</p>
+                  <p className="text-sm font-semibold text-foreground">Mais refinamentos</p>
                   <p className="text-[11px] text-muted-foreground">
-                    {activeFiltersCount
-                      ? `${activeFiltersCount} filtros aplicados`
-                      : "Abra apenas se precisar filtrar processo, CPF, orgaos e outros campos"}
+                    Expanda apenas quando precisar aprofundar a investigacao
                   </p>
                 </div>
               </div>

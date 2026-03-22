@@ -6,8 +6,9 @@ import {
   Plane,
   Wallet,
 } from "lucide-react";
+
 import type { Connection, Viagem } from "@/api/types";
-import PaginationControls from "@/components/PaginationControls";
+import PaginationControls, { type PaginationDensity } from "@/components/PaginationControls";
 import { EmptyState, ErrorStateWithRetry } from "@/components/StateViews";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -40,6 +41,10 @@ interface ViagensTableProps {
   sortBy: ViagensSortKey;
   onSortChange: (nextSort: ViagensSortKey) => void;
   onPageChange: (nextOffset: number) => void;
+  density: PaginationDensity;
+  onDensityChange: (density: PaginationDensity) => void;
+  pageSizeOptions: number[];
+  onPageSizeChange: (pageSize: number) => void;
 }
 
 function getViagemTotalCents(viagem: Viagem): bigint {
@@ -99,6 +104,10 @@ const ViagensTable = ({
   sortBy,
   onSortChange,
   onPageChange,
+  density,
+  onDensityChange,
+  pageSizeOptions,
+  onPageSizeChange,
 }: ViagensTableProps) => {
   const rows = sortRows(data?.nodes ?? [], sortBy);
   const currentPage = data ? Math.floor(data.offset / data.limit) + 1 : 1;
@@ -106,28 +115,33 @@ const ViagensTable = ({
   const pageTotal = rows.reduce((acc, item) => acc + getViagemTotalCents(item), 0n);
   const showingFrom = rows.length ? (data?.offset ?? 0) + 1 : 0;
   const showingTo = rows.length ? (data?.offset ?? 0) + rows.length : 0;
+  const rowPadding = density === "compact" ? "py-3" : "py-5";
+  const mobileRowPadding = density === "compact" ? "p-3" : "p-4";
 
   return (
-    <section className="min-w-0 rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card sm:p-6">
-      <div className="rounded-[28px] border border-border/70 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <section
+      id="viagens-lista"
+      className="min-w-0 rounded-[30px] border border-border/75 bg-card/92 p-5 shadow-card sm:p-6"
+    >
+      <div className="rounded-[30px] border border-border/70 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-2">
             <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
               <Plane className="h-3.5 w-3.5" />
-              Tabela principal
+              Ledger principal
             </p>
             <div>
-              <h3 className="text-xl font-extrabold text-foreground">
-                Lista principal de viagens
+              <h3 className="text-xl font-extrabold text-foreground sm:text-2xl">
+                Viagens no detalhe
               </h3>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Veja nomes, orgaos, destinos e valores em uma grade clara. O detalhe completo
-                abre so quando fizer sentido aprofundar.
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Uma lista premium para cruzar viajante, orgao, periodo, rota e valor total sem
+                perder contexto nem afundar em ruido visual.
               </p>
             </div>
           </div>
 
-          <div className="grid w-full gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[520px]">
+          <div className="grid w-full gap-3 sm:grid-cols-3 xl:w-auto xl:min-w-[560px]">
             <article className="rounded-2xl border border-border/70 bg-white/85 px-4 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Nesta pagina
@@ -164,11 +178,14 @@ const ViagensTable = ({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 border-t border-border/60 pt-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mt-5 flex flex-col gap-3 border-t border-border/60 pt-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
               <Wallet className="h-3.5 w-3.5 text-primary" />
               Total do recorte: {formatCountCompact(data?.total ?? 0)} viagens
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
+              densidade {density === "compact" ? "compacta" : "confortavel"}
             </span>
           </div>
 
@@ -198,7 +215,7 @@ const ViagensTable = ({
       {isLoading ? (
         <div className="space-y-3 pt-5">
           {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-2xl" />
+            <Skeleton key={index} className="h-20 w-full rounded-2xl" />
           ))}
         </div>
       ) : null}
@@ -227,90 +244,70 @@ const ViagensTable = ({
                   key={viagem.processoId || `${viagem.nomeViajante}-${viagem.dataInicio}`}
                   type="button"
                   onClick={() => onOpenDetail(viagem)}
-                  className={`block w-full border-b border-border/70 p-4 text-left transition-colors last:border-b-0 ${
-                    isActive
-                      ? "border-primary/30 bg-primary/5"
-                      : "bg-background/85 hover:bg-slate-50"
-                  }`}
+                  className={`block w-full border-b border-border/70 text-left transition-colors last:border-b-0 ${
+                    isActive ? "bg-primary/5" : "bg-background/85 hover:bg-slate-50"
+                  } ${mobileRowPadding}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="line-clamp-2 text-sm font-bold text-foreground">
-                            {viagem.nomeViajante || "-"}
-                          </p>
-                          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                            {viagem.cargo || viagem.funcao || viagem.descricaoFuncao || "Cargo nao informado"}
-                          </p>
-                        </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="line-clamp-2 text-sm font-bold text-foreground">
+                        {viagem.nomeViajante || "-"}
+                      </p>
+                      <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                        {viagem.cargo || viagem.funcao || viagem.descricaoFuncao || "Cargo nao informado"}
+                      </p>
+                    </div>
 
-                        <div className="shrink-0 text-right">
-                          <p className="text-sm font-extrabold text-foreground">
-                            {formatCentsCompact(total.toString())}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {formatCents(total.toString())}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-bold text-foreground">
+                        {formatCentsCompact(total.toString())}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatCents(total.toString())}
+                      </p>
+                    </div>
+                  </div>
 
-                      <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
-                        {viagem.situacao ? (
-                          <span className="rounded-full border border-border bg-card px-2 py-1">
-                            {viagem.situacao}
-                          </span>
-                        ) : null}
-                        {viagem.viagemUrgente ? (
-                          <span className="rounded-full border border-amber-300/50 bg-amber-50 px-2 py-1 text-amber-700">
-                            urgente
-                          </span>
-                        ) : null}
-                        {viagem.ano ? (
-                          <span className="rounded-full border border-border bg-card px-2 py-1">
-                            ano {viagem.ano}
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="mt-3 grid gap-3 rounded-[22px] border border-border/60 bg-white/85 p-3 text-xs sm:grid-cols-[1fr_auto] sm:items-start">
-                        <div className="space-y-2">
-                          <div>
-                            <p className="font-semibold text-foreground">Destino</p>
-                            <p className="mt-1 line-clamp-1 text-muted-foreground">
-                              {viagem.destinos || "Destino nao informado"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="font-semibold text-foreground">Orgao</p>
-                            <p className="mt-1 line-clamp-1 text-muted-foreground">
-                              {viagem.orgaoSuperiorNome || "Orgao superior nao informado"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-left sm:text-right">
-                          <p className="font-semibold text-foreground">{formatDate(viagem.dataInicio)}</p>
-                          <p className="mt-1 text-muted-foreground">
-                            ate {formatDate(viagem.dataFim)}
-                          </p>
-                          <p className="mt-2 line-clamp-2 text-[11px] text-muted-foreground">
-                            {viagem.motivo || "Motivo nao informado"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <p className="line-clamp-1 text-[11px] text-muted-foreground">
-                          {viagem.orgaoSolicitanteNome || "Orgao solicitante nao informado"}
+                  <div className="mt-3 grid gap-3 rounded-[22px] border border-border/60 bg-white/90 p-3 text-xs">
+                    <div className="grid grid-cols-[1fr_auto] gap-3">
+                      <div>
+                        <p className="font-semibold text-foreground">Destino</p>
+                        <p className="mt-1 line-clamp-1 text-muted-foreground">
+                          {viagem.destinos || "Destino nao informado"}
                         </p>
-
-                        <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-                          Abrir detalhe
-                          <ArrowUpRight className="h-3.5 w-3.5" />
-                        </span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">{formatDate(viagem.dataInicio)}</p>
+                        <p className="mt-1 text-muted-foreground">ate {formatDate(viagem.dataFim)}</p>
                       </div>
                     </div>
+
+                    <div>
+                      <p className="font-semibold text-foreground">Orgao</p>
+                      <p className="mt-1 line-clamp-1 text-muted-foreground">
+                        {viagem.orgaoSuperiorNome || "Orgao superior nao informado"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                      {viagem.situacao ? (
+                        <span className="rounded-full border border-border bg-card px-2 py-1">
+                          {viagem.situacao}
+                        </span>
+                      ) : null}
+                      {viagem.viagemUrgente ? (
+                        <span className="rounded-full border border-amber-300/50 bg-amber-50 px-2 py-1 text-amber-700">
+                          urgente
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                      Abrir
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    </span>
                   </div>
                 </button>
               );
@@ -319,16 +316,20 @@ const ViagensTable = ({
 
           <div className="mt-5 hidden overflow-hidden rounded-3xl border border-border/70 bg-background/80 md:block">
             <ScrollArea className="w-full">
-              <div className="min-w-[980px]">
+              <div className="min-w-[1040px]">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border/70 bg-muted/25 hover:bg-muted/25">
-                      <TableHead>Viajante</TableHead>
-                      <TableHead>Orgaos</TableHead>
-                      <TableHead>Periodo</TableHead>
-                      <TableHead>Destino</TableHead>
-                      <TableHead className="text-right">Total estimado</TableHead>
-                      <TableHead className="w-[140px] text-right">Detalhe</TableHead>
+                      <TableHead className="sticky top-0 z-10 bg-muted/85 backdrop-blur">Viajante</TableHead>
+                      <TableHead className="sticky top-0 z-10 bg-muted/85 backdrop-blur">Orgaos</TableHead>
+                      <TableHead className="sticky top-0 z-10 bg-muted/85 backdrop-blur">Periodo</TableHead>
+                      <TableHead className="sticky top-0 z-10 bg-muted/85 backdrop-blur">Destino</TableHead>
+                      <TableHead className="sticky top-0 z-10 bg-muted/85 text-right backdrop-blur">
+                        Total estimado
+                      </TableHead>
+                      <TableHead className="sticky top-0 z-10 w-[140px] bg-muted/85 text-right backdrop-blur">
+                        Detalhe
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -341,8 +342,8 @@ const ViagensTable = ({
                           key={viagem.processoId || `${viagem.nomeViajante}-${viagem.dataInicio}`}
                           className={isActive ? "bg-primary/5" : ""}
                         >
-                          <TableCell>
-                            <div className="min-w-[220px]">
+                          <TableCell className={rowPadding}>
+                            <div className="min-w-[240px]">
                               <p className="text-sm font-semibold text-foreground">
                                 {viagem.nomeViajante || "-"}
                               </p>
@@ -365,15 +366,10 @@ const ViagensTable = ({
                                     processo {viagem.processoId}
                                   </span>
                                 ) : null}
-                                {viagem.pcdp ? (
-                                  <span className="rounded-full border border-border bg-card px-2 py-1">
-                                    pcdp {viagem.pcdp}
-                                  </span>
-                                ) : null}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className={rowPadding}>
                             <div className="min-w-[220px] text-xs">
                               <div className="flex items-center gap-2 text-foreground">
                                 <Landmark className="h-3.5 w-3.5 text-primary" />
@@ -386,8 +382,8 @@ const ViagensTable = ({
                               </p>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="min-w-[140px] text-xs">
+                          <TableCell className={rowPadding}>
+                            <div className="min-w-[150px] text-xs">
                               <p className="font-medium text-foreground">{formatDate(viagem.dataInicio)}</p>
                               <p className="mt-1 text-muted-foreground">ate {formatDate(viagem.dataFim)}</p>
                               {viagem.ano ? (
@@ -395,8 +391,8 @@ const ViagensTable = ({
                               ) : null}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="max-w-[260px] text-xs">
+                          <TableCell className={rowPadding}>
+                            <div className="max-w-[280px] text-xs">
                               <p className="font-medium text-foreground">
                                 {viagem.destinos || "Destino nao informado"}
                               </p>
@@ -405,7 +401,7 @@ const ViagensTable = ({
                               </p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className={`${rowPadding} text-right`}>
                             <div className="inline-flex flex-col items-end gap-1">
                               <span className="text-sm font-bold text-foreground">
                                 {formatCentsCompact(total.toString())}
@@ -418,7 +414,7 @@ const ViagensTable = ({
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className={`${rowPadding} text-right`}>
                             <Button
                               variant={isActive ? "default" : "outline"}
                               size="sm"
@@ -439,14 +435,16 @@ const ViagensTable = ({
             </ScrollArea>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-border/70 bg-background/80 p-4">
-            <PaginationControls
-              total={data?.total ?? 0}
-              limit={data?.limit ?? 20}
-              offset={data?.offset ?? 0}
-              onPageChange={onPageChange}
-            />
-          </div>
+          <PaginationControls
+            total={data?.total ?? 0}
+            limit={data?.limit ?? 20}
+            offset={data?.offset ?? 0}
+            onPageChange={onPageChange}
+            density={density}
+            onDensityChange={onDensityChange}
+            pageSizeOptions={pageSizeOptions}
+            onPageSizeChange={onPageSizeChange}
+          />
         </>
       ) : null}
     </section>

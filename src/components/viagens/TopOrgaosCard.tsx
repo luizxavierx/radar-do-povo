@@ -1,9 +1,8 @@
-import { Building2 } from "lucide-react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
+import { Building2, Landmark } from "lucide-react";
 
 import type { Connection, ViagemOrgaoRanking } from "@/api/types";
 import { EmptyState, ErrorStateWithRetry, LoadingState } from "@/components/StateViews";
-import { centsToNumber, formatCents, formatCentsCompact } from "@/lib/formatters";
+import { centsToNumber, formatCents, formatCentsCompact, formatCountCompact } from "@/lib/formatters";
 
 interface TopOrgaosCardProps {
   title: string;
@@ -14,8 +13,6 @@ interface TopOrgaosCardProps {
   onRetry: () => void;
 }
 
-const chartPalette = ["#0f766e", "#2563eb", "#f59e0b", "#ef4444", "#7c3aed"];
-
 const TopOrgaosCard = ({
   title,
   description,
@@ -24,138 +21,137 @@ const TopOrgaosCard = ({
   error,
   onRetry,
 }: TopOrgaosCardProps) => {
-  const chartNodes = data?.nodes.slice(0, 5) ?? [];
-  const chartData = chartNodes.map((item, index) => ({
-    name: item.nomeOrgao || `Orgao ${index + 1}`,
-    value: centsToNumber(item.totalGastoLiquidoCents),
-    color: chartPalette[index % chartPalette.length],
-    viagens: item.totalViagens ?? 0,
-    codigo: item.codigoOrgao || "-",
-    bruto: formatCents(item.totalGastoLiquidoCents),
-    compacto: formatCentsCompact(item.totalGastoLiquidoCents),
-  }));
+  const nodes = data?.nodes.slice(0, 5) ?? [];
+  const leader = nodes[0];
+  const maxValue = Math.max(...nodes.map((item) => centsToNumber(item.totalGastoLiquidoCents)), 1);
 
   return (
-    <section className="rounded-3xl border border-border/75 bg-card/85 p-5 shadow-card sm:p-6">
-      <div className="mb-4 flex items-center gap-3">
+    <section className="rounded-[30px] border border-border/75 bg-card/88 p-5 shadow-card sm:p-6">
+      <div className="mb-5 flex items-start gap-3">
         <div className="rounded-2xl bg-gradient-soft p-3 text-primary">
           <Building2 className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="text-base font-bold">{title}</h3>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Orgaos
+          </p>
+          <h3 className="text-lg font-bold text-foreground">{title}</h3>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
 
       {isLoading ? <LoadingState message={`Carregando ${title.toLowerCase()}...`} /> : null}
       {error ? <ErrorStateWithRetry error={error} onRetry={onRetry} /> : null}
-      {!isLoading && !error && !data?.nodes.length ? (
+      {!isLoading && !error && !nodes.length ? (
         <EmptyState message="Nenhum orgao retornado para este recorte." />
       ) : null}
 
-      {!isLoading && !error && chartData.length ? (
-        <div className="mb-4 rounded-2xl border border-border/70 bg-background/85 p-3">
-          <div className="mb-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Distribuicao por gasto
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Leitura visual dos 5 orgaos com maior gasto liquido.
-            </p>
+      {!isLoading && !error && leader ? (
+        <div className="rounded-[28px] border border-primary/15 bg-gradient-to-br from-primary/8 via-white to-cyan-50 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl bg-white p-2 text-primary shadow-sm">
+              <Landmark className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                Maior concentracao
+              </p>
+              <h4 className="mt-2 text-lg font-bold text-foreground">{leader.nomeOrgao || "-"}</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                codigo {leader.codigoOrgao || "-"} |{" "}
+                {formatCountCompact(leader.totalViagens ?? 0)} viagens
+              </p>
+            </div>
           </div>
 
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={78}
-                  innerRadius={42}
-                  paddingAngle={3}
-                >
-                  {chartData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip
-                  formatter={(value: number, _name, payload) => {
-                    const item = payload?.payload as
-                      | { bruto?: string; viagens?: number }
-                      | undefined;
-                    return [item?.bruto || value, `${item?.viagens || 0} viagens`];
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="mt-3 grid grid-cols-1 gap-2">
-            {chartData.map((item) => (
-              <div
-                key={`${item.codigo}-${item.name}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/80 px-3 py-2"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <p className="truncate text-xs font-semibold text-foreground">{item.name}</p>
-                  </div>
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    Codigo {item.codigo} | {item.viagens.toLocaleString("pt-BR")} viagens
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-semibold text-primary">{item.compacto}</p>
-                  <p className="text-[10px] text-muted-foreground">{item.bruto}</p>
-                </div>
-              </div>
-            ))}
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <article className="rounded-2xl border border-border/70 bg-white/90 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Gasto liquido
+              </p>
+              <p className="mt-2 text-base font-bold text-foreground">
+                {formatCentsCompact(leader.totalGastoLiquidoCents)}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-border/70 bg-white/90 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Valor exato
+              </p>
+              <p className="mt-2 text-sm font-semibold text-foreground">
+                {formatCents(leader.totalGastoLiquidoCents)}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-border/70 bg-white/90 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Viajantes
+              </p>
+              <p className="mt-2 text-base font-bold text-foreground">
+                {formatCountCompact(leader.totalViajantes ?? 0)}
+              </p>
+            </article>
           </div>
         </div>
       ) : null}
 
-      <div className="space-y-2">
-        {data?.nodes.slice(0, 5).map((item, index) => (
-          <article
-            key={`${item.codigoOrgao || item.nomeOrgao}-${index}`}
-            className="rounded-2xl border border-border/70 bg-background/90 px-3 py-3"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-xs font-bold uppercase tracking-wide text-foreground">
-                  {item.nomeOrgao || "-"}
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Codigo {item.codigoOrgao || "-"}
-                </p>
-              </div>
-              <span className="rounded-full border border-border bg-card px-2 py-1 text-[10px] font-bold text-foreground">
-                #{index + 1}
-              </span>
-            </div>
-            <div className="mt-3 flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground">
-                {(item.totalViagens ?? 0).toLocaleString("pt-BR")} viagens
-              </span>
-              <div className="text-right">
-                <span className="block font-semibold text-primary">
-                  {formatCentsCompact(item.totalGastoLiquidoCents)}
-                </span>
-                <span className="block text-[10px] text-muted-foreground">
-                  {formatCents(item.totalGastoLiquidoCents)}
-                </span>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+      {!isLoading && !error && nodes.length ? (
+        <div className="mt-4 space-y-3">
+          {nodes.map((item, index) => {
+            const value = centsToNumber(item.totalGastoLiquidoCents);
+            const width = `${Math.max((value / maxValue) * 100, 8)}%`;
+
+            return (
+              <article
+                key={`${item.codigoOrgao || item.nomeOrgao}-${index}`}
+                className="rounded-[24px] border border-border/70 bg-background/90 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                        {index + 1}
+                      </span>
+                      <p className="truncate text-sm font-bold text-foreground">
+                        {item.nomeOrgao || "-"}
+                      </p>
+                    </div>
+                    <p className="mt-1 pl-9 text-xs text-muted-foreground">
+                      codigo {item.codigoOrgao || "-"} |{" "}
+                      {formatCountCompact(item.totalViajantes ?? 0)} viajantes
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-foreground">
+                      {formatCentsCompact(item.totalGastoLiquidoCents)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {formatCents(item.totalGastoLiquidoCents)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 pl-9">
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-primary via-cyan-500 to-sky-400"
+                      style={{ width }}
+                    />
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                    <span className="text-muted-foreground">
+                      {formatCountCompact(item.totalViagens ?? 0)} viagens
+                    </span>
+                    <span className="text-muted-foreground">
+                      {formatCountCompact(item.totalTrechos ?? 0)} trechos
+                    </span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
     </section>
   );
 };
