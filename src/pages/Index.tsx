@@ -50,6 +50,7 @@ import {
   formatCentsCompact,
   formatCountCompact,
 } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
 import type {
   Connection,
   PoliticoResumo,
@@ -98,28 +99,28 @@ const featuredFallback = [
     search: "lula",
     nomeCanonico: "lula",
     nome: "Luiz Inacio Lula da Silva",
-    foto: "https://upload.wikimedia.org/wikipedia/commons/8/86/Lula_-_foto_oficial_2023-01-09.jpg",
+    foto: "https://commons.wikimedia.org/wiki/Special:FilePath/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_(m%C3%A3o_pitoca).jpg",
   },
   {
     key: "bolsonaro",
     search: "bolsonaro",
     nomeCanonico: "bolsonaro",
     nome: "Jair Messias Bolsonaro",
-    foto: "https://upload.wikimedia.org/wikipedia/commons/9/93/Jair_Bolsonaro_2019_Portrait.jpg",
+    foto: "https://commons.wikimedia.org/wiki/Special:FilePath/Jair%20Bolsonaro%202019%20Portrait%20(3x4%20cropped%20center).jpg",
   },
   {
     key: "arthurLira",
     search: "arthur lira",
     nomeCanonico: "arthur-lira",
     nome: "Arthur Lira",
-    foto: "https://www.camara.leg.br/internet/deputado/bandep/160594.jpg",
+    foto: "https://www.camara.leg.br/internet/deputado/bandep/160541.jpg",
   },
   {
     key: "daviAlcolumbre",
     search: "davi alcolumbre",
     nomeCanonico: "davi-alcolumbre",
     nome: "Davi Alcolumbre",
-    foto: "https://www.senado.leg.br/senadores/img/fotos-oficiais/senador5765.jpg",
+    foto: "https://www12.senado.leg.br/institucional/presidencia/img/davi_alcolumbre_presidente.jpg",
   },
   {
     key: "flavioDino",
@@ -205,6 +206,7 @@ const Index = () => {
     });
   }, [tiposQuery.data?.nodes]);
   const leader = leaderNodes[0];
+  const topTipo = typeChartData[0];
   const leadShare =
     leader && centsToNumber(resumo?.totalPagoCents) > 0
       ? (centsToNumber(leader.totalPagoCents) / centsToNumber(resumo?.totalPagoCents)) * 100
@@ -226,6 +228,31 @@ const Index = () => {
           search: item.search,
           politico: undefined,
         }));
+  const featuredShelf = useMemo(
+    () =>
+      featuredPoliticos.slice(0, 4).map((perfil) => {
+        const politico = perfil.politico;
+        const fallbackPerfil = featuredFallbackMap[perfil.key];
+        const nome =
+          politico?.nomeCompleto || politico?.nomeCanonico || fallbackPerfil?.nome || perfil.search;
+        const profileSlug = politico?.nomeCanonico || fallbackPerfil?.nomeCanonico;
+
+        return {
+          key: perfil.key,
+          nome,
+          profileSlug,
+          search: perfil.search,
+          imageCandidates: buildImageCandidates(
+            featuredPhotoMap[perfil.key],
+            politico?.fotoUrl,
+            buildAvatarUrl(nome)
+          ),
+        };
+      }),
+    [featuredFallbackMap, featuredPhotoMap, featuredPoliticos]
+  );
+  const featuredPrimary = featuredShelf[0];
+  const featuredSecondary = featuredShelf.slice(1);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -364,10 +391,15 @@ const Index = () => {
           </section>
 
           {!isSearching ? (
-            <section className="mt-8 rounded-3xl border border-border/75 bg-card/85 p-6 shadow-card sm:p-7">
+            <section className="mt-8 overflow-hidden rounded-[32px] border border-border/75 bg-card/90 shadow-card">
+              <div className="bg-gradient-to-r from-primary/[0.07] via-sky-50/65 to-transparent px-6 py-6 sm:px-7">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="text-base font-bold sm:text-lg">Top buscas</h2>
+                    <p className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Perfis em destaque
+                    </p>
+                  <h2 className="mt-3 text-base font-bold sm:text-lg">Top buscas</h2>
                   <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                     Perfis acessados com mais frequencia.
                   </p>
@@ -380,34 +412,38 @@ const Index = () => {
                   Abrir busca completa
                 </button>
               </div>
+              </div>
 
-              <div className="mt-5 overflow-x-auto overscroll-x-contain">
-                <div className="flex min-w-max gap-3 pb-1">
-                {featuredPoliticos.slice(0, 4).map((perfil) => {
-                  const politico = perfil.politico;
-                  const fallbackPerfil = featuredFallbackMap[perfil.key];
-                  const nome =
-                    politico?.nomeCompleto || politico?.nomeCanonico || fallbackPerfil?.nome || perfil.search;
-                  const profileSlug = politico?.nomeCanonico || fallbackPerfil?.nomeCanonico;
-                  const imageCandidates = buildImageCandidates(
-                    politico?.fotoUrl,
-                    featuredPhotoMap[perfil.key],
-                    buildAvatarUrl(nome)
-                  );
-
-                  return (
-                    <FeaturedPoliticoCard
-                      key={perfil.key}
-                      nome={nome}
-                      imageCandidates={imageCandidates}
+              <div className="px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+                  {featuredPrimary ? (
+                    <FeaturedPoliticoLeadCard
+                      nome={featuredPrimary.nome}
+                      imageCandidates={featuredPrimary.imageCandidates}
                       onClick={() =>
-                        profileSlug
-                          ? navigate(`/politico/${encodeURIComponent(profileSlug)}`)
-                          : handleSearch(perfil.search)
+                        featuredPrimary.profileSlug
+                          ? navigate(`/politico/${encodeURIComponent(featuredPrimary.profileSlug)}`)
+                          : handleSearch(featuredPrimary.search)
                       }
                     />
-                  );
-                })}
+                  ) : null}
+
+                  <div className="overflow-x-auto overscroll-x-contain lg:overflow-visible">
+                    <div className="flex min-w-max snap-x snap-mandatory gap-3 pb-1 lg:min-w-0 lg:flex-col">
+                      {featuredSecondary.map((perfil) => (
+                        <FeaturedPoliticoCard
+                          key={perfil.key}
+                          nome={perfil.nome}
+                          imageCandidates={perfil.imageCandidates}
+                          onClick={() =>
+                            perfil.profileSlug
+                              ? navigate(`/politico/${encodeURIComponent(perfil.profileSlug)}`)
+                              : handleSearch(perfil.search)
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -494,15 +530,17 @@ const Index = () => {
                 </div>
               </section>
 
-              <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatsCard
-                  label="Total pago"
-                  value={formatCentsCompact(resumo?.totalPagoCents)}
-                  helper={formatCents(resumo?.totalPagoCents)}
-                  description={`${selectedYear} - ${tabs.find((tab) => tab.id === activeTab)?.label ?? ""}`}
-                  icon={Banknote}
-                  variant="green"
-                />
+              <section className="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
+                <div className="col-span-2 xl:col-span-1">
+                  <StatsCard
+                    label="Total pago"
+                    value={formatCentsCompact(resumo?.totalPagoCents)}
+                    helper={formatCents(resumo?.totalPagoCents)}
+                    description={`${selectedYear} - ${tabs.find((tab) => tab.id === activeTab)?.label ?? ""}`}
+                    icon={Banknote}
+                    variant="green"
+                  />
+                </div>
                 <StatsCard
                   label="Autores distintos"
                   value={formatCountCompact(resumo?.totalAutores ?? 0)}
@@ -519,78 +557,110 @@ const Index = () => {
                   icon={BarChart3}
                   variant="yellow"
                 />
-                <StatsCard
-                  label="Ticket por emenda"
-                  value={formatCentsCompact(resumo?.ticketMedioPagoCents)}
-                  helper={formatCents(resumo?.ticketMedioPagoCents)}
-                  description={`${formatCountCompact(resumo?.totalTipos ?? 0)} tipos e ${formatCountCompact(resumo?.totalPaises ?? 0)} paises`}
-                  icon={ShieldCheck}
-                  variant="blue"
-                />
+                <div className="col-span-2 xl:col-span-1">
+                  <StatsCard
+                    label="Ticket por emenda"
+                    value={formatCentsCompact(resumo?.ticketMedioPagoCents)}
+                    helper={formatCents(resumo?.ticketMedioPagoCents)}
+                    description={`${formatCountCompact(resumo?.totalTipos ?? 0)} tipos e ${formatCountCompact(resumo?.totalPaises ?? 0)} paises`}
+                    icon={ShieldCheck}
+                    variant="blue"
+                  />
+                </div>
               </section>
 
               <section className="mt-6 grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.18fr)_360px]">
                 <div className="space-y-6">
                   {leader ? (
-                    <section className="rounded-[28px] border border-border/70 bg-card/90 p-5 shadow-card sm:p-6">
-                      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0">
-                          <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-                            <Crown className="h-3.5 w-3.5" />
-                            Maior volume pago no ano
-                          </p>
-                          {canOpenPoliticoProfile(leader) ? (
-                            <button
-                              type="button"
-                              onClick={() => void handleOpenPoliticoProfile(leader)}
-                              className="mt-3 inline-flex items-center gap-2 text-left text-xl font-bold tracking-tight text-foreground transition-colors hover:text-primary"
-                            >
-                              <span className="truncate">{leader.nomeAutorEmenda}</span>
-                              <ArrowUpRight className="h-4 w-4 shrink-0" />
-                            </button>
-                          ) : (
-                            <h3 className="mt-3 text-xl font-bold tracking-tight text-foreground">
-                              {leader.nomeAutorEmenda}
-                            </h3>
-                          )}
-                          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                            {canOpenPoliticoProfile(leader)
-                              ? "Clique no nome para abrir o perfil completo do autor quando houver identificacao individual."
-                              : "Esse destaque representa bancada, grupo ou autoria sem perfil individual publico resolvido."}
-                          </p>
-
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {leaderNodes.slice(1, 3).map((node, index) => (
-                              <span
-                                key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${index}`}
-                                className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-2 text-xs text-muted-foreground"
+                    <section className="overflow-hidden rounded-[28px] border border-border/70 bg-card/90 shadow-card">
+                      <div className="bg-gradient-to-r from-primary/[0.08] via-cyan-100/30 to-transparent px-5 py-5 sm:px-6 sm:py-6">
+                        <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+                          <div className="min-w-0">
+                            <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                              <Crown className="h-3.5 w-3.5" />
+                              Maior volume pago no ano
+                            </p>
+                            {canOpenPoliticoProfile(leader) ? (
+                              <button
+                                type="button"
+                                onClick={() => void handleOpenPoliticoProfile(leader)}
+                                className="mt-3 inline-flex items-center gap-2 text-left text-xl font-bold tracking-tight text-foreground transition-colors hover:text-primary"
                               >
-                                <span className="font-semibold text-foreground">
-                                  #{index + 2} {shortName(node.nomeAutorEmenda)}
-                                </span>
-                                <span>{formatCentsCompact(node.totalPagoCents)}</span>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
+                                <span className="truncate">{leader.nomeAutorEmenda}</span>
+                                <ArrowUpRight className="h-4 w-4 shrink-0" />
+                              </button>
+                            ) : (
+                              <h3 className="mt-3 text-xl font-bold tracking-tight text-foreground">
+                                {leader.nomeAutorEmenda}
+                              </h3>
+                            )}
+                            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                              {canOpenPoliticoProfile(leader)
+                                ? "Clique no nome para abrir o perfil completo do autor quando houver identificacao individual."
+                                : "Esse destaque representa bancada, grupo ou autoria sem perfil individual publico resolvido."}
+                            </p>
 
-                        <div className="grid min-w-0 gap-3 sm:grid-cols-3 lg:w-[430px]">
-                          <HighlightMetric
-                            label="Pago"
-                            value={formatCentsCompact(leader.totalPagoCents)}
-                            helper={formatCents(leader.totalPagoCents)}
-                            tone="primary"
-                          />
-                          <HighlightMetric
-                            label="Emendas"
-                            value={formatCountCompact(leader.totalEmendas ?? 0)}
-                            helper={`${(leader.totalEmendas ?? 0).toLocaleString("pt-BR")} registros`}
-                          />
-                          <HighlightMetric
-                            label="Participacao"
-                            value={`${leadShare.toFixed(1)}%`}
-                            helper="Do total pago do recorte"
-                          />
+                            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                              <HighlightMetric
+                                label="Pago"
+                                value={formatCentsCompact(leader.totalPagoCents)}
+                                helper={formatCents(leader.totalPagoCents)}
+                                tone="primary"
+                                className="col-span-2 sm:col-span-1"
+                              />
+                              <HighlightMetric
+                                label="Emendas"
+                                value={formatCountCompact(leader.totalEmendas ?? 0)}
+                                helper={`${(leader.totalEmendas ?? 0).toLocaleString("pt-BR")} registros`}
+                              />
+                              <HighlightMetric
+                                label="Participacao"
+                                value={`${leadShare.toFixed(1)}%`}
+                                helper="Do total pago do recorte"
+                              />
+                            </div>
+
+                            <div className="mt-5 flex flex-wrap gap-2">
+                              {leaderNodes.slice(1, 3).map((node, index) => (
+                                <span
+                                  key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${index}`}
+                                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-white/80 px-3 py-2 text-xs text-muted-foreground shadow-sm"
+                                >
+                                  <span className="font-semibold text-foreground">
+                                    #{index + 2} {shortName(node.nomeAutorEmenda)}
+                                  </span>
+                                  <span>{formatCentsCompact(node.totalPagoCents)}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="rounded-[24px] border border-border/70 bg-white/80 p-4 shadow-sm">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                              Leitura rapida
+                            </p>
+                            <p className="mt-2 text-sm font-semibold text-foreground">
+                              {canOpenPoliticoProfile(leader)
+                                ? "Perfil individual disponivel"
+                                : "Autoria coletiva ou nao identificada"}
+                            </p>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                              {leader.totalEmendas === 1
+                                ? "Esse autor aparece com um unico registro de alto valor no recorte."
+                                : `Esse autor concentra ${formatCountCompact(leader.totalEmendas ?? 0)} emendas no ano analisado.`}
+                            </p>
+                            <div className="mt-4 rounded-2xl border border-border/70 bg-background/80 px-3 py-3">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                Comparativo do lider
+                              </p>
+                              <p className="mt-1 text-base font-bold text-foreground">
+                                {formatCentsCompact(leader.totalPagoCents)}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                contra {formatCentsCompact(resumo?.ticketMedioPagoCents)} de ticket medio por emenda
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </section>
@@ -663,7 +733,7 @@ const Index = () => {
 
                     {typeChartData.length ? (
                       <div className="space-y-4">
-                        <div className="mx-auto h-[220px] w-[220px]">
+                        <div className="relative mx-auto h-[190px] w-[190px] sm:h-[220px] sm:w-[220px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
@@ -691,6 +761,30 @@ const Index = () => {
                               />
                             </PieChart>
                           </ResponsiveContainer>
+                          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                              Lider
+                            </p>
+                            <p className="mt-1 max-w-[92px] text-center text-xs font-bold leading-4 text-foreground">
+                              {compactTipoLabel(topTipo?.nome)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="rounded-[22px] border border-border/70 bg-background/80 px-3 py-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                            Leitura principal
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-foreground">
+                            {topTipo
+                              ? `${compactTipoLabel(topTipo.nome)} lidera a composicao do ano`
+                              : "Sem lider de composicao"}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {topTipo
+                              ? `${topTipo.share.toFixed(1)}% do valor pago e ${formatCountCompact(topTipo.totalEmendas)} emendas.`
+                              : "Sem distribuicao suficiente para leitura."}
+                          </p>
                         </div>
 
                         <div className="space-y-2">
@@ -844,18 +938,22 @@ const HighlightMetric = ({
   value,
   helper,
   tone = "default",
+  className,
 }: {
   label: string;
   value: string;
   helper: string;
   tone?: "default" | "primary";
+  className?: string;
 }) => (
   <div
-    className={`rounded-[22px] border px-3 py-3 ${
+    className={cn(
+      "rounded-[22px] border px-3 py-3",
       tone === "primary"
         ? "border-primary/25 bg-primary/10"
-        : "border-border/70 bg-background/80"
-    }`}
+        : "border-border/70 bg-background/80",
+      className
+    )}
   >
     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
       {label}
@@ -928,12 +1026,13 @@ const RankingRow = ({
           </div>
         </div>
 
-        <div className="grid flex-1 gap-2 sm:grid-cols-3">
+        <div className="grid flex-1 grid-cols-2 gap-2 lg:grid-cols-3">
           <HighlightMetric
             label="Pago"
             value={formatCentsCompact(node.totalPagoCents)}
             helper={formatCents(node.totalPagoCents)}
             tone="primary"
+            className="col-span-2 lg:col-span-1"
           />
           <HighlightMetric
             label="Empenhado"
@@ -988,6 +1087,84 @@ const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
   </article>
 );
 
+const FeaturedPoliticoImage = ({
+  nome,
+  imageCandidates,
+  className,
+}: {
+  nome: string;
+  imageCandidates: string[];
+  className: string;
+}) => {
+  const [imageIndex, setImageIndex] = useState(0);
+  const safeIndex = Math.min(imageIndex, Math.max(imageCandidates.length - 1, 0));
+  const imageUrl = imageCandidates[safeIndex] || buildAvatarUrl(nome);
+
+  return (
+    <img
+      src={imageUrl}
+      alt={nome}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() =>
+        setImageIndex((current) =>
+          current < imageCandidates.length - 1 ? current + 1 : current
+        )
+      }
+      className={className}
+    />
+  );
+};
+
+const FeaturedPoliticoLeadCard = ({
+  nome,
+  imageCandidates,
+  onClick,
+}: {
+  nome: string;
+  imageCandidates: string[];
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className="group relative flex min-h-[188px] flex-col justify-between overflow-hidden rounded-[28px] border border-primary/15 bg-gradient-to-br from-primary/[0.10] via-background to-sky-50 px-5 py-5 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-elevated sm:px-6 sm:py-6"
+  >
+    <div className="absolute -right-12 -top-10 h-32 w-32 rounded-full bg-cyan-200/40 blur-2xl" />
+    <div className="relative flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <p className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/75 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+          <Crown className="h-3.5 w-3.5" />
+          Perfil mais acessado
+        </p>
+        <h3 className="mt-4 max-w-[16ch] text-xl font-bold leading-tight text-foreground sm:text-2xl">
+          {nome}
+        </h3>
+        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+          Abra o perfil completo para acompanhar viagens, emendas e o dossie consolidado.
+        </p>
+      </div>
+
+      <FeaturedPoliticoImage
+        nome={nome}
+        imageCandidates={imageCandidates}
+        className="h-20 w-20 flex-shrink-0 rounded-[24px] border border-white/80 object-cover shadow-card sm:h-24 sm:w-24"
+      />
+    </div>
+
+    <div className="relative mt-5 flex items-center justify-between gap-3 border-t border-primary/10 pt-4">
+      <div className="text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground">Top buscas</span>
+        {" "}
+        da home neste momento
+      </div>
+      <span className="inline-flex items-center gap-1 rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-[11px] font-semibold text-primary">
+        Abrir perfil
+        <ArrowUpRight className="h-3.5 w-3.5" />
+      </span>
+    </div>
+  </button>
+);
+
 const FeaturedPoliticoCard = ({
   nome,
   imageCandidates,
@@ -996,37 +1173,27 @@ const FeaturedPoliticoCard = ({
   nome: string;
   imageCandidates: string[];
   onClick: () => void;
-}) => {
-  const [imageIndex, setImageIndex] = useState(0);
-  const safeIndex = Math.min(imageIndex, Math.max(imageCandidates.length - 1, 0));
-  const imageUrl = imageCandidates[safeIndex] || buildAvatarUrl(nome);
-
-  return (
-    <button
-      onClick={onClick}
-      className="flex min-w-[250px] items-center gap-3 rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated sm:min-w-[280px]"
-    >
-      <img
-        src={imageUrl}
-        alt={nome}
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() =>
-          setImageIndex((current) =>
-            current < imageCandidates.length - 1 ? current + 1 : current
-          )
-        }
-        className="h-12 w-12 flex-shrink-0 rounded-full border border-border object-cover"
-      />
-      <div className="min-w-0">
-        <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground sm:text-xs">
-          {nome}
-        </p>
-        <p className="text-[10px] text-muted-foreground">Abrir perfil completo</p>
-      </div>
-    </button>
-  );
-};
+}) => (
+  <button
+    onClick={onClick}
+    className="group flex min-w-[238px] snap-start items-center gap-3 rounded-[24px] border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-elevated sm:min-w-[260px] lg:min-w-0"
+  >
+    <FeaturedPoliticoImage
+      nome={nome}
+      imageCandidates={imageCandidates}
+      className="h-14 w-14 flex-shrink-0 rounded-[18px] border border-border/80 object-cover shadow-sm"
+    />
+    <div className="min-w-0 flex-1">
+      <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground sm:text-xs">
+        {nome}
+      </p>
+      <p className="mt-1 text-[10px] text-muted-foreground">Abrir perfil completo</p>
+    </div>
+    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+      <ArrowUpRight className="h-3.5 w-3.5" />
+    </div>
+  </button>
+);
 
 function shortName(value?: string): string {
   if (!value) return "-";
@@ -1035,6 +1202,11 @@ function shortName(value?: string): string {
     .slice(0, 2)
     .join(" ")
     .slice(0, 18);
+}
+
+function compactTipoLabel(value?: string): string {
+  if (!value) return "Nao informado";
+  return value.replace(/\bEmenda\b/gi, "").replace(/\s+/g, " ").trim().slice(0, 34) || value;
 }
 
 function normalizeComparableName(value?: string): string {
