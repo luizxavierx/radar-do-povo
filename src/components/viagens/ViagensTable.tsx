@@ -120,8 +120,8 @@ const ViagensTable = ({
                 Viagens paginadas com detalhe sob demanda
               </h3>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Veja rapidamente quem viajou, por qual motivo, quanto foi gasto e abra o detalhe
-                completo apenas quando quiser aprofundar.
+                Veja rapidamente quem viajou, por qual motivo e quanto foi gasto. O detalhe
+                completo fica disponivel so quando voce quiser aprofundar.
               </p>
             </div>
           </div>
@@ -168,10 +168,6 @@ const ViagensTable = ({
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
               <Wallet className="h-3.5 w-3.5 text-primary" />
               Total do recorte: {formatCountCompact(data?.total ?? 0)} viagens
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
-              <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
-              Ordenacao local por data e valor
             </span>
           </div>
 
@@ -334,8 +330,7 @@ const ViagensTable = ({
 
                   <div className="mt-4 rounded-[24px] border border-border/60 bg-background/80 p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold text-foreground">Composicao rapida</p>
-                      <p className="text-[11px] text-muted-foreground">leitura da pagina atual</p>
+                      <p className="text-xs font-semibold text-foreground">Composicao dos custos</p>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {breakdown.map((item) => (
@@ -353,10 +348,7 @@ const ViagensTable = ({
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-[11px] text-muted-foreground">
-                      toque para abrir o detalhe completo desta viagem
-                    </p>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
                     <Button
                       variant={isActive ? "default" : "outline"}
                       size="sm"
@@ -489,37 +481,7 @@ const ViagensTable = ({
             </Table>
           </div>
 
-          <div className="mt-4 grid gap-3 rounded-2xl border border-border/70 bg-background/80 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-            <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-              <div className="rounded-2xl border border-border/60 bg-card/80 px-3 py-2">
-                <p className="inline-flex items-center gap-2">
-                  <Plane className="h-3.5 w-3.5 text-primary" />
-                  Total retornado
-                </p>
-                <p className="mt-1 font-semibold text-foreground">
-                  {formatCountCompact(data?.total ?? 0)} viagens
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-card/80 px-3 py-2">
-                <p className="inline-flex items-center gap-2">
-                  <Wallet className="h-3.5 w-3.5 text-primary" />
-                  Itens por pagina
-                </p>
-                <p className="mt-1 font-semibold text-foreground">{data?.limit ?? 20}</p>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-card/80 px-3 py-2">
-                <p className="inline-flex items-center gap-2">
-                  <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
-                  Faixa exibida
-                </p>
-                <p className="mt-1 font-semibold text-foreground">
-                  {showingFrom} a {showingTo || 0}
-                </p>
-              </div>
-            </div>
-
+          <div className="mt-4 rounded-2xl border border-border/70 bg-background/80 p-4">
             <PaginationControls
               total={data?.total ?? 0}
               limit={data?.limit ?? 20}

@@ -360,6 +360,20 @@ const ViagensPage = () => {
 
       return acc + (bruto > 0n ? bruto : 0n);
     }, 0n) || 0n;
+  const activeFilterCount = [
+    filters.orgaoSuperiorCodigo,
+    filters.orgaoSolicitanteCodigo,
+    filters.search,
+    filters.situacao,
+    filters.processoId,
+    filters.pcdp,
+    filters.cpfViajante,
+    filters.nomeViajante,
+    filters.cargo,
+    filters.funcao,
+    filters.destino,
+    filters.motivo,
+  ].filter(Boolean).length;
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-grid-pattern">
@@ -372,25 +386,16 @@ const ViagensPage = () => {
               <div className="min-w-0 space-y-4">
                 <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                   <Plane className="h-3.5 w-3.5" />
-                  Area de Viagens
+                  Area de viagens
                 </p>
 
                 <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Painel Geral
-                    </p>
-                    <h1 className="mt-2 max-w-4xl text-2xl font-extrabold leading-tight text-foreground sm:text-4xl">
-                      Viagens oficiais com{" "}
-                      <span className="bg-gradient-to-r from-cyan-600 via-sky-600 to-slate-900 bg-clip-text text-transparent">
-                        leitura rapida, gastos claros e detalhe sob demanda
-                      </span>
-                    </h1>
-                </div>
-                <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                    Painel geral de viagens oficiais com foco em leitura simples, gastos claros e
-                    comparacao por orgao. Ranking, resumo e tabela respondem ao mesmo recorte sem
-                    expor os filtros na barra do navegador.
+                  <h1 className="max-w-4xl text-2xl font-extrabold leading-tight text-foreground sm:text-4xl">
+                    Viagens oficiais com leitura clara, gastos simplificados e detalhe sob demanda
+                  </h1>
+                  <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                    Um painel direto para acompanhar quem viajou, quanto foi gasto e quais orgaos
+                    concentraram mais despesas no periodo escolhido.
                   </p>
                 </div>
 
@@ -399,48 +404,47 @@ const ViagensPage = () => {
                     dados oficiais consolidados
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
-                    valores resumidos em milhoes e bilhoes
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
-                    detalhe sob demanda por processo
+                    leitura amigavel para mobile
                   </span>
                 </div>
               </div>
 
-              <div className="min-w-0 grid gap-3 sm:grid-cols-2 sm:gap-4">
+              <div className="min-w-0 grid grid-cols-2 gap-3 sm:gap-4">
                 <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Base consultada
+                    Periodo
                   </p>
-                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
-                    Viagens oficiais
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Leitura geral sem subdivisao parlamentar.
-                  </p>
-                </article>
-
-                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Periodo ativo
-                  </p>
-                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
+                  <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
                     {filters.anoInicio} - {filters.anoFim}
                   </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Filtro aplicado em toda a pagina com persistencia local.
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Aplicado em toda a pagina
                   </p>
                 </article>
 
                 <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Total no recorte
+                    Filtros ativos
                   </p>
-                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
+                  <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
+                    {activeFilterCount ? formatCountCompact(activeFilterCount) : "Nenhum"}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {activeFilterCount
+                      ? `${activeFilterCount.toLocaleString("pt-BR")} refinamentos alem do periodo`
+                      : "Somente periodo e busca ampla"}
+                  </p>
+                </article>
+
+                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Viagens no recorte
+                  </p>
+                  <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
                     {formatCountCompact(totalViagensPainel)}
                   </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Exato: {totalViagensPainel.toLocaleString("pt-BR")} viagens.
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {totalViagensPainel.toLocaleString("pt-BR")} viagens encontradas
                   </p>
                 </article>
 
@@ -448,11 +452,11 @@ const ViagensPage = () => {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Soma da pagina
                   </p>
-                  <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
+                  <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
                     {formatCentsCompact(selectedTotal.toString())}
                   </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Exato: {formatCents(selectedTotal.toString())}.
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {formatCents(selectedTotal.toString())}
                   </p>
                 </article>
               </div>

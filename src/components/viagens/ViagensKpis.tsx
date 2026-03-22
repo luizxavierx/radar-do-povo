@@ -61,18 +61,15 @@ const ViagensKpis = ({
   return (
     <section className="space-y-4">
       <div>
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Visao financeira
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Valores principais para leitura rapida no mobile.
+              O que mais importa para entender o gasto no periodo.
             </p>
           </div>
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
-            prioridade alta
-          </span>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
@@ -120,18 +117,15 @@ const ViagensKpis = ({
       </div>
 
       <div>
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Movimento do recorte
+              Volume do recorte
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Volume, cobertura e intensidade operacional.
+              Quantidade de viagens, viajantes e trechos no periodo.
             </p>
           </div>
-          <span className="rounded-full border border-border/70 bg-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground">
-            leitura secundaria
-          </span>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">

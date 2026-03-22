@@ -107,6 +107,7 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
     pickTextFilters(value)
   );
   const [mobileAdvancedOpen, setMobileAdvancedOpen] = useState(false);
+  const [desktopAdvancedOpen, setDesktopAdvancedOpen] = useState(false);
 
   useEffect(() => {
     setTextDraft(pickTextFilters(value));
@@ -167,8 +168,8 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
         <div>
           <h3 className="text-sm font-bold text-foreground">Filtros reais do banco</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Codigos, processo, PCDP e CPF funcionam como filtro exato. Nome, cargo, funcao,
-            destino, motivo e situacao usam busca parcial com debounce.
+            Processo, PCDP, CPF e codigos funcionam como busca exata. Nome, cargo, funcao,
+            destino, motivo e situacao usam busca parcial.
           </p>
         </div>
 
@@ -229,8 +230,8 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
             </p>
             <h2 className="text-xl font-extrabold text-foreground">Filtros reais do banco</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Busca ampla, filtros exatos e filtros parciais do contrato oficial, com estado
-              mantido apenas na propria sessao da pagina.
+              Filtre por periodo, nome, processo, orgao e outros campos do contrato oficial sem
+              expor esses dados na URL.
             </p>
           </div>
 
@@ -252,13 +253,7 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
               {value.anoInicio} a {value.anoFim}
             </p>
           </article>
-          <article className="rounded-2xl border border-border/70 bg-background/80 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Escopo
-            </p>
-            <p className="mt-2 text-sm font-bold text-foreground">Painel geral</p>
-          </article>
-          <article className="col-span-2 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+          <article className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
               Filtros ativos
             </p>
@@ -270,28 +265,20 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
           </article>
         </div>
 
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
-            Escopo atual
-          </p>
-          <p className="mt-2 text-sm font-bold text-foreground">Painel geral de viagens</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            O recorte parlamentar foi removido desta tela para manter a leitura mais simples e
-            direta.
-          </p>
-        </div>
-
         <div className="rounded-[28px] border border-border/70 bg-background/60 p-4 sm:p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-bold text-foreground">Busca e periodo base</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Estes campos definem o recorte principal antes dos filtros avancados.
+                Comece pelo periodo e pela busca ampla. O restante entra so quando voce precisar
+                refinar.
               </p>
             </div>
-            <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
-              sempre visivel
-            </Badge>
+            {activeFiltersCount ? (
+              <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
+                {activeFiltersCount} filtros ativos
+              </Badge>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -311,7 +298,7 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Busca parcial com debounce para leitura rapida no mobile.
+                Busca parcial com resposta mais suave no mobile.
               </p>
             </div>
 
@@ -385,39 +372,60 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
           </Collapsible>
         </div>
 
-        <div className="hidden lg:block">{advancedFiltersContent}</div>
-
-        <div className="rounded-2xl border border-border/70 bg-background/65 p-3">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Resumo aplicado
-            </p>
-            <span className="text-[11px] text-muted-foreground">
-              {activeFiltersCount
-                ? `${activeFiltersCount} filtro(s) adicionais`
-                : "Somente recorte e periodo"}
-            </span>
-          </div>
-
-          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
-            <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
-              <Calendar className="mr-1.5 h-3.5 w-3.5" />
-              {value.anoInicio} a {value.anoFim}
-            </Badge>
-            <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
-              Painel geral
-            </Badge>
-            {activeBadges.map((badge) => (
-              <Badge
-                key={badge}
-                variant="outline"
-                className="border-border bg-background text-foreground"
-              >
-                {badge}
-              </Badge>
-            ))}
-          </div>
+        <div className="hidden lg:block">
+          <Collapsible open={desktopAdvancedOpen} onOpenChange={setDesktopAdvancedOpen}>
+            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/40">
+              <div className="flex items-center gap-3">
+                <span className="rounded-xl bg-primary/10 p-2 text-primary">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Filtros avancados</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {activeFiltersCount
+                      ? `${activeFiltersCount} filtros aplicados`
+                      : "Abra apenas se precisar filtrar processo, CPF, orgaos e outros campos"}
+                  </p>
+                </div>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-muted-foreground transition-transform ${
+                  desktopAdvancedOpen ? "rotate-180" : ""
+                }`}
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3">{advancedFiltersContent}</CollapsibleContent>
+          </Collapsible>
         </div>
+
+        {activeFiltersCount ? (
+          <div className="rounded-2xl border border-border/70 bg-background/65 p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Filtros aplicados
+              </p>
+              <span className="text-[11px] text-muted-foreground">
+                {activeFiltersCount} ativo(s)
+              </span>
+            </div>
+
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
+              <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                <Calendar className="mr-1.5 h-3.5 w-3.5" />
+                {value.anoInicio} a {value.anoFim}
+              </Badge>
+              {activeBadges.map((badge) => (
+                <Badge
+                  key={badge}
+                  variant="outline"
+                  className="border-border bg-background text-foreground"
+                >
+                  {badge}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );
