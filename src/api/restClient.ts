@@ -1,6 +1,8 @@
 import { ApiRequestError } from "./requestError";
 import { RADAR_API_ROOT } from "./graphqlClient";
 
+const RADAR_API_KEY = __RADAR_API_KEY__;
+const RADAR_API_KEY_HEADER = "X-Radar-Api-Key";
 const REQUEST_TIMEOUT = 15_000;
 const DEFAULT_RETRIES = 1;
 
@@ -97,6 +99,7 @@ export async function restRequest<TData>(
         headers: {
           Accept: "application/json",
           "X-Request-ID": requestId,
+          [RADAR_API_KEY_HEADER]: RADAR_API_KEY,
         },
         signal,
       });

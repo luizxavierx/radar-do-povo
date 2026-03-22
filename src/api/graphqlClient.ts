@@ -2,6 +2,8 @@ import type { GraphQLResponse, GraphQLError } from "./types";
 import { ApiRequestError } from "./requestError";
 
 const RAW_RADAR_API_BASE = __RADAR_API_BASE__.replace(/\/+$/, "");
+const RADAR_API_KEY = __RADAR_API_KEY__;
+const RADAR_API_KEY_HEADER = "X-Radar-Api-Key";
 export const RADAR_API_ROOT = RAW_RADAR_API_BASE.replace(/\/graphql\/?$/, "");
 const GRAPHQL_ENDPOINT = /\/graphql\/?$/.test(RAW_RADAR_API_BASE)
   ? RAW_RADAR_API_BASE
@@ -106,6 +108,7 @@ export async function graphqlRequest<TData, TVars = Record<string, unknown>>(
         headers: {
           "Content-Type": "application/json",
           "X-Request-ID": requestId,
+          [RADAR_API_KEY_HEADER]: RADAR_API_KEY,
         },
         body: JSON.stringify({ query, variables }),
         signal,
@@ -176,7 +179,12 @@ export async function checkApiHealth(): Promise<boolean> {
     const timer = setTimeout(() => controller.abort(), 5_000);
 
     try {
-      const res = await fetch(endpoint, { signal: controller.signal });
+      const res = await fetch(endpoint, {
+        signal: controller.signal,
+        headers: {
+          [RADAR_API_KEY_HEADER]: RADAR_API_KEY,
+        },
+      });
       if (res.ok || res.status === 503) return true;
     } catch {
       // Try the next fallback endpoint.
