@@ -20,7 +20,13 @@ import {
   useTopGastadoresAno,
   useTopSenadoresAno,
 } from "@/hooks/useRankings";
-import { centsToNumber, formatCents, toBigInt } from "@/lib/formatters";
+import {
+  centsToNumber,
+  formatCents,
+  formatCentsCompact,
+  formatCountCompact,
+  toBigInt,
+} from "@/lib/formatters";
 import type { TopGastadorEmenda } from "@/api/types";
 
 const PAGE_SIZE = 10;
@@ -73,6 +79,10 @@ const RankingsPage = () => {
 
   const mediaPago =
     totalRegistros > 0 ? formatCents((totalPagoCents / BigInt(totalRegistros)).toString()) : "R$ 0,00";
+  const mediaPagoCompact =
+    totalRegistros > 0
+      ? formatCentsCompact((totalPagoCents / BigInt(totalRegistros)).toString())
+      : "R$ 0,00";
 
   const chartData = useMemo(
     () =>
@@ -160,19 +170,22 @@ const RankingsPage = () => {
           <section className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatsCard
               label="Total pago no recorte"
-              value={formatCents(totalPagoCents.toString())}
+              value={formatCentsCompact(totalPagoCents.toString())}
+              helper={formatCents(totalPagoCents.toString())}
               description={`Ano ${ano}`}
               variant="green"
             />
             <StatsCard
               label="Registros visiveis"
-              value={String(totalRegistros)}
+              value={formatCountCompact(totalRegistros)}
+              helper={totalRegistros.toLocaleString("pt-BR")}
               description="Top retornado pela API neste recorte"
               variant="blue"
             />
             <StatsCard
               label="Media por registro"
-              value={mediaPago}
+              value={mediaPagoCompact}
+              helper={mediaPago}
               description="Total pago dividido por registros"
               variant="yellow"
             />
@@ -293,8 +306,8 @@ const ParlamentarRow = ({ node, rank }: { node: TopGastadorEmenda; rank: number 
         </div>
 
         <div className="text-right">
-          <p className="text-sm font-extrabold text-primary">{formatCents(node.totalPagoCents)}</p>
-          <p className="text-[10px] text-muted-foreground">total pago</p>
+          <p className="text-sm font-extrabold text-primary">{formatCentsCompact(node.totalPagoCents)}</p>
+          <p className="text-[10px] text-muted-foreground">{formatCents(node.totalPagoCents)}</p>
         </div>
       </div>
     </article>

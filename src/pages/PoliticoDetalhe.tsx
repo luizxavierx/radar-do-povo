@@ -24,7 +24,14 @@ import { EmptyState, ErrorState } from "@/components/StateViews";
 import { PoliticoNewsSection } from "@/components/politicos/PoliticoNewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePoliticoDossieCompleto, usePoliticoNoticias } from "@/hooks/usePoliticos";
-import { centsToNumber, formatCents, formatDate, toBigInt } from "@/lib/formatters";
+import {
+  centsToNumber,
+  formatCents,
+  formatCentsCompact,
+  formatCountCompact,
+  formatDate,
+  toBigInt,
+} from "@/lib/formatters";
 import type { Emenda, PerfilExterno } from "@/api/types";
 
 const PAGE_SIZE = 10;
@@ -219,20 +226,28 @@ const PoliticoDetalhe = () => {
               </section>
 
               <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard label="Total gastos" value={totalGastos} icon={Banknote} />
+                <MetricCard
+                  label="Total gastos"
+                  value={formatCentsCompact(totalGastosToCents(gastos))}
+                  helper={totalGastos}
+                  icon={Banknote}
+                />
                 <MetricCard
                   label="Total viagens"
-                  value={String(gastos?.totalViagens ?? viagensTotalApi)}
+                  value={formatCountCompact(gastos?.totalViagens ?? viagensTotalApi)}
+                  helper={(gastos?.totalViagens ?? viagensTotalApi).toLocaleString("pt-BR")}
                   icon={Plane}
                 />
                 <MetricCard
                   label="Total emendas"
-                  value={String(emendasTotalApi)}
+                  value={formatCountCompact(emendasTotalApi)}
+                  helper={emendasTotalApi.toLocaleString("pt-BR")}
                   icon={FileText}
                 />
                 <MetricCard
                   label="Pago em emendas"
-                  value={formatCents(emendasResumo.totalPagoCents)}
+                  value={formatCentsCompact(emendasResumo.totalPagoCents)}
+                  helper={formatCents(emendasResumo.totalPagoCents)}
                   icon={Landmark}
                 />
               </section>
@@ -297,23 +312,28 @@ const PoliticoDetalhe = () => {
                     <div className="space-y-2 text-xs">
                       <SummaryRow
                         label="Empenhado"
-                        value={formatCents(emendasResumo.totalEmpenhadoCents)}
+                        value={formatCentsCompact(emendasResumo.totalEmpenhadoCents)}
+                        helper={formatCents(emendasResumo.totalEmpenhadoCents)}
                       />
                       <SummaryRow
                         label="Liquidado"
-                        value={formatCents(emendasResumo.totalLiquidadoCents)}
+                        value={formatCentsCompact(emendasResumo.totalLiquidadoCents)}
+                        helper={formatCents(emendasResumo.totalLiquidadoCents)}
                       />
                       <SummaryRow
                         label="Pago"
-                        value={formatCents(emendasResumo.totalPagoCents)}
+                        value={formatCentsCompact(emendasResumo.totalPagoCents)}
+                        helper={formatCents(emendasResumo.totalPagoCents)}
                       />
                       <SummaryRow
                         label="Favorecidos (carga atual)"
-                        value={String(emendasResumo.totalFavorecidos)}
+                        value={formatCountCompact(emendasResumo.totalFavorecidos)}
+                        helper={emendasResumo.totalFavorecidos.toLocaleString("pt-BR")}
                       />
                       <SummaryRow
                         label="Recebido por favorecidos"
-                        value={formatCents(emendasResumo.totalRecebidoFavorecidosCents)}
+                        value={formatCentsCompact(emendasResumo.totalRecebidoFavorecidosCents)}
+                        helper={formatCents(emendasResumo.totalRecebidoFavorecidosCents)}
                       />
                     </div>
                   </section>
@@ -478,10 +498,12 @@ const PoliticoDetalhe = () => {
 const MetricCard = ({
   label,
   value,
+  helper,
   icon: Icon,
 }: {
   label: string;
   value: string;
+  helper?: string;
   icon: typeof Banknote;
 }) => (
   <article className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
@@ -492,15 +514,47 @@ const MetricCard = ({
       <Icon className="h-4 w-4 text-primary" />
     </div>
     <p className="mt-2 text-2xl font-extrabold text-foreground">{value}</p>
+    {helper ? <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p> : null}
   </article>
 );
 
-const SummaryRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex items-center justify-between rounded-lg border border-border/70 bg-background/80 px-3 py-2">
+const SummaryRow = ({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: string;
+  helper?: string;
+}) => (
+  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2">
     <span className="text-muted-foreground">{label}</span>
-    <span className="font-semibold text-foreground">{value}</span>
+    <span className="text-right">
+      <span className="block font-semibold text-foreground">{value}</span>
+      {helper ? <span className="block text-[10px] text-muted-foreground">{helper}</span> : null}
+    </span>
   </div>
 );
+
+function totalGastosToCents(
+  gastos?:
+    | {
+        totalDiariasCents?: string;
+        totalPassagensCents?: string;
+        totalPagamentosCents?: string;
+        totalOutrosGastosCents?: string;
+      }
+    | undefined
+) {
+  if (!gastos) return "0";
+
+  return (
+    toBigInt(gastos.totalDiariasCents) +
+    toBigInt(gastos.totalPassagensCents) +
+    toBigInt(gastos.totalPagamentosCents) +
+    toBigInt(gastos.totalOutrosGastosCents)
+  ).toString();
+}
 
 const DossieSkeleton = () => (
   <div className="space-y-6">

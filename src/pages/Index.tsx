@@ -45,7 +45,13 @@ import {
 } from "@/hooks/useRankings";
 import { graphqlRequest } from "@/api/graphqlClient";
 import { POLITICOS_LIST_QUERY } from "@/api/queries";
-import { centsToNumber, formatCents, toBigInt } from "@/lib/formatters";
+import {
+  centsToNumber,
+  formatCents,
+  formatCentsCompact,
+  formatCountCompact,
+  toBigInt,
+} from "@/lib/formatters";
 import type { Connection, PoliticoResumo, TopGastadorEmenda } from "@/api/types";
 
 const PAGE_SIZE = 20;
@@ -157,9 +163,14 @@ const Index = () => {
   );
 
   const totalPago = formatCents(totalPagoCents.toString());
+  const totalPagoCompact = formatCentsCompact(totalPagoCents.toString());
   const totalEmendas = rankingNodes.reduce((acc, node) => acc + (node.totalEmendas || 0), 0);
   const mediaPagoPorEmenda =
     totalEmendas > 0 ? formatCents((totalPagoCents / BigInt(totalEmendas)).toString()) : "R$ 0,00";
+  const mediaPagoPorEmendaCompact =
+    totalEmendas > 0
+      ? formatCentsCompact((totalPagoCents / BigInt(totalEmendas)).toString())
+      : "R$ 0,00";
 
   const graficoTop = useMemo(
     () =>
@@ -451,28 +462,32 @@ const Index = () => {
               <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <StatsCard
                   label="Total pago top"
-                  value={totalPago}
+                  value={totalPagoCompact}
+                  helper={totalPago}
                   description={`${tabTitles[activeTab]} ${selectedYear}`}
                   icon={Banknote}
                   variant="green"
                 />
                 <StatsCard
                   label="Registros no ranking"
-                  value={String(total)}
+                  value={formatCountCompact(total)}
+                  helper={total.toLocaleString("pt-BR")}
                   description="Top retornado pela API"
                   icon={Users}
                   variant="blue"
                 />
                 <StatsCard
                   label="Total emendas"
-                  value={totalEmendas.toLocaleString("pt-BR")}
+                  value={formatCountCompact(totalEmendas)}
+                  helper={totalEmendas.toLocaleString("pt-BR")}
                   description="Soma de emendas do recorte"
                   icon={BarChart3}
                   variant="yellow"
                 />
                 <StatsCard
                   label="Ticket por emenda"
-                  value={mediaPagoPorEmenda}
+                  value={mediaPagoPorEmendaCompact}
+                  helper={mediaPagoPorEmenda}
                   description="Total pago dividido por emendas"
                   icon={ShieldCheck}
                   variant="blue"
@@ -595,14 +610,23 @@ const Index = () => {
                               {pais.totalEmendas ?? 0} emendas registradas
                             </p>
                           </div>
-                          <span className="text-xs font-bold text-primary">{formatCents(pais.totalPagoCents)}</span>
+                          <div className="text-right">
+                            <p className="text-xs font-bold text-primary">
+                              {formatCentsCompact(pais.totalPagoCents)}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {formatCents(pais.totalPagoCents)}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
 
                     {topPais ? (
                       <div className="mt-3 rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
-                        Maior volume no ano: <strong>{topPais.pais}</strong> com {formatCents(topPais.totalPagoCents)}.
+                        Maior volume no ano: <strong>{topPais.pais}</strong> com{" "}
+                        <strong>{formatCentsCompact(topPais.totalPagoCents)}</strong>{" "}
+                        <span className="text-primary/80">({formatCents(topPais.totalPagoCents)})</span>.
                       </div>
                     ) : null}
                   </section>
@@ -716,8 +740,8 @@ const RankingRow = ({ node, rank }: { node: TopGastadorEmenda; rank: number }) =
         </div>
 
         <div className="text-right">
-          <p className="text-sm font-extrabold text-primary">{formatCents(node.totalPagoCents)}</p>
-          <p className="text-[10px] text-muted-foreground">total pago</p>
+          <p className="text-sm font-extrabold text-primary">{formatCentsCompact(node.totalPagoCents)}</p>
+          <p className="text-[10px] text-muted-foreground">{formatCents(node.totalPagoCents)}</p>
         </div>
       </div>
     </article>

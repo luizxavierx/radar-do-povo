@@ -19,7 +19,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCents, formatDate, toBigInt } from "@/lib/formatters";
+import {
+  formatCents,
+  formatCentsCompact,
+  formatCountCompact,
+  formatDate,
+  toBigInt,
+} from "@/lib/formatters";
 
 export type ViagensSortKey = "data_desc" | "data_asc" | "valor_desc" | "valor_asc";
 
@@ -75,6 +81,13 @@ function sortLabel(sortBy: ViagensSortKey, axis: "data" | "valor") {
   return sortBy === "valor_asc" ? "asc" : "desc";
 }
 
+function sortExplanation(sortBy: ViagensSortKey) {
+  if (sortBy === "data_desc") return "mais recentes primeiro";
+  if (sortBy === "data_asc") return "mais antigas primeiro";
+  if (sortBy === "valor_desc") return "maiores valores primeiro";
+  return "menores valores primeiro";
+}
+
 const ViagensTable = ({
   data,
   isLoading,
@@ -89,44 +102,99 @@ const ViagensTable = ({
   const rows = sortRows(data?.nodes ?? [], sortBy);
   const currentPage = data ? Math.floor(data.offset / data.limit) + 1 : 1;
   const totalPages = data?.total ? Math.ceil(data.total / data.limit) : 1;
+  const pageTotal = rows.reduce((acc, item) => acc + getViagemTotalCents(item), 0n);
+  const showingFrom = rows.length ? (data?.offset ?? 0) + 1 : 0;
+  const showingTo = rows.length ? (data?.offset ?? 0) + rows.length : 0;
 
   return (
     <section className="min-w-0 rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card sm:p-6">
-      <div className="flex flex-col gap-4 border-b border-border/70 pb-5 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-            <Plane className="h-3.5 w-3.5" />
-            Tabela Principal
-          </p>
-          <div>
-            <h3 className="text-xl font-extrabold text-foreground">
-              Viagens paginadas com detalhe sob demanda
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Ordenacao local por data e valor. Pagina atual: {currentPage} de {totalPages}.
+      <div className="rounded-[28px] border border-border/70 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              <Plane className="h-3.5 w-3.5" />
+              Tabela principal
             </p>
+            <div>
+              <h3 className="text-xl font-extrabold text-foreground">
+                Viagens paginadas com detalhe sob demanda
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                Veja rapidamente quem viajou, por qual motivo, quanto foi gasto e abra o detalhe
+                completo apenas quando quiser aprofundar.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid w-full gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[520px]">
+            <article className="rounded-2xl border border-border/70 bg-white/85 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Nesta pagina
+              </p>
+              <p className="mt-2 text-base font-bold text-foreground">
+                {formatCountCompact(rows.length)}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Itens {showingFrom} a {showingTo || 0}
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-border/70 bg-white/85 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Total estimado da pagina
+              </p>
+              <p className="mt-2 text-base font-bold text-foreground">
+                {formatCentsCompact(pageTotal.toString())}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {formatCents(pageTotal.toString())}
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-border/70 bg-white/85 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Leitura atual
+              </p>
+              <p className="mt-2 text-base font-bold text-foreground">
+                Pagina {currentPage} de {totalPages}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{sortExplanation(sortBy)}</p>
+            </article>
           </div>
         </div>
 
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-center rounded-xl sm:flex-none"
-            onClick={() => onSortChange(nextSort(sortBy, "data"))}
-          >
-            <CalendarRange className="h-4 w-4" />
-            Data {sortLabel(sortBy, "data")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-center rounded-xl sm:flex-none"
-            onClick={() => onSortChange(nextSort(sortBy, "valor"))}
-          >
-            <ArrowUpDown className="h-4 w-4" />
-            Valor {sortLabel(sortBy, "valor")}
-          </Button>
+        <div className="mt-4 flex flex-col gap-3 border-t border-border/60 pt-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
+              <Wallet className="h-3.5 w-3.5 text-primary" />
+              Total do recorte: {formatCountCompact(data?.total ?? 0)} viagens
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
+              <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+              Ordenacao local por data e valor
+            </span>
+          </div>
+
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-center rounded-xl bg-white sm:flex-none"
+              onClick={() => onSortChange(nextSort(sortBy, "data"))}
+            >
+              <CalendarRange className="h-4 w-4" />
+              Data {sortLabel(sortBy, "data")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-center rounded-xl bg-white sm:flex-none"
+              onClick={() => onSortChange(nextSort(sortBy, "valor"))}
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              Valor {sortLabel(sortBy, "valor")}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -138,7 +206,11 @@ const ViagensTable = ({
         </div>
       ) : null}
 
-      {error ? <div className="pt-5"><ErrorStateWithRetry error={error} onRetry={onRetry} /></div> : null}
+      {error ? (
+        <div className="pt-5">
+          <ErrorStateWithRetry error={error} onRetry={onRetry} />
+        </div>
+      ) : null}
 
       {!isLoading && !error && !rows.length ? (
         <div className="pt-5">
@@ -153,10 +225,26 @@ const ViagensTable = ({
               const isActive = selectedProcessoId === viagem.processoId;
               const total = getViagemTotalCents(viagem);
               const breakdown = [
-                { label: "Diarias", value: formatCents(viagem.valorDiariasCents) },
-                { label: "Passagens", value: formatCents(viagem.valorPassagensCents) },
-                { label: "Outros", value: formatCents(viagem.valorOutrosGastosCents) },
-                { label: "Devolucao", value: formatCents(viagem.valorDevolucaoCents) },
+                {
+                  label: "Diarias",
+                  value: formatCentsCompact(viagem.valorDiariasCents),
+                  helper: formatCents(viagem.valorDiariasCents),
+                },
+                {
+                  label: "Passagens",
+                  value: formatCentsCompact(viagem.valorPassagensCents),
+                  helper: formatCents(viagem.valorPassagensCents),
+                },
+                {
+                  label: "Outros",
+                  value: formatCentsCompact(viagem.valorOutrosGastosCents),
+                  helper: formatCents(viagem.valorOutrosGastosCents),
+                },
+                {
+                  label: "Devolucao",
+                  value: formatCentsCompact(viagem.valorDevolucaoCents),
+                  helper: formatCents(viagem.valorDevolucaoCents),
+                },
               ];
 
               return (
@@ -180,9 +268,11 @@ const ViagensTable = ({
                       </div>
                       <div className="text-right">
                         <p className="text-base font-extrabold text-foreground">
+                          {formatCentsCompact(total.toString())}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
                           {formatCents(total.toString())}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">total estimado</p>
                       </div>
                     </div>
 
@@ -257,6 +347,7 @@ const ViagensTable = ({
                             {item.label}
                           </p>
                           <p className="mt-2 text-sm font-bold text-foreground">{item.value}</p>
+                          <p className="mt-1 text-[10px] text-muted-foreground">{item.helper}</p>
                         </div>
                       ))}
                     </div>
@@ -370,10 +461,13 @@ const ViagensTable = ({
                       <TableCell className="text-right">
                         <div className="inline-flex flex-col items-end gap-1">
                           <span className="text-sm font-bold text-foreground">
-                            {formatCents(total.toString())}
+                            {formatCentsCompact(total.toString())}
                           </span>
                           <span className="text-[11px] text-muted-foreground">
-                            passagens {formatCents(viagem.valorPassagensCents)}
+                            {formatCents(total.toString())}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            passagens {formatCentsCompact(viagem.valorPassagensCents)}
                           </span>
                         </div>
                       </TableCell>
@@ -395,20 +489,35 @@ const ViagensTable = ({
             </Table>
           </div>
 
-          <div className="mt-4 grid gap-3 rounded-2xl border border-border/70 bg-background/80 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-              <p className="inline-flex items-center gap-2">
-                <Plane className="h-3.5 w-3.5 text-primary" />
-                Total retornado: {(data?.total ?? 0).toLocaleString("pt-BR")}
-              </p>
-              <p className="inline-flex items-center gap-2">
-                <Wallet className="h-3.5 w-3.5 text-primary" />
-                Limite por pagina: {data?.limit ?? 20}
-              </p>
-              <p className="inline-flex items-center gap-2">
-                <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
-                Offset atual: {data?.offset ?? 0}
-              </p>
+          <div className="mt-4 grid gap-3 rounded-2xl border border-border/70 bg-background/80 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+              <div className="rounded-2xl border border-border/60 bg-card/80 px-3 py-2">
+                <p className="inline-flex items-center gap-2">
+                  <Plane className="h-3.5 w-3.5 text-primary" />
+                  Total retornado
+                </p>
+                <p className="mt-1 font-semibold text-foreground">
+                  {formatCountCompact(data?.total ?? 0)} viagens
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-border/60 bg-card/80 px-3 py-2">
+                <p className="inline-flex items-center gap-2">
+                  <Wallet className="h-3.5 w-3.5 text-primary" />
+                  Itens por pagina
+                </p>
+                <p className="mt-1 font-semibold text-foreground">{data?.limit ?? 20}</p>
+              </div>
+
+              <div className="rounded-2xl border border-border/60 bg-card/80 px-3 py-2">
+                <p className="inline-flex items-center gap-2">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+                  Faixa exibida
+                </p>
+                <p className="mt-1 font-semibold text-foreground">
+                  {showingFrom} a {showingTo || 0}
+                </p>
+              </div>
             </div>
 
             <PaginationControls
