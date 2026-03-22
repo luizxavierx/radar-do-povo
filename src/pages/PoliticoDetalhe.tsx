@@ -32,7 +32,7 @@ import {
   formatDate,
   toBigInt,
 } from "@/lib/formatters";
-import type { Emenda, PerfilExterno } from "@/api/types";
+import type { Emenda, PerfilExterno, Viagem } from "@/api/types";
 
 const PAGE_SIZE = 10;
 const CURRENT_YEAR = new Date().getFullYear();
@@ -111,8 +111,14 @@ const PoliticoDetalhe = () => {
       { name: "Passagens", value: centsToNumber(totalPassagensCents.toString()) },
       { name: "Outros", value: centsToNumber(totalOutrosGastosCents.toString()) },
     ];
+    const filtered = source.filter((item) => item.value > 0);
+    const total = filtered.reduce((acc, item) => acc + item.value, 0);
 
-    return source.filter((item) => item.value > 0);
+    return filtered.map((item, index) => ({
+      ...item,
+      color: pieColors[index % pieColors.length],
+      share: total > 0 ? (item.value / total) * 100 : 0,
+    }));
   }, [gastos, totalDiariasCents, totalOutrosGastosCents, totalPassagensCents]);
 
   const totalGastos = useMemo(() => {
@@ -130,10 +136,10 @@ const PoliticoDetalhe = () => {
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-grid-pattern">
       <AppSidebar />
 
-      <main className="lg:ml-72">
+      <main className="min-h-screen lg:ml-72">
         <div className="mx-auto w-full max-w-[1180px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
           <button
             onClick={() => navigate(-1)}
@@ -151,23 +157,27 @@ const PoliticoDetalhe = () => {
 
           {politico ? (
             <div className="space-y-6">
-              <section className="animate-fade-up rounded-3xl border border-white/60 bg-card/80 p-6 shadow-elevated backdrop-blur-sm">
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="flex min-w-0 items-start gap-4">
+              <section className="animate-fade-up rounded-[32px] border border-white/60 bg-card/85 p-5 shadow-elevated backdrop-blur-sm sm:p-6">
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+                  <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
                     {fotoUrl ? (
                       <img
                         src={fotoUrl}
                         alt={politico.nomeCanonico}
-                        className="h-24 w-24 rounded-2xl object-cover shadow-card"
+                        className="h-24 w-24 rounded-[24px] object-cover shadow-card sm:h-28 sm:w-28"
                       />
                     ) : (
-                      <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-muted">
+                      <div className="flex h-24 w-24 items-center justify-center rounded-[24px] bg-muted sm:h-28 sm:w-28">
                         <User className="h-10 w-10 text-muted-foreground" />
                       </div>
                     )}
 
                     <div className="min-w-0">
-                      <h1 className="truncate text-2xl font-extrabold uppercase tracking-wide text-foreground sm:text-3xl">
+                      <p className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                        <User className="h-3.5 w-3.5" />
+                        Perfil completo
+                      </p>
+                      <h1 className="mt-3 text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-3xl">
                         {politico.nomeCompleto || politico.nomeCanonico}
                       </h1>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
@@ -189,7 +199,14 @@ const PoliticoDetalhe = () => {
                         ) : null}
                       </div>
 
-                      <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                      <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
+                        Dossie consolidado de viagens oficiais, emendas parlamentares e referencias externas no recorte de{" "}
+                        <strong className="text-foreground">
+                          {anoInicio} a {anoFim}
+                        </strong>.
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
                         {politico.dataNascimento ? (
                           <span>Nascimento: {formatDate(politico.dataNascimento)}</span>
                         ) : null}
@@ -205,43 +222,59 @@ const PoliticoDetalhe = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <label className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 font-semibold shadow-card">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      Inicio
-                      <select
-                        value={anoInicio}
-                        onChange={(e) => handlePeriodChange(Number(e.target.value), anoFim)}
-                        className="bg-transparent outline-none"
-                      >
-                        {years.map((year) => (
-                          <option key={`start-${year}`} value={year}>
-                            {year}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                  <div className="rounded-[28px] border border-border/70 bg-white/80 p-4 shadow-card">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Recorte do dossie
+                    </p>
+                    <p className="mt-2 text-base font-bold text-foreground">
+                      {anoInicio} a {anoFim}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      Ajuste o periodo para recalcular viagens e emendas do perfil.
+                    </p>
 
-                    <label className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 font-semibold shadow-card">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      Fim
-                      <select
-                        value={anoFim}
-                        onChange={(e) => handlePeriodChange(anoInicio, Number(e.target.value))}
-                        className="bg-transparent outline-none"
-                      >
-                        {years.map((year) => (
-                          <option key={`end-${year}`} value={year}>
-                            {year}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                      <label className="rounded-2xl border border-border bg-background/90 px-3 py-2 font-semibold shadow-sm">
+                        <span className="mb-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5 text-primary" />
+                          Inicio
+                        </span>
+                        <select
+                          value={anoInicio}
+                          onChange={(e) => handlePeriodChange(Number(e.target.value), anoFim)}
+                          className="w-full bg-transparent text-sm outline-none"
+                        >
+                          {years.map((year) => (
+                            <option key={`start-${year}`} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="rounded-2xl border border-border bg-background/90 px-3 py-2 font-semibold shadow-sm">
+                        <span className="mb-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5 text-primary" />
+                          Fim
+                        </span>
+                        <select
+                          value={anoFim}
+                          onChange={(e) => handlePeriodChange(anoInicio, Number(e.target.value))}
+                          className="w-full bg-transparent text-sm outline-none"
+                        >
+                          {years.map((year) => (
+                            <option key={`end-${year}`} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </section>
 
-              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                 <MetricCard
                   label="Gasto liquido em viagens"
                   value={formatCentsCompact(totalGastoLiquidoCents.toString())}
@@ -279,71 +312,135 @@ const PoliticoDetalhe = () => {
                 }}
               />
 
-              <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-                <div className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
-                  <h2 className="mb-3 text-base font-bold">
-                    Composicao das viagens ({anoInicio}-{anoFim})
-                  </h2>
+              <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-foreground sm:text-lg">
+                        Composicao das viagens
+                      </h2>
+                      <p className="text-xs text-muted-foreground sm:text-sm">
+                        Peso relativo de diarias, passagens e outros gastos no periodo.
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-muted px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+                      {anoInicio}-{anoFim}
+                    </div>
+                  </div>
 
                   {pieData.length === 0 ? (
                     <EmptyState message="Sem valores de gastos para este periodo." />
                   ) : (
-                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-                      <div className="h-72">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              dataKey="value"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={92}
-                              innerRadius={50}
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell
-                                  key={entry.name}
-                                  fill={pieColors[index % pieColors.length]}
-                                />
-                              ))}
-                            </Pie>
-                            <RechartsTooltip
-                              formatter={(value: number) =>
-                                value.toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                  maximumFractionDigits: 0,
-                                })
-                              }
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
+                    <div className="mt-4 grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+                      <div className="rounded-[28px] bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-4 ring-1 ring-border/60">
+                        <div className="relative mx-auto h-[200px] w-[200px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={90}
+                                innerRadius={58}
+                                paddingAngle={3}
+                                stroke="#ffffff"
+                                strokeWidth={4}
+                              >
+                                {pieData.map((entry) => (
+                                  <Cell key={entry.name} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip
+                                formatter={(value: number) =>
+                                  value.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                    maximumFractionDigits: 0,
+                                  })
+                                }
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                              Gasto liquido
+                            </p>
+                            <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+                              {formatCentsCompact(totalGastoLiquidoCents.toString())}
+                            </p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              apos devolucoes
+                            </p>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <SummaryRow
-                          label="Gasto bruto"
-                          value={formatCentsCompact(totalGastoBrutoCents.toString())}
-                          helper={formatCents(totalGastoBrutoCents.toString())}
-                        />
-                        <SummaryRow
-                          label="Devolucoes"
-                          value={formatCentsCompact(totalDevolucaoCents.toString())}
-                          helper={formatCents(totalDevolucaoCents.toString())}
-                        />
-                        <SummaryRow
-                          label="Pagamentos registrados"
-                          value={formatCentsCompact(totalPagamentosCents.toString())}
-                          helper={formatCents(totalPagamentosCents.toString())}
-                        />
+                      <div className="space-y-3">
+                        {pieData.map((item) => (
+                          <div
+                            key={item.name}
+                            className="rounded-[22px] border border-border/70 bg-background/85 px-4 py-4"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-full"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <p className="text-sm font-semibold text-foreground">
+                                    {item.name}
+                                  </p>
+                                </div>
+                                <p className="mt-2 text-[11px] text-muted-foreground">
+                                  {formatCents(String(Math.round(item.value * 100)))}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-base font-bold text-primary">
+                                  {item.share.toFixed(1)}%
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">do bruto</p>
+                              </div>
+                            </div>
+                            <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-border/70">
+                              <div
+                                className="h-full rounded-full"
+                                style={{ width: `${Math.max(item.share, 8)}%`, backgroundColor: item.color }}
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-4">
-                  <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
+                  <section className="rounded-[24px] border border-border/70 bg-card/85 p-4 shadow-card">
+                    <h2 className="mb-3 text-sm font-bold">Painel financeiro</h2>
+                    <div className="space-y-2 text-xs">
+                      <SummaryRow
+                        label="Gasto bruto"
+                        value={formatCentsCompact(totalGastoBrutoCents.toString())}
+                        helper={formatCents(totalGastoBrutoCents.toString())}
+                      />
+                      <SummaryRow
+                        label="Devolucoes"
+                        value={formatCentsCompact(totalDevolucaoCents.toString())}
+                        helper={formatCents(totalDevolucaoCents.toString())}
+                      />
+                      <SummaryRow
+                        label="Pagamentos registrados"
+                        value={formatCentsCompact(totalPagamentosCents.toString())}
+                        helper={formatCents(totalPagamentosCents.toString())}
+                      />
+                    </div>
+                  </section>
+
+                  <section className="rounded-[24px] border border-border/70 bg-card/85 p-4 shadow-card">
                     <h2 className="mb-3 text-sm font-bold">Resumo de emendas</h2>
                     <div className="space-y-2 text-xs">
                       <SummaryRow
@@ -376,17 +473,33 @@ const PoliticoDetalhe = () => {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
-                <h2 className="mb-3 flex items-center gap-2 text-base font-bold">
-                  <Plane className="h-4.5 w-4.5 text-accent" />
-                  Viagens
-                </h2>
+              <section className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h2 className="flex items-center gap-2 text-base font-bold sm:text-lg">
+                      <Plane className="h-4.5 w-4.5 text-accent" />
+                      Viagens
+                    </h2>
+                    <p className="text-xs text-muted-foreground sm:text-sm">
+                      Registros paginados de deslocamento no recorte selecionado.
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-muted px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+                    {formatCountCompact(viagensTotalView)} viagens
+                  </div>
+                </div>
 
                 {viagensPage.length === 0 ? (
                   <EmptyState message="Nenhuma viagem registrada neste periodo." />
                 ) : (
                   <>
-                    <div className="overflow-x-auto">
+                    <div className="space-y-3 md:hidden">
+                      {viagensPage.map((viagem, index) => (
+                        <MobileViagemCard key={viagem.processoId || index} viagem={viagem} />
+                      ))}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
                       <table className="w-full min-w-[700px] text-xs">
                         <thead>
                           <tr className="border-b border-border/80 text-left text-muted-foreground">
@@ -407,12 +520,7 @@ const PoliticoDetalhe = () => {
                                 {viagem.motivo || "-"}
                               </td>
                               <td className="max-w-[240px] truncate py-2.5 pr-4 text-muted-foreground">
-                                {viagem.trechos?.nodes
-                                  ?.map(
-                                    (trecho) =>
-                                      `${trecho.origemCidade} -> ${trecho.destinoCidade}`
-                                  )
-                                  .join(" | ") || "-"}
+                                {buildTrechosLabel(viagem)}
                               </td>
                               <td className="py-2.5 text-right font-semibold text-primary">
                                 {formatCents(viagem.valorDiariasCents)}
@@ -432,23 +540,40 @@ const PoliticoDetalhe = () => {
                         limit={PAGE_SIZE}
                         offset={viagensOffset}
                         onPageChange={setViagensOffset}
+                        itemLabel="viagens"
                       />
                     ) : null}
                   </>
                 )}
               </section>
 
-              <section className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
-                <h2 className="mb-3 flex items-center gap-2 text-base font-bold">
-                  <FileText className="h-4.5 w-4.5 text-primary" />
-                  Emendas parlamentares
-                </h2>
+              <section className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h2 className="flex items-center gap-2 text-base font-bold sm:text-lg">
+                      <FileText className="h-4.5 w-4.5 text-primary" />
+                      Emendas parlamentares
+                    </h2>
+                    <p className="text-xs text-muted-foreground sm:text-sm">
+                      Itens paginados com valores de empenho, liquidacao e pagamento.
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-muted px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+                    {formatCountCompact(emendasTotalView)} emendas
+                  </div>
+                </div>
 
                 {emendasPage.length === 0 ? (
                   <EmptyState message="Nenhuma emenda registrada neste periodo." />
                 ) : (
                   <>
-                    <div className="overflow-x-auto">
+                    <div className="space-y-3 md:hidden">
+                      {emendasPage.map((emenda, index) => (
+                        <MobileEmendaCard key={emenda.id || index} emenda={emenda} />
+                      ))}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
                       <table className="w-full min-w-[760px] text-xs">
                         <thead>
                           <tr className="border-b border-border/80 text-left text-muted-foreground">
@@ -493,6 +618,7 @@ const PoliticoDetalhe = () => {
                         limit={PAGE_SIZE}
                         offset={emendasOffset}
                         onPageChange={setEmendasOffset}
+                        itemLabel="emendas"
                       />
                     ) : null}
                   </>
@@ -521,14 +647,16 @@ const MetricCard = ({
   helper?: string;
   icon: typeof Banknote;
 }) => (
-  <article className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
-    <div className="flex items-center justify-between">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+  <article className="rounded-[22px] border border-border/70 bg-card/85 p-4 shadow-card">
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <Icon className="h-4 w-4 text-primary" />
+      <div className="rounded-2xl bg-primary/10 p-2 text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
     </div>
-    <p className="mt-2 text-2xl font-extrabold text-foreground">{value}</p>
+    <p className="mt-3 text-xl font-extrabold leading-tight text-foreground sm:text-2xl">{value}</p>
     {helper ? <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p> : null}
   </article>
 );
@@ -542,34 +670,120 @@ const SummaryRow = ({
   value: string;
   helper?: string;
 }) => (
-  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2">
+  <div className="flex flex-col gap-1 rounded-xl border border-border/70 bg-background/80 px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
     <span className="text-muted-foreground">{label}</span>
-    <span className="text-right">
+    <span className="sm:text-right">
       <span className="block font-semibold text-foreground">{value}</span>
       {helper ? <span className="block text-[10px] text-muted-foreground">{helper}</span> : null}
     </span>
   </div>
 );
 
+const MobileViagemCard = ({ viagem }: { viagem: Viagem }) => (
+  <article className="rounded-[22px] border border-border/70 bg-background/85 p-4 shadow-sm">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-sm font-bold leading-6 text-foreground">
+          {viagem.motivo || viagem.destinos || "Viagem oficial"}
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {formatDate(viagem.dataInicio)} - {formatDate(viagem.dataFim)}
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="text-sm font-bold text-primary">
+          {formatCentsCompact(buildViagemLiquidaCents(viagem))}
+        </p>
+        <p className="text-[11px] text-muted-foreground">total estimado</p>
+      </div>
+    </div>
+
+    <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+      {viagem.orgaoSolicitanteNome ? (
+        <span className="rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
+          {viagem.orgaoSolicitanteNome}
+        </span>
+      ) : null}
+      {viagem.situacao ? (
+        <span className="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
+          {viagem.situacao}
+        </span>
+      ) : null}
+    </div>
+
+    <p className="mt-3 text-xs leading-5 text-muted-foreground">{buildTrechosLabel(viagem)}</p>
+
+    <div className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+      <SummaryRow
+        label="Diarias"
+        value={formatCentsCompact(viagem.valorDiariasCents)}
+        helper={formatCents(viagem.valorDiariasCents)}
+      />
+      <SummaryRow
+        label="Passagens"
+        value={formatCentsCompact(viagem.valorPassagensCents)}
+        helper={formatCents(viagem.valorPassagensCents)}
+      />
+    </div>
+  </article>
+);
+
+const MobileEmendaCard = ({ emenda }: { emenda: Emenda }) => (
+  <article className="rounded-[22px] border border-border/70 bg-background/85 p-4 shadow-sm">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-foreground">
+          {emenda.tipoEmenda || "Emenda parlamentar"}
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">Ano {emenda.anoEmenda || "-"}</p>
+      </div>
+      <div className="text-right">
+        <p className="text-sm font-bold text-primary">
+          {formatCentsCompact(emenda.valorPagoCents)}
+        </p>
+        <p className="text-[11px] text-muted-foreground">pago</p>
+      </div>
+    </div>
+
+    <p className="mt-3 break-all font-mono text-[10px] text-muted-foreground">
+      {emenda.codigoEmenda || "-"}
+    </p>
+
+    <div className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+      <SummaryRow
+        label="Empenhado"
+        value={formatCentsCompact(emenda.valorEmpenhadoCents)}
+        helper={formatCents(emenda.valorEmpenhadoCents)}
+      />
+      <SummaryRow
+        label="Liquidado"
+        value={formatCentsCompact(emenda.valorLiquidadoCents)}
+        helper={formatCents(emenda.valorLiquidadoCents)}
+      />
+    </div>
+  </article>
+);
+
 const DossieSkeleton = () => (
   <div className="space-y-6">
-    <section className="rounded-3xl border border-border/70 bg-card/80 p-6 shadow-card">
-      <div className="flex items-start gap-4">
-        <Skeleton className="h-24 w-24 rounded-2xl" />
+    <section className="rounded-[32px] border border-border/70 bg-card/80 p-6 shadow-card">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <Skeleton className="h-24 w-24 rounded-[24px]" />
         <div className="flex-1 space-y-3">
+          <Skeleton className="h-6 w-32 rounded-full" />
           <Skeleton className="h-8 w-72" />
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-4 w-52" />
+          <Skeleton className="h-4 w-56" />
+          <Skeleton className="h-4 w-64" />
         </div>
       </div>
     </section>
-    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {Array.from({ length: 4 }).map((_, index) => (
-        <Skeleton key={index} className="h-24 w-full rounded-2xl" />
+        <Skeleton key={index} className="h-24 w-full rounded-[22px]" />
       ))}
     </section>
-    <Skeleton className="h-64 w-full rounded-2xl" />
-    <Skeleton className="h-64 w-full rounded-2xl" />
+    <Skeleton className="h-72 w-full rounded-[28px]" />
+    <Skeleton className="h-72 w-full rounded-[28px]" />
   </div>
 );
 
@@ -704,7 +918,7 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
   if (!cards.length) return null;
 
   return (
-    <section className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
+    <section className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
       <h2 className="mb-3 flex items-center gap-2 text-base font-bold">
         <Globe className="h-4.5 w-4.5 text-accent" />
         Perfil em fontes externas
@@ -714,9 +928,9 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
         {cards.map((card) => (
           <article
             key={card.key}
-            className="rounded-xl border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground"
+            className="rounded-[22px] border border-border/70 bg-background/85 p-4 text-xs leading-5 text-muted-foreground"
           >
-            <h3 className="mb-2 flex items-center gap-2 text-xs font-bold text-foreground">
+            <h3 className="mb-3 flex items-center gap-2 text-xs font-bold text-foreground">
               <card.icon className="h-4 w-4 text-primary" />
               {card.label}
             </h3>
@@ -727,6 +941,29 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
     </section>
   );
 };
+
+function buildTrechosLabel(viagem: Viagem) {
+  const trechos =
+    viagem.trechos?.nodes
+      ?.map((trecho) => `${trecho.origemCidade || "-"} -> ${trecho.destinoCidade || "-"}`)
+      .filter(Boolean) ?? [];
+
+  if (trechos.length) {
+    return trechos.join(" | ");
+  }
+
+  return viagem.destinos || "Sem rota detalhada";
+}
+
+function buildViagemLiquidaCents(viagem: Viagem) {
+  const total =
+    toBigInt(viagem.valorDiariasCents) +
+    toBigInt(viagem.valorPassagensCents) +
+    toBigInt(viagem.valorOutrosGastosCents) -
+    toBigInt(viagem.valorDevolucaoCents);
+
+  return total.toString();
+}
 
 function buildEmendasResumo(emendas: Emenda[]) {
   let totalEmpenhado = 0n;

@@ -23,20 +23,20 @@ export function PoliticoNewsSection({
   onRetry,
 }: PoliticoNewsSectionProps) {
   return (
-    <section className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-card">
+    <section className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-bold text-foreground">
+          <h2 className="flex items-center gap-2 text-base font-bold text-foreground sm:text-lg">
             <Newspaper className="h-4.5 w-4.5 text-primary" />
             Noticias recentes
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Menções recentes sobre <strong className="text-foreground">{politico}</strong>.
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            Mencoes recentes sobre <strong className="text-foreground">{politico}</strong>.
           </p>
         </div>
 
         {total > items.length ? (
-          <p className="text-[11px] font-medium text-muted-foreground">
+          <p className="rounded-full bg-muted px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
             {items.length} de {total}
           </p>
         ) : null}
@@ -45,7 +45,11 @@ export function PoliticoNewsSection({
       <div className="mt-4">
         {isLoading ? <PoliticoNewsSkeleton /> : null}
         {!isLoading && error ? (
-          <ErrorStateWithRetry error={error} onRetry={() => onRetry?.()} retryLabel="Recarregar noticias" />
+          <ErrorStateWithRetry
+            error={error}
+            onRetry={() => onRetry?.()}
+            retryLabel="Recarregar noticias"
+          />
         ) : null}
         {!isLoading && !error && items.length === 0 ? (
           <EmptyState message="Nenhuma noticia recente encontrada nos feeds configurados para este politico." />
@@ -55,7 +59,7 @@ export function PoliticoNewsSection({
             {items.map((item, index) => (
               <article
                 key={`${item.link}-${index}`}
-                className="rounded-xl border border-border/70 bg-background/80 p-4 transition-colors hover:bg-muted/30"
+                className="rounded-[22px] border border-border/70 bg-background/85 p-4 transition-colors hover:bg-muted/30"
               >
                 <div className="flex flex-wrap items-center gap-2 text-[11px]">
                   <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
@@ -97,10 +101,7 @@ function PoliticoNewsSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       {Array.from({ length: 4 }).map((_, index) => (
-        <div
-          key={index}
-          className="rounded-xl border border-border/70 bg-background/80 p-4"
-        >
+        <div key={index} className="rounded-[22px] border border-border/70 bg-background/85 p-4">
           <div className="flex gap-2">
             <Skeleton className="h-6 w-24 rounded-full" />
             <Skeleton className="h-6 w-28 rounded-full" />
