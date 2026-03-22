@@ -25,6 +25,7 @@ interface PaginationControlsProps {
   limit: number;
   offset: number;
   onPageChange: (newOffset: number) => void;
+  itemLabel?: string;
   density?: PaginationDensity;
   onDensityChange?: (density: PaginationDensity) => void;
   pageSizeOptions?: number[];
@@ -36,6 +37,7 @@ const PaginationControls = ({
   limit,
   offset,
   onPageChange,
+  itemLabel = "viagens",
   density = "comfortable",
   onDensityChange,
   pageSizeOptions = [20, 40, 60],
@@ -58,7 +60,7 @@ const PaginationControls = ({
             </p>
             <p className="text-sm font-semibold text-foreground">
               {total > 0
-                ? `${offset + 1}-${Math.min(offset + limit, total)} de ${total.toLocaleString("pt-BR")} viagens`
+                ? `${offset + 1}-${Math.min(offset + limit, total)} de ${total.toLocaleString("pt-BR")} ${itemLabel}`
                 : "Nenhum resultado nesta pagina"}
             </p>
             <p className="text-xs text-muted-foreground">
