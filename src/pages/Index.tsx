@@ -211,6 +211,11 @@ const Index = () => {
     leader && centsToNumber(resumo?.totalPagoCents) > 0
       ? (centsToNumber(leader.totalPagoCents) / centsToNumber(resumo?.totalPagoCents)) * 100
       : 0;
+  const leaderToTicketRatio =
+    leader && centsToNumber(resumo?.ticketMedioPagoCents) > 0
+      ? centsToNumber(leader.totalPagoCents) / centsToNumber(resumo?.ticketMedioPagoCents)
+      : 0;
+  const leaderRunnersUp = leaderNodes.slice(1, 3);
   const topPais = paisesQuery.data?.nodes?.[0];
   const featuredPhotoMap = useMemo<Record<string, string>>(
     () => Object.fromEntries(featuredFallback.map((item) => [item.key, item.foto])),
@@ -600,46 +605,80 @@ const Index = () => {
                                 : "Esse destaque representa bancada, grupo ou autoria sem perfil individual publico resolvido."}
                             </p>
 
-                            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                              <HighlightMetric
-                                label="Pago"
-                                value={formatCentsCompact(leader.totalPagoCents)}
-                                helper={formatCents(leader.totalPagoCents)}
-                                tone="primary"
-                                className="col-span-2 sm:col-span-1"
-                              />
-                              <HighlightMetric
-                                label="Emendas"
-                                value={formatCountCompact(leader.totalEmendas ?? 0)}
-                                helper={`${(leader.totalEmendas ?? 0).toLocaleString("pt-BR")} registros`}
-                              />
-                              <HighlightMetric
-                                label="Participacao"
-                                value={`${leadShare.toFixed(1)}%`}
-                                helper="Do total pago do recorte"
-                              />
+                            <div className="mt-5 rounded-[24px] border border-primary/15 bg-white/80 p-4 shadow-sm">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                    Valor lider do recorte
+                                  </p>
+                                  <p className="mt-2 text-3xl font-bold tracking-tight text-primary sm:text-[2rem]">
+                                    {formatCentsCompact(leader.totalPagoCents)}
+                                  </p>
+                                  <p className="mt-1 text-sm text-muted-foreground">
+                                    {formatCents(leader.totalPagoCents)}
+                                  </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 sm:min-w-[240px]">
+                                  <div className="rounded-[20px] border border-border/70 bg-background/80 px-3 py-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                      Emendas
+                                    </p>
+                                    <p className="mt-1 text-lg font-bold text-foreground">
+                                      {formatCountCompact(leader.totalEmendas ?? 0)}
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground">
+                                      {(leader.totalEmendas ?? 0).toLocaleString("pt-BR")} registros
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-[20px] border border-border/70 bg-background/80 px-3 py-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                      Participacao
+                                    </p>
+                                    <p className="mt-1 text-lg font-bold text-foreground">
+                                      {leadShare.toFixed(1)}%
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground">
+                                      Do total pago do recorte
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
 
-                            <div className="mt-5 flex flex-wrap gap-2">
-                              {leaderNodes.slice(1, 3).map((node, index) => (
-                                <span
-                                  key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${index}`}
-                                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-white/80 px-3 py-2 text-xs text-muted-foreground shadow-sm"
-                                >
-                                  <span className="font-semibold text-foreground">
-                                    #{index + 2} {shortName(node.nomeAutorEmenda)}
-                                  </span>
-                                  <span>{formatCentsCompact(node.totalPagoCents)}</span>
-                                </span>
-                              ))}
-                            </div>
+                            {leaderRunnersUp.length ? (
+                              <div className="mt-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                  Proximos nomes no ano
+                                </p>
+                                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                  {leaderRunnersUp.map((node, index) => (
+                                    <div
+                                      key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${index}`}
+                                      className="rounded-[20px] border border-border/70 bg-white/80 px-3 py-3 shadow-sm"
+                                    >
+                                      <p className="truncate text-sm font-semibold text-foreground">
+                                        #{index + 2} {shortName(node.nomeAutorEmenda)}
+                                      </p>
+                                      <p className="mt-1 text-xs text-muted-foreground">
+                                        {formatCountCompact(node.totalEmendas ?? 0)} emendas
+                                      </p>
+                                      <p className="mt-2 text-sm font-bold text-primary">
+                                        {formatCentsCompact(node.totalPagoCents)}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
 
                           <div className="rounded-[24px] border border-border/70 bg-white/80 p-4 shadow-sm">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                              Leitura rapida
+                              Leitura do recorte
                             </p>
-                            <p className="mt-2 text-sm font-semibold text-foreground">
+                            <p className="mt-2 text-base font-semibold text-foreground">
                               {canOpenPoliticoProfile(leader)
                                 ? "Perfil individual disponivel"
                                 : "Autoria coletiva ou nao identificada"}
@@ -649,15 +688,36 @@ const Index = () => {
                                 ? "Esse autor aparece com um unico registro de alto valor no recorte."
                                 : `Esse autor concentra ${formatCountCompact(leader.totalEmendas ?? 0)} emendas no ano analisado.`}
                             </p>
-                            <div className="mt-4 rounded-2xl border border-border/70 bg-background/80 px-3 py-3">
+
+                            <div className="mt-5 rounded-[20px] border border-border/70 bg-background/80 px-3 py-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                  Peso no total pago
+                                </p>
+                                <span className="text-sm font-bold text-foreground">{leadShare.toFixed(1)}%</span>
+                              </div>
+                              <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-border/70">
+                                <div
+                                  className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400"
+                                  style={{ width: `${Math.min(Math.max(leadShare, 6), 100)}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mt-4 rounded-[20px] border border-border/70 bg-background/80 px-3 py-3">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                 Comparativo do lider
                               </p>
                               <p className="mt-1 text-base font-bold text-foreground">
-                                {formatCentsCompact(leader.totalPagoCents)}
+                                {leaderToTicketRatio > 0
+                                  ? `${leaderToTicketRatio.toLocaleString("pt-BR", {
+                                      maximumFractionDigits: 1,
+                                    })}x o ticket medio`
+                                  : formatCentsCompact(leader.totalPagoCents)}
                               </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                contra {formatCentsCompact(resumo?.ticketMedioPagoCents)} de ticket medio por emenda
+                              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                Ticket medio do recorte em {selectedYear}:{" "}
+                                {formatCentsCompact(resumo?.ticketMedioPagoCents)} por emenda.
                               </p>
                             </div>
                           </div>
