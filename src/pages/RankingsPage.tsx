@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { BarChart3, Crown, Globe, Landmark, Medal, Trophy, Users } from "lucide-react";
 
+import AppFooter from "@/components/AppFooter";
 import AppSidebar from "@/components/AppSidebar";
 import StatsCard from "@/components/StatsCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
@@ -259,6 +260,8 @@ const RankingsPage = () => {
               </button>
             </section>
           ) : null}
+
+          <AppFooter className="mt-10" />
         </div>
       </main>
     </div>

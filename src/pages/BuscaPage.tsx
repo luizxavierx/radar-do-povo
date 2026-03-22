@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Filter, MapPin, Search, Users } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import AppFooter from "@/components/AppFooter";
 import AppSidebar from "@/components/AppSidebar";
 import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
@@ -211,6 +212,8 @@ const BuscaPage = () => {
               </button>
             </section>
           ) : null}
+
+          <AppFooter className="mt-10" />
         </div>
       </main>
     </div>

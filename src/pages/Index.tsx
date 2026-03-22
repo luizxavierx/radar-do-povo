@@ -25,6 +25,7 @@ import {
 } from "recharts";
 import { useQueryClient } from "@tanstack/react-query";
 
+import AppFooter from "@/components/AppFooter";
 import AppSidebar from "@/components/AppSidebar";
 import SearchBar from "@/components/SearchBar";
 import StatsCard from "@/components/StatsCard";
@@ -77,44 +78,44 @@ const featuredFallback = [
   {
     key: "lula",
     search: "lula",
-    nomeCanonico: "luiz%20inacio%20lula%20da%20silva",
+    nomeCanonico: "lula",
     nome: "Luiz Inacio Lula da Silva",
-    foto: "https://l-frii.com/wp-content/uploads/2022/10/Bresil-Luiz-Inacio-Lula-da-Silva-elu-president.jpg",
+    foto: "https://upload.wikimedia.org/wikipedia/commons/8/86/Lula_-_foto_oficial_2023-01-09.jpg",
   },
   {
     key: "bolsonaro",
     search: "bolsonaro",
-    nomeCanonico: "jair%20messias%20bolsonaro",
+    nomeCanonico: "bolsonaro",
     nome: "Jair Messias Bolsonaro",
-    foto: "https://1.bp.blogspot.com/-g2gOz-Ze7E0/XC3t-u4zg-I/AAAAAAAANEg/nqoAvbb4Hsc-2EsnEp2zSFcPDsdWdH5cgCLcBGAs/s1600/01.jpg",
+    foto: "https://upload.wikimedia.org/wikipedia/commons/9/93/Jair_Bolsonaro_2019_Portrait.jpg",
   },
   {
     key: "arthurLira",
     search: "arthur lira",
-    nomeCanonico: "arthur%20lira",
+    nomeCanonico: "arthur-lira",
     nome: "Arthur Lira",
     foto: "https://www.camara.leg.br/internet/deputado/bandep/160594.jpg",
   },
   {
     key: "daviAlcolumbre",
     search: "davi alcolumbre",
-    nomeCanonico: "davi%20alcolumbre",
+    nomeCanonico: "davi-alcolumbre",
     nome: "Davi Alcolumbre",
-    foto: "https://s.yimg.com/zb/imgv1/abf557e2-9bba-3a25-8732-0b655111a311/t_500x300",
+    foto: "https://www.senado.leg.br/senadores/img/fotos-oficiais/senador5765.jpg",
   },
   {
     key: "flavioDino",
     search: "flavio dino",
-    nomeCanonico: "flavio dino",
+    nomeCanonico: "flavio-dino",
     nome: "Flavio Dino",
-    foto: "https://s.yimg.com/zb/imgv1/f9745b1e-ec2c-3ece-ae26-a7c410c3f03f/t_500x300",
+    foto: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Flavio_Dino_%28cropped%29.jpg",
   },
   {
     key: "simoneTebet",
     search: "simone tebet",
-    nomeCanonico: "simone tebet",
+    nomeCanonico: "simone-tebet",
     nome: "Simone Tebet",
-    foto: "https://www.tragora.com.br/wp-content/uploads/2022/12/simone-tebet.png",
+    foto: "https://upload.wikimedia.org/wikipedia/commons/8/89/Simone_Tebet_%28cropped%29.jpg",
   },
 ];
 
@@ -564,6 +565,8 @@ const Index = () => {
               </button>
             </section>
           ) : null}
+
+          <AppFooter className="mt-10" />
         </div>
       </main>
     </div>

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plane, Wallet } from "lucide-react";
 
 import type { RankingViagemFiltroInput, Viagem } from "@/api/types";
+import AppFooter from "@/components/AppFooter";
 import AppSidebar from "@/components/AppSidebar";
 import ViagemDetailDrawer from "@/components/viagens/ViagemDetailDrawer";
 import ViagensAnalyticsDeck from "@/components/viagens/ViagensAnalyticsDeck";
@@ -595,6 +596,8 @@ const ViagensPage = () => {
                 onPageSizeChange={handlePageSizeChange}
               />
             </section>
+
+            <AppFooter className="mt-10" />
           </div>
         </div>
       </main>

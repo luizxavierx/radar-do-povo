@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 
+import AppFooter from "@/components/AppFooter";
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
 import { EmptyState, ErrorState } from "@/components/StateViews";
@@ -499,14 +500,16 @@ const PoliticoDetalhe = () => {
                 )}
               </section>
 
-              {politico.perfilExterno ? (
-                <PerfilExternoSection perfil={politico.perfilExterno} />
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </main>
-    </div>
+                {politico.perfilExterno ? (
+                  <PerfilExternoSection perfil={politico.perfilExterno} />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <AppFooter className="mt-10" />
+        </main>
+      </div>
   );
 };
 
