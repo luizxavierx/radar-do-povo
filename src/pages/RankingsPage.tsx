@@ -19,6 +19,7 @@ import {
   Globe,
   Landmark,
   Medal,
+  MoveRight,
   PieChart as PieChartIcon,
   RefreshCcw,
   Trophy,
@@ -165,6 +166,7 @@ const RankingsPage = () => {
   const seriesNodes = serieQuery.data?.nodes ?? [];
   const tiposNodes = (tiposQuery.data?.nodes ?? []).slice(0, 6);
   const paisNodes = (paisesQuery.data?.nodes ?? []).slice(0, 6);
+  const singleYearNode = seriesNodes.length === 1 ? seriesNodes[0] : null;
 
   const serieChartData = useMemo(
     () =>
@@ -191,6 +193,26 @@ const RankingsPage = () => {
       };
     });
   }, [tiposNodes]);
+
+  const annualHighlights = useMemo(() => {
+    if (!seriesNodes.length) {
+      return {
+        strongestPaid: null as EmendaSerieAnualNode | null,
+        strongestEmpenhado: null as EmendaSerieAnualNode | null,
+        latestYear: null as EmendaSerieAnualNode | null,
+      };
+    }
+
+    return {
+      strongestPaid: [...seriesNodes].sort(
+        (a, b) => centsToNumber(b.totalPagoCents) - centsToNumber(a.totalPagoCents)
+      )[0],
+      strongestEmpenhado: [...seriesNodes].sort(
+        (a, b) => centsToNumber(b.totalEmpenhadoCents) - centsToNumber(a.totalEmpenhadoCents)
+      )[0],
+      latestYear: [...seriesNodes].sort((a, b) => b.ano - a.ano)[0],
+    };
+  }, [seriesNodes]);
 
   const clearFilters = () => {
     setScope("parlamentares");
@@ -419,7 +441,7 @@ const RankingsPage = () => {
             ) : null}
           </section>
 
-          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
+          <section className="mt-6 grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
             <div className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
               <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
@@ -439,56 +461,172 @@ const RankingsPage = () => {
                 <EmptyState message="Nenhuma serie anual encontrada para este recorte." />
               ) : null}
 
-              {serieChartData.length ? (
-                <div className="h-[320px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={serieChartData} margin={{ top: 12, left: 0, right: 0, bottom: 8 }}>
-                      <defs>
-                        <linearGradient id="emendasPagoGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(182 89% 30%)" stopOpacity={0.85} />
-                          <stop offset="100%" stopColor="hsl(182 89% 30%)" stopOpacity={0.05} />
-                        </linearGradient>
-                        <linearGradient id="emendasEmpenhadoGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(212 93% 47%)" stopOpacity={0.75} />
-                          <stop offset="100%" stopColor="hsl(212 93% 47%)" stopOpacity={0.05} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid vertical={false} stroke="hsl(206 26% 82%)" strokeDasharray="3 3" />
-                      <XAxis dataKey="ano" tickLine={false} axisLine={false} fontSize={11} />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        fontSize={11}
-                        width={74}
-                        tickFormatter={(value) => `R$ ${(value / 1_000_000).toFixed(0)} mi`}
+              {singleYearNode ? (
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <InsightPill
+                      label="Ano observado"
+                      value={String(singleYearNode.ano)}
+                      helper="Recorte com um unico ano"
+                    />
+                    <InsightPill
+                      label="Pago"
+                      value={formatCentsCompact(singleYearNode.totalPagoCents)}
+                      helper={formatCents(singleYearNode.totalPagoCents)}
+                    />
+                    <InsightPill
+                      label="Empenhado"
+                      value={formatCentsCompact(singleYearNode.totalEmpenhadoCents)}
+                      helper={formatCents(singleYearNode.totalEmpenhadoCents)}
+                    />
+                    <InsightPill
+                      label="Emendas"
+                      value={formatCountCompact(singleYearNode.totalEmendas ?? 0)}
+                      helper={`${(singleYearNode.totalAutores ?? 0).toLocaleString("pt-BR")} autores`}
+                    />
+                  </div>
+
+                  <div className="rounded-[24px] border border-border/70 bg-background/80 p-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <span className="inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+                      Pago
+                      <MoveRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="inline-flex h-2.5 w-2.5 rounded-full bg-blue-500" />
+                      Empenhado
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      <AnnualBar
+                        label="Pago"
+                        value={formatCentsCompact(singleYearNode.totalPagoCents)}
+                        helper={formatCents(singleYearNode.totalPagoCents)}
+                        ratio={1}
+                        tone="primary"
                       />
-                      <RechartsTooltip
-                        formatter={(value: number) =>
-                          value.toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                            maximumFractionDigits: 0,
-                          })
+                      <AnnualBar
+                        label="Empenhado"
+                        value={formatCentsCompact(singleYearNode.totalEmpenhadoCents)}
+                        helper={formatCents(singleYearNode.totalEmpenhadoCents)}
+                        ratio={
+                          Math.min(
+                            1,
+                            Math.max(
+                              0.18,
+                              centsToNumber(singleYearNode.totalEmpenhadoCents) > 0
+                                ? centsToNumber(singleYearNode.totalPagoCents) /
+                                  centsToNumber(singleYearNode.totalEmpenhadoCents)
+                                : 0
+                            )
+                          )
                         }
+                        tone="secondary"
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="empenhado"
-                        stroke="hsl(212 93% 47%)"
-                        fill="url(#emendasEmpenhadoGradient)"
-                        strokeWidth={2}
-                        name="Empenhado"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="pago"
-                        stroke="hsl(182 89% 30%)"
-                        fill="url(#emendasPagoGradient)"
-                        strokeWidth={3}
-                        name="Pago"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              ) : serieChartData.length ? (
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <InsightPill
+                      label="Maior pago"
+                      value={
+                        annualHighlights.strongestPaid
+                          ? `${annualHighlights.strongestPaid.ano}`
+                          : "-"
+                      }
+                      helper={
+                        annualHighlights.strongestPaid
+                          ? formatCentsCompact(annualHighlights.strongestPaid.totalPagoCents)
+                          : "Sem dado"
+                      }
+                    />
+                    <InsightPill
+                      label="Maior empenhado"
+                      value={
+                        annualHighlights.strongestEmpenhado
+                          ? `${annualHighlights.strongestEmpenhado.ano}`
+                          : "-"
+                      }
+                      helper={
+                        annualHighlights.strongestEmpenhado
+                          ? formatCentsCompact(annualHighlights.strongestEmpenhado.totalEmpenhadoCents)
+                          : "Sem dado"
+                      }
+                    />
+                    <InsightPill
+                      label="Ultimo ano"
+                      value={annualHighlights.latestYear ? `${annualHighlights.latestYear.ano}` : "-"}
+                      helper={
+                        annualHighlights.latestYear
+                          ? `${formatCountCompact(annualHighlights.latestYear.totalEmendas ?? 0)} emendas`
+                          : "Sem dado"
+                      }
+                    />
+                  </div>
+
+                  <div className="rounded-[24px] border border-border/70 bg-background/70 p-3 sm:p-4">
+                    <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+                        Pago
+                      </span>
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                        Empenhado
+                      </span>
+                    </div>
+
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={serieChartData} margin={{ top: 12, left: 0, right: 0, bottom: 8 }}>
+                          <defs>
+                            <linearGradient id="emendasPagoGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="hsl(182 89% 30%)" stopOpacity={0.85} />
+                              <stop offset="100%" stopColor="hsl(182 89% 30%)" stopOpacity={0.05} />
+                            </linearGradient>
+                            <linearGradient id="emendasEmpenhadoGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="hsl(212 93% 47%)" stopOpacity={0.75} />
+                              <stop offset="100%" stopColor="hsl(212 93% 47%)" stopOpacity={0.05} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid vertical={false} stroke="hsl(206 26% 82%)" strokeDasharray="3 3" />
+                          <XAxis dataKey="ano" tickLine={false} axisLine={false} fontSize={11} />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            fontSize={11}
+                            width={74}
+                            tickFormatter={(value) => `R$ ${(value / 1_000_000).toFixed(0)} mi`}
+                          />
+                          <RechartsTooltip
+                            formatter={(value: number) =>
+                              value.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                                maximumFractionDigits: 0,
+                              })
+                            }
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="empenhado"
+                            stroke="hsl(212 93% 47%)"
+                            fill="url(#emendasEmpenhadoGradient)"
+                            strokeWidth={2}
+                            name="Empenhado"
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="pago"
+                            stroke="hsl(182 89% 30%)"
+                            fill="url(#emendasPagoGradient)"
+                            strokeWidth={3}
+                            name="Pago"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -685,6 +823,67 @@ const HeroSummaryCard = ({
     <p className="mt-1 text-xs leading-5 text-muted-foreground">{helper}</p>
   </div>
 );
+
+const InsightPill = ({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+}) => (
+  <div className="rounded-[22px] border border-border/70 bg-background/80 px-4 py-3 shadow-sm">
+    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+      {label}
+    </p>
+    <p className="mt-1 text-lg font-bold text-foreground">{value}</p>
+    <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+  </div>
+);
+
+const AnnualBar = ({
+  label,
+  value,
+  helper,
+  ratio,
+  tone,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+  ratio: number;
+  tone: "primary" | "secondary";
+}) => {
+  const width = `${Math.min(100, Math.max(12, ratio * 100))}%`;
+
+  return (
+    <div className="rounded-[22px] border border-border/70 bg-card/70 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            {label}
+          </p>
+          <p className={`mt-1 text-base font-bold ${tone === "primary" ? "text-primary" : "text-blue-600"}`}>
+            {value}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 h-3 rounded-full bg-muted">
+        <div
+          className={`h-3 rounded-full ${
+            tone === "primary"
+              ? "bg-gradient-to-r from-emerald-500 to-cyan-500"
+              : "bg-gradient-to-r from-blue-500 to-sky-500"
+          }`}
+          style={{ width }}
+        />
+      </div>
+    </div>
+  );
+};
 
 const FilterField = ({
   label,
