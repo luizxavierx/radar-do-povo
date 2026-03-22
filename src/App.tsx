@@ -3,11 +3,16 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppShellLayout from "@/components/AppShellLayout";
 import Index from "./pages/Index";
 import PoliticoDetalhe from "./pages/PoliticoDetalhe";
 import BuscaPage from "./pages/BuscaPage";
 import ViagensPage from "./pages/ViagensPage";
 import RankingsPage from "./pages/RankingsPage";
+import TermosPage from "./pages/TermosPage";
+import MetodologiaPage from "./pages/MetodologiaPage";
+import DiretrizesPage from "./pages/DiretrizesPage";
+import ContatoPage from "./pages/ContatoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -28,11 +33,17 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/politico/:id" element={<PoliticoDetalhe />} />
-          <Route path="/busca" element={<BuscaPage />} />
-          <Route path="/viagens" element={<ViagensPage />} />
-          <Route path="/rankings" element={<RankingsPage />} />
+          <Route element={<AppShellLayout />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/politico/:id" element={<PoliticoDetalhe />} />
+            <Route path="/busca" element={<BuscaPage />} />
+            <Route path="/viagens" element={<ViagensPage />} />
+            <Route path="/rankings" element={<RankingsPage />} />
+            <Route path="/termos" element={<TermosPage />} />
+            <Route path="/metodologia" element={<MetodologiaPage />} />
+            <Route path="/diretrizes-editoriais" element={<DiretrizesPage />} />
+            <Route path="/contato" element={<ContatoPage />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

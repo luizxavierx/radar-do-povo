@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plane, Wallet } from "lucide-react";
 
 import type { RankingViagemFiltroInput, Viagem } from "@/api/types";
-import AppFooter from "@/components/AppFooter";
 import AppSidebar from "@/components/AppSidebar";
 import ViagemDetailDrawer from "@/components/viagens/ViagemDetailDrawer";
 import ViagensAnalyticsDeck from "@/components/viagens/ViagensAnalyticsDeck";
@@ -441,10 +440,10 @@ const ViagensPage = () => {
   const canComparePreviousPeriod = filters.anoInicio > 2019 && filters.anoFim > 2019;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-grid-pattern">
+    <div className="overflow-x-hidden">
       <AppSidebar />
 
-      <main className="min-h-screen overflow-x-hidden lg:ml-72">
+      <main className="overflow-x-hidden lg:ml-72">
         <div className="w-full px-3 pb-16 pt-20 sm:px-6 sm:pt-24 lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
           <section className="rounded-[34px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(238,248,251,0.92))] p-5 shadow-elevated backdrop-blur-sm sm:p-8">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -596,8 +595,6 @@ const ViagensPage = () => {
                 onPageSizeChange={handlePageSizeChange}
               />
             </section>
-
-            <AppFooter className="mt-10" />
           </div>
         </div>
       </main>

@@ -10,7 +10,6 @@ import {
 } from "recharts";
 import { BarChart3, Crown, Globe, Landmark, Medal, Trophy, Users } from "lucide-react";
 
-import AppFooter from "@/components/AppFooter";
 import AppSidebar from "@/components/AppSidebar";
 import StatsCard from "@/components/StatsCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
@@ -98,10 +97,10 @@ const RankingsPage = () => {
   const error = activeQuery.error;
 
   return (
-    <div className="min-h-screen bg-grid-pattern">
+    <div>
       <AppSidebar />
 
-      <main className="min-h-screen lg:ml-72">
+      <main className="lg:ml-72">
         <div className="mx-auto w-full max-w-[1240px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
           <section className="animate-fade-up rounded-3xl border border-white/60 bg-card/85 p-7 shadow-elevated backdrop-blur-sm sm:p-8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -260,8 +259,6 @@ const RankingsPage = () => {
               </button>
             </section>
           ) : null}
-
-          <AppFooter className="mt-10" />
         </div>
       </main>
     </div>

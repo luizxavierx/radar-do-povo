@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 
-import AppFooter from "@/components/AppFooter";
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
 import { EmptyState, ErrorState } from "@/components/StateViews";
@@ -131,10 +130,10 @@ const PoliticoDetalhe = () => {
   };
 
   return (
-    <div className="min-h-screen bg-grid-pattern">
+    <div>
       <AppSidebar />
 
-      <main className="min-h-screen lg:ml-72">
+      <main className="lg:ml-72">
         <div className="mx-auto w-full max-w-[1180px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
           <button
             onClick={() => navigate(-1)}
@@ -506,8 +505,6 @@ const PoliticoDetalhe = () => {
               </div>
             ) : null}
           </div>
-
-          <AppFooter className="mt-10" />
         </main>
       </div>
   );
