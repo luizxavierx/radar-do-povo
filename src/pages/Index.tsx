@@ -601,11 +601,11 @@ const Index = () => {
                             )}
                             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                               {canOpenPoliticoProfile(leader)
-                                ? "Clique no nome para abrir o perfil completo do autor quando houver identificacao individual."
-                                : "Esse destaque representa bancada, grupo ou autoria sem perfil individual publico resolvido."}
+                                ? "Perfil individual disponivel para abrir o dossie completo."
+                                : "Autoria coletiva ou sem perfil individual publico resolvido."}
                             </p>
 
-                            <div className="mt-5 rounded-[24px] border border-primary/15 bg-white/80 p-4 shadow-sm">
+                            <div className="mt-5 rounded-[24px] bg-white/80 p-4 shadow-sm ring-1 ring-primary/10">
                               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                                 <div>
                                   <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -619,8 +619,8 @@ const Index = () => {
                                   </p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-2 sm:min-w-[240px]">
-                                  <div className="rounded-[20px] border border-border/70 bg-background/80 px-3 py-3">
+                                <div className="grid grid-cols-2 gap-4 sm:min-w-[240px]">
+                                  <div>
                                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                       Emendas
                                     </p>
@@ -632,7 +632,7 @@ const Index = () => {
                                     </p>
                                   </div>
 
-                                  <div className="rounded-[20px] border border-border/70 bg-background/80 px-3 py-3">
+                                  <div>
                                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                       Participacao
                                     </p>
@@ -650,21 +650,23 @@ const Index = () => {
                             {leaderRunnersUp.length ? (
                               <div className="mt-4">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                  Proximos nomes no ano
+                                  Proximos no ranking
                                 </p>
-                                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                <div className="mt-2 flex flex-wrap gap-2">
                                   {leaderRunnersUp.map((node, index) => (
                                     <div
                                       key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${index}`}
-                                      className="rounded-[20px] border border-border/70 bg-white/80 px-3 py-3 shadow-sm"
+                                      className="inline-flex min-w-[180px] items-center justify-between gap-3 rounded-full bg-white/80 px-3 py-2 text-xs shadow-sm ring-1 ring-border/60"
                                     >
-                                      <p className="truncate text-sm font-semibold text-foreground">
-                                        #{index + 2} {shortName(node.nomeAutorEmenda)}
-                                      </p>
-                                      <p className="mt-1 text-xs text-muted-foreground">
-                                        {formatCountCompact(node.totalEmendas ?? 0)} emendas
-                                      </p>
-                                      <p className="mt-2 text-sm font-bold text-primary">
+                                      <div className="min-w-0">
+                                        <p className="truncate font-semibold text-foreground">
+                                          #{index + 2} {shortName(node.nomeAutorEmenda)}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                          {formatCountCompact(node.totalEmendas ?? 0)} emendas
+                                        </p>
+                                      </div>
+                                      <p className="text-sm font-bold text-primary">
                                         {formatCentsCompact(node.totalPagoCents)}
                                       </p>
                                     </div>
@@ -674,7 +676,7 @@ const Index = () => {
                             ) : null}
                           </div>
 
-                          <div className="rounded-[24px] border border-border/70 bg-white/80 p-4 shadow-sm">
+                          <div className="rounded-[24px] bg-white/75 p-5 shadow-sm ring-1 ring-border/60">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                               Leitura do recorte
                             </p>
@@ -685,11 +687,11 @@ const Index = () => {
                             </p>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
                               {leader.totalEmendas === 1
-                                ? "Esse autor aparece com um unico registro de alto valor no recorte."
-                                : `Esse autor concentra ${formatCountCompact(leader.totalEmendas ?? 0)} emendas no ano analisado.`}
+                                ? "Um unico registro concentra esse destaque no ano."
+                                : `Esse autor concentra ${formatCountCompact(leader.totalEmendas ?? 0)} emendas no recorte analisado.`}
                             </p>
 
-                            <div className="mt-5 rounded-[20px] border border-border/70 bg-background/80 px-3 py-3">
+                            <div className="mt-5 border-t border-border/70 pt-4">
                               <div className="flex items-center justify-between gap-3">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                   Peso no total pago
@@ -704,18 +706,18 @@ const Index = () => {
                               </div>
                             </div>
 
-                            <div className="mt-4 rounded-[20px] border border-border/70 bg-background/80 px-3 py-3">
+                            <div className="mt-4 border-t border-border/70 pt-4">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                 Comparativo do lider
                               </p>
-                              <p className="mt-1 text-base font-bold text-foreground">
+                              <p className="mt-2 text-xl font-bold tracking-tight text-foreground">
                                 {leaderToTicketRatio > 0
                                   ? `${leaderToTicketRatio.toLocaleString("pt-BR", {
                                       maximumFractionDigits: 1,
                                     })}x o ticket medio`
                                   : formatCentsCompact(leader.totalPagoCents)}
                               </p>
-                              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                              <p className="mt-1 text-sm leading-6 text-muted-foreground">
                                 Ticket medio do recorte em {selectedYear}:{" "}
                                 {formatCentsCompact(resumo?.ticketMedioPagoCents)} por emenda.
                               </p>
@@ -793,7 +795,7 @@ const Index = () => {
 
                     {typeChartData.length ? (
                       <div className="space-y-4">
-                        <div className="relative mx-auto h-[190px] w-[190px] sm:h-[220px] sm:w-[220px]">
+                        <div className="relative mx-auto h-[180px] w-[180px] sm:h-[200px] sm:w-[200px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
@@ -802,9 +804,9 @@ const Index = () => {
                                 nameKey="nome"
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={58}
-                                outerRadius={92}
-                                paddingAngle={2}
+                                innerRadius={54}
+                                outerRadius={82}
+                                paddingAngle={3}
                               >
                                 {typeChartData.map((item) => (
                                   <Cell key={item.nome} fill={item.color} />
@@ -823,57 +825,59 @@ const Index = () => {
                           </ResponsiveContainer>
                           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                              Lider
+                              Lider do ano
                             </p>
-                            <p className="mt-1 max-w-[92px] text-center text-xs font-bold leading-4 text-foreground">
+                            <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+                              {topTipo ? `${topTipo.share.toFixed(0)}%` : "-"}
+                            </p>
+                            <p className="mt-1 max-w-[98px] text-center text-[11px] font-semibold leading-4 text-muted-foreground">
                               {compactTipoLabel(topTipo?.nome)}
                             </p>
                           </div>
                         </div>
 
-                        <div className="rounded-[22px] border border-border/70 bg-background/80 px-3 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                            Leitura principal
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-foreground">
-                            {topTipo
-                              ? `${compactTipoLabel(topTipo.nome)} lidera a composicao do ano`
-                              : "Sem lider de composicao"}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {topTipo
-                              ? `${topTipo.share.toFixed(1)}% do valor pago e ${formatCountCompact(topTipo.totalEmendas)} emendas.`
-                              : "Sem distribuicao suficiente para leitura."}
-                          </p>
-                        </div>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {topTipo
+                            ? `${compactTipoLabel(topTipo.nome)} lidera a composicao do ano com ${topTipo.share.toFixed(1)}% do valor pago.`
+                            : "Sem distribuicao suficiente para leitura."}
+                        </p>
 
                         <div className="space-y-2">
                           {typeChartData.map((item) => (
                             <div
                               key={item.nome}
-                              className="flex items-start justify-between gap-3 rounded-2xl border border-border/70 bg-background/80 px-3 py-3"
+                              className="rounded-[20px] bg-background/80 px-3 py-3 ring-1 ring-border/60"
                             >
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className="mt-0.5 h-2.5 w-2.5 rounded-full"
-                                    style={{ backgroundColor: item.color }}
-                                  />
-                                  <p className="truncate text-sm font-semibold text-foreground">
-                                    {item.nome}
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className="mt-0.5 h-2.5 w-2.5 rounded-full"
+                                      style={{ backgroundColor: item.color }}
+                                    />
+                                    <p className="truncate text-sm font-semibold text-foreground">
+                                      {compactTipoLabel(item.nome)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm font-bold text-primary">
+                                    {formatCentsCompact(String(Math.round(item.value * 100)))}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {item.share.toFixed(1)}%
                                   </p>
                                 </div>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                  {formatCountCompact(item.totalEmendas)} emendas
-                                </p>
                               </div>
-                              <div className="text-right">
-                                <p className="text-sm font-bold text-primary">
-                                  {formatCentsCompact(String(Math.round(item.value * 100)))}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  {item.share.toFixed(1)}% do pago
-                                </p>
+                              <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/70">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{ width: `${Math.max(item.share, 8)}%`, backgroundColor: item.color }}
+                                />
+                              </div>
+                              <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                                <span>{formatCountCompact(item.totalEmendas)} emendas</span>
+                                <span>{item.share.toFixed(1)}% do pago</span>
                               </div>
                             </div>
                           ))}
