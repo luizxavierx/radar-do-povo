@@ -207,10 +207,6 @@ const Index = () => {
   }, [tiposQuery.data?.nodes]);
   const leader = leaderNodes[0];
   const topTipo = typeChartData[0];
-  const leadShare =
-    leader && centsToNumber(resumo?.totalPagoCents) > 0
-      ? (centsToNumber(leader.totalPagoCents) / centsToNumber(resumo?.totalPagoCents)) * 100
-      : 0;
   const leaderToTicketRatio =
     leader && centsToNumber(resumo?.ticketMedioPagoCents) > 0
       ? centsToNumber(leader.totalPagoCents) / centsToNumber(resumo?.ticketMedioPagoCents)
@@ -619,7 +615,7 @@ const Index = () => {
                                   </p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 sm:min-w-[240px]">
+                                <div className="sm:min-w-[120px]">
                                   <div>
                                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                       Emendas
@@ -629,18 +625,6 @@ const Index = () => {
                                     </p>
                                     <p className="text-[11px] text-muted-foreground">
                                       {(leader.totalEmendas ?? 0).toLocaleString("pt-BR")} registros
-                                    </p>
-                                  </div>
-
-                                  <div>
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                      Participacao
-                                    </p>
-                                    <p className="mt-1 text-lg font-bold text-foreground">
-                                      {leadShare.toFixed(1)}%
-                                    </p>
-                                    <p className="text-[11px] text-muted-foreground">
-                                      Do total pago do recorte
                                     </p>
                                   </div>
                                 </div>
@@ -692,21 +676,6 @@ const Index = () => {
                             </p>
 
                             <div className="mt-5 border-t border-border/70 pt-4">
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                  Peso no total pago
-                                </p>
-                                <span className="text-sm font-bold text-foreground">{leadShare.toFixed(1)}%</span>
-                              </div>
-                              <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-border/70">
-                                <div
-                                  className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400"
-                                  style={{ width: `${Math.min(Math.max(leadShare, 6), 100)}%` }}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="mt-4 border-t border-border/70 pt-4">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                 Comparativo do lider
                               </p>
