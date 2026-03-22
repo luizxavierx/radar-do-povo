@@ -51,7 +51,6 @@ import {
   formatCountCompact,
 } from "@/lib/formatters";
 import { buildPoliticoPath } from "@/lib/politicos";
-import { cn } from "@/lib/utils";
 import type {
   Connection,
   PoliticoResumo,
@@ -767,92 +766,152 @@ const Index = () => {
 
                     {typeChartData.length ? (
                       <div className="space-y-4">
-                        <div className="relative mx-auto h-[180px] w-[180px] sm:h-[200px] sm:w-[200px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={typeChartData}
-                                dataKey="value"
-                                nameKey="nome"
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={54}
-                                outerRadius={82}
-                                paddingAngle={3}
-                              >
-                                {typeChartData.map((item) => (
-                                  <Cell key={item.nome} fill={item.color} />
-                                ))}
-                              </Pie>
-                              <RechartsTooltip
-                                formatter={(value: number) =>
-                                  value.toLocaleString("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL",
-                                    maximumFractionDigits: 0,
-                                  })
-                                }
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                              Lider do ano
-                            </p>
-                            <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
-                              {topTipo ? `${topTipo.share.toFixed(0)}%` : "-"}
-                            </p>
-                            <p className="mt-1 max-w-[98px] text-center text-[11px] font-semibold leading-4 text-muted-foreground">
-                              {compactTipoLabel(topTipo?.nome)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <p className="text-sm leading-6 text-muted-foreground">
-                          {topTipo
-                            ? `${compactTipoLabel(topTipo.nome)} lidera a composicao do ano com ${topTipo.share.toFixed(1)}% do valor pago.`
-                            : "Sem distribuicao suficiente para leitura."}
-                        </p>
-
-                        <div className="space-y-2">
-                          {typeChartData.map((item) => (
-                            <div
-                              key={item.nome}
-                              className="rounded-[20px] bg-background/80 px-3 py-3 ring-1 ring-border/60"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className="mt-0.5 h-2.5 w-2.5 rounded-full"
-                                      style={{ backgroundColor: item.color }}
-                                    />
-                                    <p className="truncate text-sm font-semibold text-foreground">
-                                      {compactTipoLabel(item.nome)}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-sm font-bold text-primary">
-                                    {formatCentsCompact(String(Math.round(item.value * 100)))}
-                                  </p>
-                                  <p className="text-[11px] text-muted-foreground">
-                                    {item.share.toFixed(1)}%
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/70">
-                                <div
-                                  className="h-full rounded-full"
-                                  style={{ width: `${Math.max(item.share, 8)}%`, backgroundColor: item.color }}
-                                />
-                              </div>
-                              <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                                <span>{formatCountCompact(item.totalEmendas)} emendas</span>
-                                <span>{item.share.toFixed(1)}% do pago</span>
+                        <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)] xl:items-center">
+                          <div className="rounded-[30px] bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-4 shadow-sm ring-1 ring-border/60">
+                            <div className="relative mx-auto h-[196px] w-[196px]">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie
+                                    data={typeChartData}
+                                    dataKey="value"
+                                    nameKey="nome"
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={88}
+                                    paddingAngle={3}
+                                    stroke="#ffffff"
+                                    strokeWidth={5}
+                                  >
+                                    {typeChartData.map((item) => (
+                                      <Cell key={item.nome} fill={item.color} />
+                                    ))}
+                                  </Pie>
+                                  <RechartsTooltip
+                                    formatter={(value: number) =>
+                                      value.toLocaleString("pt-BR", {
+                                        style: "currency",
+                                        currency: "BRL",
+                                        maximumFractionDigits: 0,
+                                      })
+                                    }
+                                  />
+                                </PieChart>
+                              </ResponsiveContainer>
+                              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                  Tipo lider
+                                </p>
+                                <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
+                                  {topTipo ? `${topTipo.share.toFixed(0)}%` : "-"}
+                                </p>
+                                <p className="mt-2 max-w-[112px] text-center text-[11px] font-semibold leading-4 text-muted-foreground">
+                                  {compactTipoLabel(topTipo?.nome)}
+                                </p>
                               </div>
                             </div>
-                          ))}
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="rounded-[26px] bg-background/90 p-4 shadow-sm ring-1 ring-border/60 sm:p-5">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                    Leitura principal
+                                  </p>
+                                  <p className="mt-2 text-lg font-bold leading-tight text-foreground sm:text-xl">
+                                    {topTipo
+                                      ? compactTipoLabel(topTipo.nome)
+                                      : "Sem lider de composicao"}
+                                  </p>
+                                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                    {topTipo
+                                      ? `${compactTipoLabel(topTipo.nome)} puxa a maior fatia do ano e concentra ${topTipo.share.toFixed(1)}% do valor pago.`
+                                      : "Sem distribuicao suficiente para leitura."}
+                                  </p>
+                                </div>
+                                <div className="rounded-[22px] bg-primary/10 px-4 py-3 text-left sm:min-w-[148px]">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/80">
+                                    Valor lider
+                                  </p>
+                                  <p className="mt-1 text-xl font-bold text-primary">
+                                    {topTipo ? formatCentsCompact(String(Math.round(topTipo.value * 100))) : "-"}
+                                  </p>
+                                  <p className="mt-1 text-[11px] text-muted-foreground">
+                                    {topTipo ? `${formatCountCompact(topTipo.totalEmendas)} emendas` : "Sem registros"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="mt-4">
+                                <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+                                  <span>Mapa do recorte</span>
+                                  <span>100% do valor pago</span>
+                                </div>
+                                <div className="mt-2 flex h-3 overflow-hidden rounded-full bg-border/60">
+                                  {typeChartData.map((item) => (
+                                    <div
+                                      key={`${item.nome}-segment`}
+                                      className="h-full first:rounded-l-full last:rounded-r-full"
+                                      style={{
+                                        width: `${Math.max(item.share, 4)}%`,
+                                        backgroundColor: item.color,
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {typeChartData.map((item) => (
+                                <div
+                                  key={item.nome}
+                                  className="rounded-[22px] border border-border/70 bg-background/85 px-4 py-4 shadow-sm"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <span
+                                          className="mt-0.5 h-2.5 w-2.5 rounded-full"
+                                          style={{ backgroundColor: item.color }}
+                                        />
+                                        <p className="truncate text-sm font-semibold text-foreground">
+                                          {compactTipoLabel(item.nome)}
+                                        </p>
+                                      </div>
+                                      <p className="mt-2 text-[11px] text-muted-foreground">
+                                        {formatCountCompact(item.totalEmendas)} emendas
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-base font-bold text-foreground">
+                                        {item.share.toFixed(1)}%
+                                      </p>
+                                      <p className="mt-1 text-[11px] text-muted-foreground">
+                                        do pago
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-4 flex items-end justify-between gap-3">
+                                    <p className="text-sm font-bold text-primary">
+                                      {formatCentsCompact(String(Math.round(item.value * 100)))}
+                                    </p>
+                                    <div className="h-2.5 w-20 overflow-hidden rounded-full bg-border/70">
+                                      <div
+                                        className="h-full rounded-full"
+                                        style={{
+                                          width: `${Math.max(item.share, 8)}%`,
+                                          backgroundColor: item.color,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ) : null}
@@ -969,38 +1028,6 @@ const HomeBriefCard = ({
   </div>
 );
 
-const HighlightMetric = ({
-  label,
-  value,
-  helper,
-  tone = "default",
-  className,
-}: {
-  label: string;
-  value: string;
-  helper: string;
-  tone?: "default" | "primary";
-  className?: string;
-}) => (
-  <div
-    className={cn(
-      "rounded-[22px] border px-3 py-3",
-      tone === "primary"
-        ? "border-primary/25 bg-primary/10"
-        : "border-border/70 bg-background/80",
-      className
-    )}
-  >
-    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-      {label}
-    </p>
-    <p className={`mt-1 text-sm font-bold ${tone === "primary" ? "text-primary" : "text-foreground"}`}>
-      {value}
-    </p>
-    <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p>
-  </div>
-);
-
 const RankingRow = ({
   node,
   rank,
@@ -1018,68 +1045,82 @@ const RankingRow = ({
 
   return (
     <article className="rounded-[24px] border border-border/70 bg-background/80 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-card sm:p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-soft text-primary">
-            {Icon ? <Icon className="h-4.5 w-4.5" /> : <span className="text-xs font-bold">#{rank}</span>}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            {canOpenProfile ? (
-              <button
-                type="button"
-                onClick={onOpenProfile}
-                disabled={openingProfile}
-                className="inline-flex max-w-full items-center gap-2 text-left text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:text-primary disabled:cursor-wait disabled:opacity-70"
-              >
-                <span className="truncate">{node.nomeAutorEmenda}</span>
-                <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
-              </button>
-            ) : (
-              <p className="truncate text-sm font-bold uppercase tracking-wide text-foreground">
-                {node.nomeAutorEmenda}
-              </p>
-            )}
-
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-              <span className="rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
-                {formatCountCompact(node.totalEmendas ?? 0)} emendas
-              </span>
-              <span
-                className={`rounded-full px-2.5 py-1 font-medium ${
-                  canOpenProfile
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {canOpenProfile
-                  ? openingProfile
-                    ? "Abrindo perfil..."
-                    : "Perfil completo"
-                  : "Sem perfil individual"}
-              </span>
-            </div>
-          </div>
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-soft text-primary">
+          {Icon ? <Icon className="h-4.5 w-4.5" /> : <span className="text-xs font-bold">#{rank}</span>}
         </div>
 
-        <div className="grid flex-1 grid-cols-2 gap-2 lg:grid-cols-3">
-          <HighlightMetric
-            label="Pago"
-            value={formatCentsCompact(node.totalPagoCents)}
-            helper={formatCents(node.totalPagoCents)}
-            tone="primary"
-            className="col-span-2 lg:col-span-1"
-          />
-          <HighlightMetric
-            label="Empenhado"
-            value={formatCentsCompact(node.totalEmpenhadoCents)}
-            helper={formatCents(node.totalEmpenhadoCents)}
-          />
-          <HighlightMetric
-            label="Liquidado"
-            value={formatCentsCompact(node.totalLiquidadoCents)}
-            helper={formatCents(node.totalLiquidadoCents)}
-          />
+        <div className="min-w-0 flex-1">
+          {canOpenProfile ? (
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              disabled={openingProfile}
+              className="inline-flex max-w-full items-center gap-2 text-left text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:text-primary disabled:cursor-wait disabled:opacity-70"
+            >
+              <span className="truncate">{node.nomeAutorEmenda}</span>
+              <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
+            </button>
+          ) : (
+            <p className="truncate text-sm font-bold uppercase tracking-wide text-foreground">
+              {node.nomeAutorEmenda}
+            </p>
+          )}
+
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
+              {formatCountCompact(node.totalEmendas ?? 0)} emendas
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-1 font-medium ${
+                canOpenProfile
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {canOpenProfile
+                ? openingProfile
+                  ? "Abrindo perfil..."
+                  : "Perfil completo"
+                : "Sem perfil individual"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="rounded-[24px] bg-gradient-to-br from-primary/[0.10] via-white to-cyan-50 px-4 py-4 ring-1 ring-primary/15 sm:px-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">
+            Pago
+          </p>
+          <p className="mt-2 text-2xl font-bold leading-none tracking-tight text-primary sm:text-[1.9rem]">
+            {formatCentsCompact(node.totalPagoCents)}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{formatCents(node.totalPagoCents)}</p>
+        </div>
+
+        <div className="rounded-[22px] border border-border/70 bg-white/85 px-4 py-4 shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Empenhado
+          </p>
+          <p className="mt-2 text-xl font-bold leading-tight text-foreground">
+            {formatCentsCompact(node.totalEmpenhadoCents)}
+          </p>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            {formatCents(node.totalEmpenhadoCents)}
+          </p>
+        </div>
+
+        <div className="rounded-[22px] border border-border/70 bg-white/85 px-4 py-4 shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Liquidado
+          </p>
+          <p className="mt-2 text-xl font-bold leading-tight text-foreground">
+            {formatCentsCompact(node.totalLiquidadoCents)}
+          </p>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            {formatCents(node.totalLiquidadoCents)}
+          </p>
         </div>
       </div>
     </article>
