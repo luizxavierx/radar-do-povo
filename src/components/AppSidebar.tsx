@@ -33,13 +33,13 @@ const quickLinks = [
   {
     icon: Compass,
     label: "Painel de viagens",
-    description: "Leitura executiva",
+    description: "Visao principal",
     path: "/viagens",
   },
   {
     icon: LibraryBig,
     label: "Comparativos",
-    description: "Autores e orgaos",
+    description: "Rankings anuais",
     path: "/rankings",
   },
 ];
@@ -62,9 +62,8 @@ const AppSidebar = () => {
     <>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-border/80 bg-white/95 backdrop-blur-sm lg:hidden">
         <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between px-4">
-          <button onClick={() => goTo("/")} className="inline-flex items-center gap-2">
+          <button onClick={() => goTo("/")} className="inline-flex items-center">
             <img src={logo} alt="Radar do Povo" className="h-9 w-auto" />
-            <span className="text-sm font-display font-semibold text-foreground">Radar do Povo</span>
           </button>
 
           <button
@@ -92,12 +91,8 @@ const AppSidebar = () => {
         <div className="flex h-full flex-col overflow-y-auto">
           <div className="border-b border-sidebar-border/80 px-5 py-5">
             <div className="flex items-center justify-between gap-2">
-              <button onClick={() => goTo("/")} className="inline-flex items-center gap-3 text-left">
+              <button onClick={() => goTo("/")} className="inline-flex items-center text-left">
                 <img src={logo} alt="Radar do Povo" className="h-12 w-auto" />
-                <div>
-                  <p className="font-display text-sm font-semibold text-sidebar-foreground">Radar do Povo</p>
-                  <p className="text-[11px] text-sidebar-foreground/65">Transparencia analitica</p>
-                </div>
               </button>
 
               <button
@@ -114,12 +109,8 @@ const AppSidebar = () => {
                 Painel institucional
               </p>
               <p className="mt-2 text-sm font-semibold text-foreground">
-                Dados oficiais organizados para leitura rapida e investigativa.
+                Dados publicos organizados para leitura clara.
               </p>
-              <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
-                <span className="rounded-full bg-white px-2 py-1">fontes federais</span>
-                <span className="rounded-full bg-white px-2 py-1">analise publica</span>
-              </div>
             </div>
           </div>
 
@@ -206,10 +197,7 @@ const AppSidebar = () => {
                 <Activity className="h-4 w-4 animate-pulse-glow rounded-full text-primary" />
               </div>
               <p className="mt-2 text-sm font-medium text-foreground">
-                Monitoramento ativo de gastos, viagens e perfis publicos.
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Fonte consolidada para leitura analitica e rastreabilidade.
+                Monitoramento ativo.
               </p>
             </div>
           </div>

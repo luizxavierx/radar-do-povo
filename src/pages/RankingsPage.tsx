@@ -93,20 +93,6 @@ const RankingsPage = () => {
     [rawNodes]
   );
 
-  const deputadosESenadoresIguais = useMemo(() => {
-    const dep = (deputadosQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
-    const sen = (senadoresQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
-    if (!dep.length || !sen.length) return false;
-
-    const signature = (nodes: TopGastadorEmenda[]) =>
-      nodes
-        .slice(0, 10)
-        .map((node) => `${node.nomeAutorEmenda}|${node.totalPagoCents}`)
-        .join(";");
-
-    return signature(dep) === signature(sen);
-  }, [deputadosQuery.data?.nodes, senadoresQuery.data?.nodes]);
-
   const loading = activeQuery.isLoading;
   const error = activeQuery.error;
 
@@ -120,10 +106,10 @@ const RankingsPage = () => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h1 className="text-3xl font-extrabold">
-                  Rankings anuais <span className="text-gradient-primary">em conformidade com a API</span>
+                  Rankings anuais <span className="text-gradient-primary">dos maiores volumes</span>
                 </h1>
                 <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                  Deputados e senadores usam endpoints dedicados. Bancadas sao filtradas no front a partir do ranking Geral.
+                  Recorte rapido dos principais autores por ano e por grupo.
                 </p>
               </div>
 
@@ -179,24 +165,17 @@ const RankingsPage = () => {
               label="Registros visiveis"
               value={formatCountCompact(totalRegistros)}
               helper={totalRegistros.toLocaleString("pt-BR")}
-              description="Top retornado pela API neste recorte"
+              description="Autores listados no recorte"
               variant="blue"
             />
             <StatsCard
               label="Media por registro"
               value={mediaPagoCompact}
               helper={mediaPago}
-              description="Total pago dividido por registros"
+              description="Media por autor"
               variant="yellow"
             />
           </section>
-
-          {deputadosESenadoresIguais &&
-          (activeTab === "deputados" || activeTab === "senadores") ? (
-            <section className="mt-4 rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-              A API retornou os mesmos resultados para deputados e senadores neste ano. O front esta separado por endpoint, mas os dados da origem vieram iguais.
-            </section>
-          ) : null}
 
           <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-3">

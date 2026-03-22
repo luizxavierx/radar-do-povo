@@ -480,21 +480,8 @@ const ViagensPage = () => {
                     </span>
                   </h1>
                   <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
-                    Uma leitura analitica e editorial dos deslocamentos oficiais para entender
-                    volume, concentracao de despesas e padroes por orgao, periodo e viajante.
+                    Leitura clara dos deslocamentos oficiais por periodo, orgao e viajante.
                   </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                    dados oficiais consolidados
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
-                    leitura executiva
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
-                    rastreabilidade por processo
-                  </span>
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">

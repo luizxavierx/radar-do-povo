@@ -4,12 +4,10 @@ import {
   Activity,
   BarChart3,
   Banknote,
-  Building2,
   Crown,
   Globe,
   Landmark,
   Medal,
-  Plane,
   Search,
   ShieldCheck,
   Sparkles,
@@ -199,20 +197,6 @@ const Index = () => {
           politico: undefined,
         }));
 
-  const deputadosESenadoresIguais = useMemo(() => {
-    const dep = (deputadosQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
-    const sen = (senadoresQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
-    if (!dep.length || !sen.length) return false;
-
-    const signature = (nodes: TopGastadorEmenda[]) =>
-      nodes
-        .slice(0, 10)
-        .map((node) => `${node.nomeAutorEmenda}|${node.totalPagoCents}`)
-        .join(";");
-
-    return signature(dep) === signature(sen);
-  }, [deputadosQuery.data?.nodes, senadoresQuery.data?.nodes]);
-
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setOffset(0);
@@ -276,7 +260,7 @@ const Index = () => {
                   Radar do Povo <span className="text-gradient-primary">moderno e orientado por dados</span>
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-                  Visao consolidada de emendas parlamentares, trilha de gastos publicos e sinais de concentracao por parlamentar e por pais.
+                  Emendas, gastos publicos e perfis politicos em uma leitura mais clara e direta.
                 </p>
               </div>
 
@@ -312,7 +296,7 @@ const Index = () => {
             <SearchBar
               onSearch={handleSearch}
               isLoading={isSearching && searchQuery.isLoading}
-              placeholder="Digite nome, partido ou parte do nome canonico"
+              placeholder="Digite nome ou partido"
               submitLabel="Consultar"
               autoSearch
               debounceMs={300}
@@ -320,72 +304,12 @@ const Index = () => {
           </section>
 
           {!isSearching ? (
-            <section className="mt-9 rounded-3xl border border-border/75 bg-card/85 p-6 shadow-card sm:p-7">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-base font-bold sm:text-lg">Perfis em destaque</h2>
-                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                    Atalhos para os nomes mais buscados no momento.
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigate("/busca")}
-                  className="inline-flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
-                >
-                  <Search className="h-3.5 w-3.5" />
-                  Ver busca completa
-                </button>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                {featuredPoliticos.map((perfil) => {
-                  const politico = perfil.politico;
-                  const nome = politico?.nomeCompleto || politico?.nomeCanonico || perfil.search;
-                  const partido = politico?.partido;
-                  const uf = politico?.uf;
-                  const imageUrl =
-                    politico?.fotoUrl || featuredPhotoMap[perfil.key] || buildAvatarUrl(nome);
-
-                  return (
-                    <button
-                      key={perfil.key}
-                      onClick={() =>
-                        politico?.nomeCanonico
-                          ? navigate(`/politico/${encodeURIComponent(politico.nomeCanonico)}`)
-                          : handleSearch(perfil.search)
-                      }
-                      className="rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={imageUrl}
-                          alt={nome}
-                          className="h-9 w-9 flex-shrink-0 rounded-full border border-border object-cover"
-                        />
-
-                        <div className="min-w-0">
-                          <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
-                            {nome}
-                          </p>
-                          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                            {[partido, uf].filter(Boolean).join(" - ") || "Perfil principal"}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
-          {!isSearching ? (
             <section className="mt-8 rounded-3xl border border-border/75 bg-card/85 p-6 shadow-card sm:p-7">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-base font-bold sm:text-lg">Top buscas</h2>
                   <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                    Atalhos diretos para abrir o perfil completo dos nomes mais procurados.
+                    Perfis acessados com mais frequencia.
                   </p>
                 </div>
                 <button
@@ -415,22 +339,22 @@ const Index = () => {
                           ? navigate(`/politico/${encodeURIComponent(profileSlug)}`)
                           : handleSearch(perfil.search)
                       }
-                    className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={nome}
-                      className="h-9 w-9 flex-shrink-0 rounded-full border border-border object-cover"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
-                        {nome}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        Abrir perfil completo
-                      </p>
-                    </div>
-                  </button>
+                      className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={nome}
+                        className="h-9 w-9 flex-shrink-0 rounded-full border border-border object-cover"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
+                          {nome}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Abrir perfil completo
+                        </p>
+                      </div>
+                    </button>
                   );
                 })}
               </div>
@@ -472,7 +396,7 @@ const Index = () => {
                   label="Registros no ranking"
                   value={formatCountCompact(total)}
                   helper={total.toLocaleString("pt-BR")}
-                  description="Top retornado pela API"
+                  description="Autores listados no recorte"
                   icon={Users}
                   variant="blue"
                 />
@@ -480,7 +404,7 @@ const Index = () => {
                   label="Total emendas"
                   value={formatCountCompact(totalEmendas)}
                   helper={totalEmendas.toLocaleString("pt-BR")}
-                  description="Soma de emendas do recorte"
+                  description="Emendas somadas no recorte"
                   icon={BarChart3}
                   variant="yellow"
                 />
@@ -488,7 +412,7 @@ const Index = () => {
                   label="Ticket por emenda"
                   value={mediaPagoPorEmendaCompact}
                   helper={mediaPagoPorEmenda}
-                  description="Total pago dividido por emendas"
+                  description="Media por emenda"
                   icon={ShieldCheck}
                   variant="blue"
                 />
@@ -510,13 +434,6 @@ const Index = () => {
                   </button>
                 ))}
               </section>
-
-              {deputadosESenadoresIguais &&
-              (activeTab === "deputados" || activeTab === "senadores") ? (
-                <section className="mt-4 rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-                  A API retornou dados identicos para deputados e senadores neste ano. O front esta separado corretamente por endpoint, mas os dados de origem vieram iguais.
-                </section>
-              ) : null}
 
               <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="space-y-4">
@@ -624,38 +541,10 @@ const Index = () => {
 
                     {topPais ? (
                       <div className="mt-3 rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
-                        Maior volume no ano: <strong>{topPais.pais}</strong> com{" "}
-                        <strong>{formatCentsCompact(topPais.totalPagoCents)}</strong>{" "}
-                        <span className="text-primary/80">({formatCents(topPais.totalPagoCents)})</span>.
+                        Lider do ano: <strong>{topPais.pais}</strong> com{" "}
+                        <strong>{formatCentsCompact(topPais.totalPagoCents)}</strong>.
                       </div>
                     ) : null}
-                  </section>
-
-                  <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
-                    <h2 className="mb-3 text-sm font-bold">Atalhos de exploracao</h2>
-                    <div className="grid grid-cols-1 gap-2">
-                      <button
-                        onClick={() => navigate("/viagens")}
-                        className="flex items-center justify-between rounded-xl border border-border/80 bg-background/80 px-3 py-2 text-left text-xs font-medium hover:bg-muted/70"
-                      >
-                        Abrir area completa de viagens
-                        <Plane className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                      <button
-                        onClick={() => navigate("/rankings")}
-                        className="flex items-center justify-between rounded-xl border border-border/80 bg-background/80 px-3 py-2 text-left text-xs font-medium hover:bg-muted/70"
-                      >
-                        Abrir ranking com filtros avancados
-                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                      <button
-                        onClick={() => navigate("/busca")}
-                        className="flex items-center justify-between rounded-xl border border-border/80 bg-background/80 px-3 py-2 text-left text-xs font-medium hover:bg-muted/70"
-                      >
-                        Ir para busca detalhada de politicos
-                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                    </div>
                   </section>
                 </div>
               </section>

@@ -31,14 +31,13 @@ export function PoliticoNewsSection({
             Noticias recentes
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Manchetes mais recentes encontradas em RSS para{" "}
-            <strong className="text-foreground">{politico}</strong>.
+            Menções recentes sobre <strong className="text-foreground">{politico}</strong>.
           </p>
         </div>
 
         {total > items.length ? (
           <p className="text-[11px] font-medium text-muted-foreground">
-            Exibindo {items.length} de {total} noticias filtradas.
+            {items.length} de {total}
           </p>
         ) : null}
       </div>

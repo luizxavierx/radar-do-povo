@@ -84,7 +84,7 @@ const BuscaPage = () => {
               Busca inteligente de <span className="text-gradient-primary">politicos</span>
             </h1>
             <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-              Consulte por nome e refine por partido, UF e cargo para cruzar rapidamente os perfis retornados pela API.
+              Encontre perfis por nome, partido, UF ou cargo.
             </p>
 
             <div className="mt-5">
@@ -158,14 +158,13 @@ const BuscaPage = () => {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-3 text-xs">
-              <span className="rounded-full border border-border bg-background px-3 py-1 text-muted-foreground">
-                Filtros ativos: {hasFilter ? "sim" : "nao"}
-              </span>
-              <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-primary">
-                Resultado total: {total}
-              </span>
-            </div>
+            {hasFilter ? (
+              <div className="mt-5 text-xs">
+                <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-primary">
+                  {total} resultado(s)
+                </span>
+              </div>
+            ) : null}
           </section>
 
           <section className="mt-8 space-y-3">
@@ -245,11 +244,6 @@ const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
           ) : null}
           {politico.cargoAtual ? (
             <span className="rounded-full bg-accent/10 px-2 py-0.5 font-semibold text-accent">{politico.cargoAtual}</span>
-          ) : null}
-          {politico.dataNascimento ? (
-            <span className="rounded-full bg-background px-2 py-0.5 font-semibold text-muted-foreground">
-              nascimento informado
-            </span>
           ) : null}
         </div>
       </div>

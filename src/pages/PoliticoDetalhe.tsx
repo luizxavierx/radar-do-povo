@@ -337,15 +337,6 @@ const PoliticoDetalhe = () => {
                       />
                     </div>
                   </section>
-
-                  <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
-                    <h2 className="mb-3 text-sm font-bold">Periodo ativo</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Este painel esta consultando a API entre{" "}
-                      <strong className="text-foreground">{anoInicio}</strong> e{" "}
-                      <strong className="text-foreground">{anoFim}</strong>.
-                    </p>
-                  </section>
                 </div>
               </section>
 
@@ -359,12 +350,6 @@ const PoliticoDetalhe = () => {
                   <EmptyState message="Nenhuma viagem registrada neste periodo." />
                 ) : (
                   <>
-                    {viagensTotalApi > viagensNodes.length ? (
-                      <p className="mb-3 text-[11px] text-muted-foreground">
-                        Mostrando {viagensNodes.length} de {viagensTotalApi} viagens retornadas.
-                      </p>
-                    ) : null}
-
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[700px] text-xs">
                         <thead>
@@ -427,12 +412,6 @@ const PoliticoDetalhe = () => {
                   <EmptyState message="Nenhuma emenda registrada neste periodo." />
                 ) : (
                   <>
-                    {emendasTotalApi > emendasNodes.length ? (
-                      <p className="mb-3 text-[11px] text-muted-foreground">
-                        Mostrando {emendasNodes.length} de {emendasTotalApi} emendas retornadas.
-                      </p>
-                    ) : null}
-
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[760px] text-xs">
                         <thead>

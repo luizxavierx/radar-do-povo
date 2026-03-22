@@ -87,13 +87,6 @@ function sortLabel(sortBy: ViagensSortKey, axis: "data" | "valor") {
   return sortBy === "valor_asc" ? "asc" : "desc";
 }
 
-function sortExplanation(sortBy: ViagensSortKey) {
-  if (sortBy === "data_desc") return "mais recentes primeiro";
-  if (sortBy === "data_asc") return "mais antigas primeiro";
-  if (sortBy === "valor_desc") return "maiores valores primeiro";
-  return "menores valores primeiro";
-}
-
 const ViagensTable = ({
   data,
   isLoading,
@@ -126,22 +119,17 @@ const ViagensTable = ({
       <div className="rounded-[30px] border border-border/70 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-2">
-            <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-              <Plane className="h-3.5 w-3.5" />
-              Ledger principal
-            </p>
             <div>
               <h3 className="text-xl font-extrabold text-foreground sm:text-2xl">
                 Viagens no detalhe
               </h3>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Uma lista premium para cruzar viajante, orgao, periodo, rota e valor total sem
-                perder contexto nem afundar em ruido visual.
+                Lista principal do recorte atual.
               </p>
             </div>
           </div>
 
-          <div className="grid w-full gap-3 sm:grid-cols-3 xl:w-auto xl:min-w-[560px]">
+          <div className="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:min-w-[380px]">
             <article className="rounded-2xl border border-border/70 bg-white/85 px-4 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Nesta pagina
@@ -165,24 +153,18 @@ const ViagensTable = ({
                 {formatCents(pageTotal.toString())}
               </p>
             </article>
-
-            <article className="rounded-2xl border border-border/70 bg-white/85 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Leitura atual
-              </p>
-              <p className="mt-2 text-base font-bold text-foreground">
-                Pagina {currentPage} de {totalPages}
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{sortExplanation(sortBy)}</p>
-            </article>
           </div>
         </div>
 
         <div className="mt-5 flex flex-col gap-3 border-t border-border/60 pt-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
+              <Plane className="h-3.5 w-3.5 text-primary" />
+              {formatCountCompact(data?.total ?? 0)} viagens no recorte
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
               <Wallet className="h-3.5 w-3.5 text-primary" />
-              Total do recorte: {formatCountCompact(data?.total ?? 0)} viagens
+              Pagina {currentPage} de {totalPages}
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
               densidade {density === "compact" ? "compacta" : "confortavel"}
