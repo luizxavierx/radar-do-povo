@@ -2,7 +2,9 @@ import {
   ArrowUpDown,
   ArrowUpRight,
   CalendarRange,
+  ChevronRight,
   Landmark,
+  MapPin,
   Plane,
   Wallet,
 } from "lucide-react";
@@ -216,88 +218,92 @@ const ViagensTable = ({
 
       {!isLoading && !error && rows.length ? (
         <>
-          <div className="mt-5 overflow-hidden rounded-[28px] border border-border/70 bg-background/90 md:hidden">
-            {rows.map((viagem) => {
-              const isActive = selectedProcessoId === viagem.processoId;
-              const total = getViagemTotalCents(viagem);
+          <ScrollArea className="mt-5 max-h-[68vh] overflow-hidden rounded-[28px] border border-border/70 bg-background/90 md:hidden">
+            <div>
+              {rows.map((viagem) => {
+                const isActive = selectedProcessoId === viagem.processoId;
+                const total = getViagemTotalCents(viagem);
 
-              return (
-                <button
-                  key={viagem.processoId || `${viagem.nomeViajante}-${viagem.dataInicio}`}
-                  type="button"
-                  onClick={() => onOpenDetail(viagem)}
-                  className={`block w-full border-b border-border/70 text-left transition-colors last:border-b-0 ${
-                    isActive ? "bg-primary/5" : "bg-background/85 hover:bg-slate-50"
-                  } ${mobileRowPadding}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="line-clamp-2 text-sm font-bold text-foreground">
-                        {viagem.nomeViajante || "-"}
-                      </p>
-                      <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                        {viagem.cargo || viagem.funcao || viagem.descricaoFuncao || "Cargo nao informado"}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-bold text-foreground">
-                        {formatCentsCompact(total.toString())}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {formatCents(total.toString())}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 grid gap-3 rounded-[22px] border border-border/60 bg-white/90 p-3 text-xs">
-                    <div className="grid grid-cols-[1fr_auto] gap-3">
-                      <div>
-                        <p className="font-semibold text-foreground">Destino</p>
-                        <p className="mt-1 line-clamp-1 text-muted-foreground">
-                          {viagem.destinos || "Destino nao informado"}
+                return (
+                  <button
+                    key={viagem.processoId || `${viagem.nomeViajante}-${viagem.dataInicio}`}
+                    type="button"
+                    onClick={() => onOpenDetail(viagem)}
+                    className={`block w-full border-b border-border/70 text-left transition-colors last:border-b-0 ${
+                      isActive ? "bg-primary/5" : "bg-background/85 hover:bg-slate-50"
+                    } ${mobileRowPadding}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-sm font-bold text-foreground">
+                          {viagem.nomeViajante || "-"}
+                        </p>
+                        <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                          {viagem.cargo || viagem.funcao || viagem.descricaoFuncao || "Cargo nao informado"}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">{formatDate(viagem.dataInicio)}</p>
-                        <p className="mt-1 text-muted-foreground">ate {formatDate(viagem.dataFim)}</p>
+
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold text-foreground">
+                          {formatCentsCompact(total.toString())}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatCents(total.toString())}
+                        </p>
                       </div>
                     </div>
 
-                    <div>
-                      <p className="font-semibold text-foreground">Orgao</p>
-                      <p className="mt-1 line-clamp-1 text-muted-foreground">
-                        {viagem.orgaoSuperiorNome || "Orgao superior nao informado"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
-                      {viagem.situacao ? (
-                        <span className="rounded-full border border-border bg-card px-2 py-1">
-                          {viagem.situacao}
+                    <div className="mt-3 grid gap-2 text-xs">
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <CalendarRange className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span>
+                          {formatDate(viagem.dataInicio)} ate {formatDate(viagem.dataFim)}
                         </span>
-                      ) : null}
-                      {viagem.viagemUrgente ? (
-                        <span className="rounded-full border border-amber-300/50 bg-amber-50 px-2 py-1 text-amber-700">
-                          urgente
+                      </div>
+
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <Landmark className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span className="line-clamp-1">
+                          {viagem.orgaoSuperiorNome || "Orgao superior nao informado"}
                         </span>
-                      ) : null}
+                      </div>
+
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span className="line-clamp-1">
+                          {viagem.destinos || "Destino nao informado"}
+                        </span>
+                      </div>
                     </div>
 
-                    <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-                      Abrir
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                        {viagem.situacao ? (
+                          <span className="rounded-full border border-border bg-card px-2 py-1">
+                            {viagem.situacao}
+                          </span>
+                        ) : null}
+                        {viagem.viagemUrgente ? (
+                          <span className="rounded-full border border-amber-300/50 bg-amber-50 px-2 py-1 text-amber-700">
+                            urgente
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                        Detalhe
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
 
           <div className="mt-5 hidden overflow-hidden rounded-3xl border border-border/70 bg-background/80 md:block">
-            <ScrollArea className="w-full">
+            <ScrollArea className="h-[72vh] w-full">
               <div className="min-w-[1040px]">
                 <Table>
                   <TableHeader>
@@ -414,6 +420,7 @@ const ViagensTable = ({
                 </Table>
               </div>
               <ScrollBar orientation="horizontal" />
+              <ScrollBar orientation="vertical" />
             </ScrollArea>
           </div>
 

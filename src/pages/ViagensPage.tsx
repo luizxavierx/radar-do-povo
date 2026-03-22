@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDownRight, Plane, Sparkles } from "lucide-react";
+import { Plane, Wallet } from "lucide-react";
 
 import type { RankingViagemFiltroInput, Viagem } from "@/api/types";
 import AppSidebar from "@/components/AppSidebar";
-import { Button } from "@/components/ui/button";
 import ViagemDetailDrawer from "@/components/viagens/ViagemDetailDrawer";
 import ViagensAnalyticsDeck from "@/components/viagens/ViagensAnalyticsDeck";
 import ViagensFilters, { type ViagensFilterState } from "@/components/viagens/ViagensFilters";
@@ -19,7 +18,7 @@ import { useTopOrgaosSolicitantesViagens } from "@/hooks/useTopOrgaosSolicitante
 import { useTopOrgaosSuperioresViagens } from "@/hooks/useTopOrgaosSuperioresViagens";
 import { useTopViajantes } from "@/hooks/useTopViajantes";
 import { useViagensPainel } from "@/hooks/useViagensPainel";
-import { formatCents, formatCentsCompact, formatCountCompact, toBigInt } from "@/lib/formatters";
+import { formatCents, formatCentsCompact, formatCountCompact } from "@/lib/formatters";
 import { fetchViagensPainel, normalizeViagensFilter } from "@/services/viagensService";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -424,24 +423,6 @@ const ViagensPage = () => {
     });
   };
 
-  const scrollToSection = (id: string) => {
-    if (typeof document === "undefined") return;
-    const element = document.getElementById(id);
-    if (!element) return;
-
-    element.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const selectedTotal =
-    viagensPainelQuery.data?.nodes.reduce((acc, item) => {
-      const bruto =
-        toBigInt(item.valorDiariasCents) +
-        toBigInt(item.valorPassagensCents) +
-        toBigInt(item.valorOutrosGastosCents) -
-        toBigInt(item.valorDevolucaoCents);
-
-      return acc + (bruto > 0n ? bruto : 0n);
-    }, 0n) || 0n;
   const activeFilterCount = [
     filters.orgaoSuperiorCodigo,
     filters.orgaoSolicitanteCodigo,
@@ -465,104 +446,69 @@ const ViagensPage = () => {
       <main className="min-h-screen overflow-x-hidden lg:ml-72">
         <div className="w-full px-3 pb-16 pt-20 sm:px-6 sm:pt-24 lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
           <section className="rounded-[34px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(238,248,251,0.92))] p-5 shadow-elevated backdrop-blur-sm sm:p-8">
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-              <div className="min-w-0 space-y-5">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0 max-w-3xl">
                 <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                   <Plane className="h-3.5 w-3.5" />
-                  Area de viagens
+                  Painel de viagens
                 </p>
 
-                <div className="space-y-3">
-                  <h1 className="max-w-4xl text-3xl font-extrabold leading-tight text-foreground sm:text-5xl">
-                    Viagens oficiais em foco
-                    <span className="mt-1 block bg-gradient-to-r from-foreground via-primary to-sky-500 bg-clip-text text-transparent">
-                      quem viajou, quanto custou e onde o gasto se concentrou
-                    </span>
-                  </h1>
-                  <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
-                    Leitura clara dos deslocamentos oficiais por periodo, orgao e viajante.
-                  </p>
-                </div>
+                <h1 className="mt-3 text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">
+                  Viagens oficiais <span className="text-gradient-primary">em foco</span>
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
+                  Leitura clara dos deslocamentos oficiais por periodo, orgao e viajante.
+                </p>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Button
-                    className="rounded-2xl px-5"
-                    onClick={() => scrollToSection("viagens-analises")}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Explorar analises
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl bg-white px-5"
-                    onClick={() => scrollToSection("viagens-lista")}
-                  >
-                    <ArrowDownRight className="h-4 w-4" />
-                    Ir para a lista principal
-                  </Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-foreground">
+                    {filters.anoInicio} a {filters.anoFim}
+                  </span>
+                  {activeFilterCount ? (
+                    <span className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-foreground">
+                      {activeFilterCount} filtro(s)
+                    </span>
+                  ) : null}
+                  {savedViewLabel ? (
+                    <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                      {savedViewLabel}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 
-              <div className="grid min-w-0 gap-3 sm:grid-cols-2 sm:gap-4">
-                <article className="rounded-[28px] border border-primary/15 bg-gradient-to-br from-primary/8 via-white to-cyan-50 p-5 shadow-card sm:col-span-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                    Gasto liquido do periodo
-                  </p>
-                  <p className="mt-3 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+              <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:min-w-[420px]">
+                <article className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-primary/8 via-white to-cyan-50 p-4 shadow-card sm:p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                      Gasto liquido
+                    </p>
+                    <span className="rounded-xl bg-primary/10 p-2 text-primary">
+                      <Wallet className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <p className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
                     {formatCentsCompact(resumoData?.totalGastoLiquidoCents)}
                   </p>
-                  <p className="mt-2 text-sm font-medium text-foreground/80">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {formatCents(resumoData?.totalGastoLiquidoCents)}
                   </p>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Numero central para acompanhar o impacto financeiro do recorte atual depois de
-                    devolucoes e ajustes.
-                  </p>
                 </article>
 
                 <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Periodo
-                  </p>
-                  <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
-                    {filters.anoInicio} - {filters.anoFim}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">Aplicado em toda a pagina</p>
-                </article>
-
-                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Filtros ativos
-                  </p>
-                  <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
-                    {activeFilterCount ? formatCountCompact(activeFilterCount) : "Nenhum"}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {savedViewLabel ? savedViewLabel : "Refino alem do periodo"}
-                  </p>
-                </article>
-
-                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Viagens no recorte
-                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Viagens no recorte
+                    </p>
+                    <span className="rounded-xl bg-primary/10 p-2 text-primary">
+                      <Plane className="h-4 w-4" />
+                    </span>
+                  </div>
                   <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
                     {formatCountCompact(totalViagensPainel)}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
                     {totalViagensPainel.toLocaleString("pt-BR")} viagens encontradas
-                  </p>
-                </article>
-
-                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Soma da pagina
-                  </p>
-                  <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
-                    {formatCentsCompact(selectedTotal.toString())}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {formatCents(selectedTotal.toString())}
                   </p>
                 </article>
               </div>
