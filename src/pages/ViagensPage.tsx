@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plane } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
 
 import AppSidebar from "@/components/AppSidebar";
 import TopGastadoresCard from "@/components/viagens/TopGastadoresCard";
@@ -33,6 +32,7 @@ const DEFAULT_YEAR = CURRENT_YEAR - 1;
 const TABLE_LIMIT = 20;
 const RANKING_LIMIT = 5;
 const DEFAULT_SORT: ViagensSortKey = "data_desc";
+const VIAGENS_STORAGE_KEY = "radar:viagens:state";
 
 const DEFAULT_FILTERS: ViagensFilterState = {
   recorte: "geral",
@@ -78,99 +78,83 @@ function parseYear(value: string | null, fallback: number) {
   return Number.isInteger(parsed) && parsed >= 2019 && parsed <= CURRENT_YEAR ? parsed : fallback;
 }
 
-function parsePage(value: string | null) {
+function parsePage(value: unknown) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-function parseRecorte(value: string | null): ViagensRecorte {
+function parseRecorte(value: unknown): ViagensRecorte {
   if (value === "deputados" || value === "senadores" || value === "geral") {
     return value;
   }
   return DEFAULT_FILTERS.recorte;
 }
 
-function buildFilterState(searchParams: URLSearchParams): ViagensFilterState {
-  const anoInicio = parseYear(searchParams.get("anoInicio"), DEFAULT_FILTERS.anoInicio);
-  const anoFim = parseYear(searchParams.get("anoFim"), DEFAULT_FILTERS.anoFim);
+function normalizeStoredText(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function buildFilterState(storedFilters: unknown): ViagensFilterState {
+  const raw =
+    storedFilters && typeof storedFilters === "object"
+      ? (storedFilters as Record<string, unknown>)
+      : {};
+  const anoInicio = parseYear(raw.anoInicio as string | null, DEFAULT_FILTERS.anoInicio);
+  const anoFim = parseYear(raw.anoFim as string | null, DEFAULT_FILTERS.anoFim);
 
   return {
-    recorte: parseRecorte(searchParams.get("recorte")),
+    recorte: parseRecorte(raw.recorte),
     anoInicio: Math.min(anoInicio, anoFim),
     anoFim: Math.max(anoInicio, anoFim),
-    orgaoSuperiorCodigo: searchParams.get("orgaoSuperiorCodigo") || "",
-    orgaoSolicitanteCodigo: searchParams.get("orgaoSolicitanteCodigo") || "",
-    search: searchParams.get("search") || "",
-    situacao: searchParams.get("situacao") || "",
-    processoId: searchParams.get("processoId") || "",
-    pcdp: searchParams.get("pcdp") || "",
-    cpfViajante: searchParams.get("cpfViajante") || "",
-    nomeViajante: searchParams.get("nomeViajante") || "",
-    cargo: searchParams.get("cargo") || "",
-    funcao: searchParams.get("funcao") || "",
-    destino: searchParams.get("destino") || "",
-    motivo: searchParams.get("motivo") || "",
+    orgaoSuperiorCodigo: normalizeStoredText(raw.orgaoSuperiorCodigo),
+    orgaoSolicitanteCodigo: normalizeStoredText(raw.orgaoSolicitanteCodigo),
+    search: normalizeStoredText(raw.search),
+    situacao: normalizeStoredText(raw.situacao),
+    processoId: normalizeStoredText(raw.processoId),
+    pcdp: normalizeStoredText(raw.pcdp),
+    cpfViajante: normalizeStoredText(raw.cpfViajante),
+    nomeViajante: normalizeStoredText(raw.nomeViajante),
+    cargo: normalizeStoredText(raw.cargo),
+    funcao: normalizeStoredText(raw.funcao),
+    destino: normalizeStoredText(raw.destino),
+    motivo: normalizeStoredText(raw.motivo),
   };
 }
 
-function toSearchParams(filter: ViagensFilterState, page: number) {
-  const params = new URLSearchParams();
-  params.set("recorte", filter.recorte);
-  params.set("anoInicio", String(filter.anoInicio));
-  params.set("anoFim", String(filter.anoFim));
-  params.set("page", String(page));
-
-  if (filter.orgaoSuperiorCodigo.trim()) {
-    params.set("orgaoSuperiorCodigo", filter.orgaoSuperiorCodigo.trim());
-  }
-  if (filter.orgaoSolicitanteCodigo.trim()) {
-    params.set("orgaoSolicitanteCodigo", filter.orgaoSolicitanteCodigo.trim());
-  }
-  if (filter.search.trim()) {
-    params.set("search", filter.search.trim());
-  }
-  if (filter.situacao.trim()) {
-    params.set("situacao", filter.situacao.trim());
-  }
-  if (filter.processoId.trim()) {
-    params.set("processoId", filter.processoId.trim());
-  }
-  if (filter.pcdp.trim()) {
-    params.set("pcdp", filter.pcdp.trim());
-  }
-  if (filter.cpfViajante.trim()) {
-    params.set("cpfViajante", filter.cpfViajante.trim());
-  }
-  if (filter.nomeViajante.trim()) {
-    params.set("nomeViajante", filter.nomeViajante.trim());
-  }
-  if (filter.cargo.trim()) {
-    params.set("cargo", filter.cargo.trim());
-  }
-  if (filter.funcao.trim()) {
-    params.set("funcao", filter.funcao.trim());
-  }
-  if (filter.destino.trim()) {
-    params.set("destino", filter.destino.trim());
-  }
-  if (filter.motivo.trim()) {
-    params.set("motivo", filter.motivo.trim());
+function readStoredViagensState(): { filters: ViagensFilterState; page: number } {
+  if (typeof window === "undefined") {
+    return { filters: DEFAULT_FILTERS, page: 1 };
   }
 
-  return params;
+  try {
+    const raw = window.sessionStorage.getItem(VIAGENS_STORAGE_KEY);
+    if (!raw) {
+      return { filters: DEFAULT_FILTERS, page: 1 };
+    }
+
+    const parsed = JSON.parse(raw) as {
+      filters?: unknown;
+      page?: unknown;
+    };
+
+    return {
+      filters: buildFilterState(parsed.filters),
+      page: parsePage(parsed.page),
+    };
+  } catch {
+    return { filters: DEFAULT_FILTERS, page: 1 };
+  }
 }
 
 const ViagensPage = () => {
   const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [filters, setFilters] = useState<ViagensFilterState>(() => readStoredViagensState().filters);
+  const [currentPage, setCurrentPage] = useState<number>(() => readStoredViagensState().page);
   const [sortBy, setSortBy] = useState<ViagensSortKey>(DEFAULT_SORT);
   const [selectedViagem, setSelectedViagem] = useState<Viagem | null>(null);
   const [peopleRankingsReady, setPeopleRankingsReady] = useState(false);
   const [orgaoRankingsReady, setOrgaoRankingsReady] = useState(false);
   const [summaryComplementReady, setSummaryComplementReady] = useState(false);
-
-  const filters = useMemo(() => buildFilterState(searchParams), [searchParams]);
-  const currentPage = parsePage(searchParams.get("page"));
   const offset = (currentPage - 1) * TABLE_LIMIT;
 
   const apiFilter = useMemo<RankingViagemFiltroInput>(
@@ -242,16 +226,18 @@ const ViagensPage = () => {
   );
 
   useEffect(() => {
-    const hasBaseParams =
-      Boolean(searchParams.get("recorte")) &&
-      Boolean(searchParams.get("anoInicio")) &&
-      Boolean(searchParams.get("anoFim")) &&
-      Boolean(searchParams.get("page"));
-
-    if (!hasBaseParams) {
-      setSearchParams(toSearchParams(filters, currentPage), { replace: true });
+    if (typeof window === "undefined") {
+      return;
     }
-  }, [currentPage, filters, searchParams, setSearchParams]);
+
+    window.sessionStorage.setItem(
+      VIAGENS_STORAGE_KEY,
+      JSON.stringify({
+        filters,
+        page: currentPage,
+      })
+    );
+  }, [currentPage, filters]);
 
   useEffect(() => {
     setPeopleRankingsReady(false);
@@ -384,17 +370,18 @@ const ViagensPage = () => {
       next.anoInicio = next.anoFim;
     }
 
-    setSearchParams(toSearchParams(next, 1), { replace: true });
+    setFilters(next);
+    setCurrentPage(1);
   };
 
   const handleReset = () => {
     setSortBy(DEFAULT_SORT);
-    setSearchParams(toSearchParams(DEFAULT_FILTERS, 1), { replace: true });
+    setFilters(DEFAULT_FILTERS);
+    setCurrentPage(1);
   };
 
   const handlePageChange = (nextOffset: number) => {
-    const nextPage = Math.floor(nextOffset / TABLE_LIMIT) + 1;
-    setSearchParams(toSearchParams(filters, nextPage), { replace: true });
+    setCurrentPage(Math.floor(nextOffset / TABLE_LIMIT) + 1);
   };
 
   const selectedTotal =
@@ -435,8 +422,8 @@ const ViagensPage = () => {
                     </h1>
                   </div>
                   <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                    {recorteInfo.label}. {recorteInfo.description} Tudo fica sincronizado com a URL,
-                    com ranking, resumo e tabela respondendo ao mesmo recorte.
+                    {recorteInfo.label}. {recorteInfo.description} Ranking, resumo e tabela
+                    respondem ao mesmo recorte sem expor os filtros na barra do navegador.
                   </p>
                 </div>
 
@@ -471,7 +458,7 @@ const ViagensPage = () => {
                     {filters.anoInicio} - {filters.anoFim}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Filtro sincronizado com a URL e aplicado em toda a pagina.
+                    Filtro aplicado em toda a pagina com persistencia local.
                   </p>
                 </article>
 

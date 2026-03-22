@@ -237,8 +237,8 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
             </p>
             <h2 className="text-xl font-extrabold text-foreground">Recorte e filtros reais do banco</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Busca ampla, filtros exatos e filtros parciais do contrato oficial, todos sincronizados
-              com a URL.
+              Busca ampla, filtros exatos e filtros parciais do contrato oficial, com estado
+              mantido na propria sessao da pagina.
             </p>
           </div>
 
