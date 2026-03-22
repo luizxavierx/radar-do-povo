@@ -444,50 +444,64 @@ const ViagensPage = () => {
       <AppSidebar />
 
       <main className="overflow-x-hidden lg:ml-72">
-        <div className="w-full px-3 pb-16 pt-20 sm:px-6 sm:pt-24 lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
-          <section className="rounded-[34px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(238,248,251,0.92))] p-5 shadow-elevated backdrop-blur-sm sm:p-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div className="min-w-0 max-w-3xl">
-                <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                  <Plane className="h-3.5 w-3.5" />
+        <div className="w-full px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
+
+          {/* ── Hero ── */}
+          <section className="rounded-3xl border border-border bg-card px-6 py-7 sm:px-8 sm:py-8">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+
+              {/* Left: title block */}
+              <div className="min-w-0 max-w-2xl">
+                <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                  <Plane className="h-3 w-3" />
                   Painel de viagens
                 </p>
 
-                <h1 className="mt-3 text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">
-                  Viagens oficiais <span className="text-gradient-primary">em foco</span>
+                <h1 className="mt-3 text-[2rem] font-extrabold leading-[1.15] tracking-tight text-foreground sm:text-[2.4rem]">
+                  Viagens oficiais{" "}
+                  <span className="text-primary">em foco</span>
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
+
+                <p className="mt-2.5 max-w-xl text-sm leading-6 text-muted-foreground">
                   Leitura clara dos deslocamentos oficiais por periodo, orgao e viajante.
                 </p>
 
+                {/* Meta chips */}
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-foreground">
-                    {filters.anoInicio} a {filters.anoFim}
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
+                    {filters.anoInicio === filters.anoFim
+                      ? filters.anoInicio
+                      : `${filters.anoInicio} – ${filters.anoFim}`}
                   </span>
-                  {activeFilterCount ? (
-                    <span className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-foreground">
-                      {activeFilterCount} filtro(s)
+
+                  {activeFilterCount > 0 ? (
+                    <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
+                      {activeFilterCount} filtro{activeFilterCount > 1 ? "s" : ""} ativo{activeFilterCount > 1 ? "s" : ""}
                     </span>
                   ) : null}
+
                   {savedViewLabel ? (
-                    <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                    <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-xs font-medium text-primary">
                       {savedViewLabel}
                     </span>
                   ) : null}
                 </div>
               </div>
 
-              <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:min-w-[420px]">
-                <article className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-primary/8 via-white to-cyan-50 p-4 shadow-card sm:p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              {/* Right: summary cards */}
+              <div className="grid gap-3 sm:grid-cols-2 xl:w-[400px] xl:shrink-0">
+
+                {/* Gasto líquido — destaque principal */}
+                <article className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       Gasto liquido
                     </p>
-                    <span className="rounded-xl bg-primary/10 p-2 text-primary">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Wallet className="h-4 w-4" />
                     </span>
                   </div>
-                  <p className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                  <p className="mt-3 text-2xl font-bold tracking-tight text-primary sm:text-3xl">
                     {formatCentsCompact(resumoData?.totalGastoLiquidoCents)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -495,27 +509,30 @@ const ViagensPage = () => {
                   </p>
                 </article>
 
-                <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:p-5">
-                  <div className="flex items-center justify-between gap-3">
+                {/* Viagens no recorte — neutro */}
+                <article className="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       Viagens no recorte
                     </p>
-                    <span className="rounded-xl bg-primary/10 p-2 text-primary">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                       <Plane className="h-4 w-4" />
                     </span>
                   </div>
-                  <p className="mt-3 text-lg font-extrabold text-foreground sm:text-2xl">
+                  <p className="mt-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                     {formatCountCompact(totalViagensPainel)}
                   </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {totalViagensPainel.toLocaleString("pt-BR")} viagens encontradas
                   </p>
                 </article>
+
               </div>
             </div>
           </section>
 
-          <div className="mt-6 space-y-6">
+          {/* ── Content sections ── */}
+          <div className="mt-5 space-y-5">
             <ViagensFilters
               value={filters}
               onChange={updateFilters}
