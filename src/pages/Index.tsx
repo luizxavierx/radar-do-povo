@@ -50,6 +50,7 @@ import {
   formatCentsCompact,
   formatCountCompact,
 } from "@/lib/formatters";
+import { buildPoliticoPath } from "@/lib/politicos";
 import { cn } from "@/lib/utils";
 import type {
   Connection,
@@ -236,12 +237,16 @@ const Index = () => {
         const fallbackPerfil = featuredFallbackMap[perfil.key];
         const nome =
           politico?.nomeCompleto || politico?.nomeCanonico || fallbackPerfil?.nome || perfil.search;
-        const profileSlug = politico?.nomeCanonico || fallbackPerfil?.nomeCanonico;
+        const profilePath = buildPoliticoPath({
+          nomeCompleto: politico?.nomeCompleto || fallbackPerfil?.nome || perfil.search,
+          nomeCanonico: politico?.nomeCanonico || fallbackPerfil?.nomeCanonico,
+          id: politico?.id,
+        });
 
         return {
           key: perfil.key,
           nome,
-          profileSlug,
+          profilePath,
           search: perfil.search,
           imageCandidates: buildImageCandidates(
             featuredPhotoMap[perfil.key],
@@ -290,7 +295,7 @@ const Index = () => {
 
       const match = selectPoliticoMatch(connection.nodes, authorName);
       if (match?.nomeCanonico || match?.id) {
-        navigate(`/politico/${encodeURIComponent(match.nomeCanonico || match.id)}`);
+        navigate(buildPoliticoPath(match));
       }
     } finally {
       setOpeningProfile((current) => (current === authorName ? null : current));
@@ -422,8 +427,8 @@ const Index = () => {
                       nome={featuredPrimary.nome}
                       imageCandidates={featuredPrimary.imageCandidates}
                       onClick={() =>
-                        featuredPrimary.profileSlug
-                          ? navigate(`/politico/${encodeURIComponent(featuredPrimary.profileSlug)}`)
+                        featuredPrimary.profilePath
+                          ? navigate(featuredPrimary.profilePath)
                           : handleSearch(featuredPrimary.search)
                       }
                     />
@@ -437,8 +442,8 @@ const Index = () => {
                           nome={perfil.nome}
                           imageCandidates={perfil.imageCandidates}
                           onClick={() =>
-                            perfil.profileSlug
-                              ? navigate(`/politico/${encodeURIComponent(perfil.profileSlug)}`)
+                            perfil.profilePath
+                              ? navigate(perfil.profilePath)
                               : handleSearch(perfil.search)
                           }
                         />
@@ -458,15 +463,13 @@ const Index = () => {
                 <EmptyState message="Nenhum politico encontrado para este termo." />
               ) : null}
 
-              {searchQuery.data?.nodes.map((politico) => (
-                <button
-                  key={politico.id}
-                  onClick={() =>
-                    navigate(`/politico/${encodeURIComponent(politico.nomeCanonico || politico.id)}`)
-                  }
-                  className="w-full text-left"
-                >
-                  <PoliticianSearchCard politico={politico} />
+            {searchQuery.data?.nodes.map((politico) => (
+              <button
+                key={politico.id}
+                onClick={() => navigate(buildPoliticoPath(politico))}
+                className="w-full text-left"
+              >
+                <PoliticianSearchCard politico={politico} />
                 </button>
               ))}
             </section>

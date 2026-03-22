@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { usePoliticos } from "@/hooks/usePoliticos";
 import { graphqlRequest } from "@/api/graphqlClient";
 import { POLITICOS_LIST_QUERY } from "@/api/queries";
+import { buildPoliticoPath } from "@/lib/politicos";
 import type { Connection, PoliticoResumo } from "@/api/types";
 
 const PAGE_SIZE = 24;
@@ -178,9 +179,7 @@ const BuscaPage = () => {
             {data?.nodes.map((politico) => (
               <button
                 key={politico.id}
-                onClick={() =>
-                  navigate(`/politico/${encodeURIComponent(politico.nomeCanonico || politico.id)}`)
-                }
+                onClick={() => navigate(buildPoliticoPath(politico))}
                 className="w-full text-left"
               >
                 <PoliticianResultCard politico={politico} />
