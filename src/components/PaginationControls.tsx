@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -149,13 +148,13 @@ const PaginationControls = ({
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <ScrollArea className="w-full rounded-2xl border border-border/70 bg-white/85">
-              <div className="flex min-w-max items-center gap-2 px-2 py-2">
+            <div className="w-full overflow-x-auto rounded-2xl border border-border/70 bg-white/85 overscroll-x-contain">
+              <div className="flex min-w-max snap-x snap-mandatory items-center gap-1.5 px-1.5 py-1.5">
                 {pageItems.map((item, index) =>
                   item === "ellipsis" ? (
                     <span
                       key={`ellipsis-${index}`}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-muted-foreground"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-muted-foreground sm:h-10 sm:w-10"
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </span>
@@ -165,7 +164,7 @@ const PaginationControls = ({
                       type="button"
                       onClick={() => onPageChange((item - 1) * limit)}
                       className={cn(
-                        "inline-flex h-10 min-w-10 items-center justify-center rounded-2xl border px-3 text-sm font-semibold transition-colors",
+                        "inline-flex h-9 min-w-9 shrink-0 snap-start items-center justify-center rounded-2xl border px-3 text-xs font-semibold transition-colors sm:h-10 sm:min-w-10 sm:text-sm",
                         item === currentPage
                           ? "border-primary bg-primary text-primary-foreground shadow-sm"
                           : "border-border/70 bg-white text-foreground hover:bg-muted"
@@ -178,8 +177,7 @@ const PaginationControls = ({
                   )
                 )}
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+            </div>
 
             <Button
               variant="outline"

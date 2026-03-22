@@ -13,7 +13,6 @@ import type { Connection, Viagem } from "@/api/types";
 import PaginationControls, { type PaginationDensity } from "@/components/PaginationControls";
 import { EmptyState, ErrorStateWithRetry } from "@/components/StateViews";
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -218,7 +217,7 @@ const ViagensTable = ({
 
       {!isLoading && !error && rows.length ? (
         <>
-          <ScrollArea className="mt-5 max-h-[68vh] overflow-hidden rounded-[28px] border border-border/70 bg-background/90 md:hidden">
+          <div className="mt-5 max-h-[68vh] overflow-y-auto overscroll-contain rounded-[28px] border border-border/70 bg-background/90 md:hidden">
             <div>
               {rows.map((viagem) => {
                 const isActive = selectedProcessoId === viagem.processoId;
@@ -299,11 +298,10 @@ const ViagensTable = ({
                 );
               })}
             </div>
-            <ScrollBar orientation="vertical" />
-          </ScrollArea>
+          </div>
 
-          <div className="mt-5 hidden overflow-hidden rounded-3xl border border-border/70 bg-background/80 md:block">
-            <ScrollArea className="h-[72vh] w-full">
+          <div className="mt-5 hidden max-h-[72vh] overflow-auto rounded-3xl border border-border/70 bg-background/80 md:block">
+            <div className="w-full">
               <div className="min-w-[1040px]">
                 <Table>
                   <TableHeader>
@@ -419,9 +417,7 @@ const ViagensTable = ({
                   </TableBody>
                 </Table>
               </div>
-              <ScrollBar orientation="horizontal" />
-              <ScrollBar orientation="vertical" />
-            </ScrollArea>
+            </div>
           </div>
 
           <PaginationControls

@@ -162,13 +162,12 @@ const ViagensKpis = ({
           O que importa primeiro no recorte atual
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Um bloco dominante para leitura financeira e um grid de apoio para volume, composicao e
-          indicadores derivados.
+          Valores centrais do recorte atual.
         </p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-        <section className="rounded-[32px] border border-primary/15 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-5 shadow-card sm:p-6">
+        <section className="rounded-[32px] border border-primary/15 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-4 shadow-card sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
@@ -176,15 +175,14 @@ const ViagensKpis = ({
                 KPI principal
               </p>
               <h3 className="mt-3 text-lg font-bold text-foreground">Gasto liquido consolidado</h3>
-              <p className="mt-2 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+              <p className="mt-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-5xl">
                 {formatCentsCompact(data?.totalGastoLiquidoCents)}
               </p>
-              <p className="mt-2 text-sm font-medium text-foreground/80">
+              <p className="mt-2 text-xs font-medium text-foreground/80 sm:text-sm">
                 {formatCents(data?.totalGastoLiquidoCents)}
               </p>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
-                Valor final depois de descontar devolucoes. Use este numero como referencia central
-                para comparar periodos, orgaos e concentracao por viajante.
+              <p className="mt-3 max-w-lg text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
+                Referencia central do recorte depois de devolucoes e ajustes.
               </p>
             </div>
 
@@ -278,7 +276,7 @@ const ViagensKpis = ({
           </div>
         </section>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
           {secondaryCards.map((card) => (
             <StatsCard
               key={card.label}

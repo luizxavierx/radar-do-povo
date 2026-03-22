@@ -321,42 +321,34 @@ const Index = () => {
                 </button>
               </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-5 overflow-x-auto overscroll-x-contain">
+                <div className="flex min-w-max gap-3 pb-1">
                 {featuredPoliticos.slice(0, 4).map((perfil) => {
                   const politico = perfil.politico;
                   const fallbackPerfil = featuredFallbackMap[perfil.key];
                   const nome =
                     politico?.nomeCompleto || politico?.nomeCanonico || fallbackPerfil?.nome || perfil.search;
-                  const imageUrl =
-                    politico?.fotoUrl || featuredPhotoMap[perfil.key] || buildAvatarUrl(nome);
                   const profileSlug = politico?.nomeCanonico || fallbackPerfil?.nomeCanonico;
+                  const imageCandidates = buildImageCandidates(
+                    politico?.fotoUrl,
+                    featuredPhotoMap[perfil.key],
+                    buildAvatarUrl(nome)
+                  );
 
                   return (
-                    <button
+                    <FeaturedPoliticoCard
                       key={perfil.key}
+                      nome={nome}
+                      imageCandidates={imageCandidates}
                       onClick={() =>
                         profileSlug
                           ? navigate(`/politico/${encodeURIComponent(profileSlug)}`)
                           : handleSearch(perfil.search)
                       }
-                      className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
-                    >
-                      <img
-                        src={imageUrl}
-                        alt={nome}
-                        className="h-9 w-9 flex-shrink-0 rounded-full border border-border object-cover"
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
-                          {nome}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          Abrir perfil completo
-                        </p>
-                      </div>
-                    </button>
+                    />
                   );
                 })}
+                </div>
               </div>
             </section>
           ) : null}
@@ -674,6 +666,46 @@ const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
   </article>
 );
 
+const FeaturedPoliticoCard = ({
+  nome,
+  imageCandidates,
+  onClick,
+}: {
+  nome: string;
+  imageCandidates: string[];
+  onClick: () => void;
+}) => {
+  const [imageIndex, setImageIndex] = useState(0);
+  const safeIndex = Math.min(imageIndex, Math.max(imageCandidates.length - 1, 0));
+  const imageUrl = imageCandidates[safeIndex] || buildAvatarUrl(nome);
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex min-w-[250px] items-center gap-3 rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated sm:min-w-[280px]"
+    >
+      <img
+        src={imageUrl}
+        alt={nome}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onError={() =>
+          setImageIndex((current) =>
+            current < imageCandidates.length - 1 ? current + 1 : current
+          )
+        }
+        className="h-12 w-12 flex-shrink-0 rounded-full border border-border object-cover"
+      />
+      <div className="min-w-0">
+        <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground sm:text-xs">
+          {nome}
+        </p>
+        <p className="text-[10px] text-muted-foreground">Abrir perfil completo</p>
+      </div>
+    </button>
+  );
+};
+
 function shortName(value?: string): string {
   if (!value) return "-";
   return value
@@ -687,6 +719,10 @@ function buildAvatarUrl(value: string): string {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     value
   )}&background=e6f7f7&color=0f766e&size=128&format=png`;
+}
+
+function buildImageCandidates(...values: Array<string | undefined>) {
+  return values.filter((value, index, array): value is string => Boolean(value) && array.indexOf(value) === index);
 }
 
 export default Index;

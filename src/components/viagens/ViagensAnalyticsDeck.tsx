@@ -109,7 +109,7 @@ const ViagensAnalyticsDeck = ({
   return (
     <section
       id="viagens-analises"
-      className="rounded-[32px] border border-border/75 bg-card/90 p-5 shadow-card sm:p-6"
+      className="rounded-[32px] border border-border/75 bg-card/90 p-4 shadow-card sm:p-6"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
@@ -121,8 +121,7 @@ const ViagensAnalyticsDeck = ({
             Onde o gasto se concentrou e quem puxou o volume
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Uma leitura organizada para comparar pessoas, orgaos e composicao financeira sem
-            fragmentar a atencao em cards estreitos.
+            Pessoas, orgaos e composicao em uma leitura mais direta.
           </p>
         </div>
 
@@ -147,22 +146,22 @@ const ViagensAnalyticsDeck = ({
       </div>
 
       <Tabs defaultValue="pessoas" className="mt-6">
-        <TabsList className="h-auto flex-wrap rounded-2xl border border-border/70 bg-background/70 p-1">
+        <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-2xl border border-border/70 bg-background/70 p-1">
           <TabsTrigger
             value="pessoas"
-            className="rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
+            className="shrink-0 rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
           >
             Pessoas
           </TabsTrigger>
           <TabsTrigger
             value="orgaos"
-            className="rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
+            className="shrink-0 rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
           >
             Orgaos
           </TabsTrigger>
           <TabsTrigger
             value="composicao"
-            className="rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
+            className="shrink-0 rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
           >
             Composicao
           </TabsTrigger>
