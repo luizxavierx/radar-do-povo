@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import type {
+  EmendaRankingResumo,
+  EmendaSerieAnualNode,
+  EmendaTipoRanking,
   PaginationInput,
   RankingEmendaFiltroInput,
   TopGastadorEmenda,
@@ -11,8 +14,11 @@ import {
   QUERY_STALE_TIME,
 } from "./queryShared";
 import {
+  fetchEmendasResumo,
+  fetchEmendasSerieAnual,
   fetchTopEmendasPorPais,
   fetchTopGastadoresEmendas,
+  fetchTopTiposEmendas,
 } from "@/services/rankingsService";
 
 const TOP30_PAGINATION = { limit: 30, offset: 0 } as const;
@@ -115,6 +121,24 @@ export function useTopEmendasPorPaisAno(ano: number, pagination?: PaginationInpu
   });
 }
 
+export function useEmendaRankingResumo(filtro?: RankingEmendaFiltroInput) {
+  return useQuery<EmendaRankingResumo>({
+    queryKey: ["emenda-ranking-resumo", filtro],
+    queryFn: ({ signal }) => fetchEmendasResumo(filtro, { signal }),
+    staleTime: QUERY_STALE_TIME,
+    gcTime: QUERY_GC_TIME,
+  });
+}
+
+export function useEmendaSerieAnual(filtro?: RankingEmendaFiltroInput) {
+  return useQuery<{ total: number; limit?: number; offset?: number; nodes: EmendaSerieAnualNode[] }>({
+    queryKey: ["emenda-serie-anual", filtro],
+    queryFn: ({ signal }) => fetchEmendasSerieAnual(filtro, { signal }),
+    staleTime: QUERY_STALE_TIME,
+    gcTime: QUERY_GC_TIME,
+  });
+}
+
 export function useTopGastadoresCustom(
   filtro?: RankingEmendaFiltroInput,
   pagination?: PaginationInput
@@ -125,6 +149,38 @@ export function useTopGastadoresCustom(
     queryKey: ["top-gastadores-custom", filtro, normalizedPagination],
     queryFn: ({ signal }) =>
       fetchTopGastadoresEmendas(filtro, normalizedPagination, { signal }),
+    ...paginatedQueryDefaults,
+  });
+}
+
+export function useTopEmendasPorPaisCustom(
+  filtro?: RankingEmendaFiltroInput,
+  pagination?: PaginationInput
+) {
+  const normalizedPagination = normalizePagination(pagination, 10);
+
+  return useQuery({
+    queryKey: ["top-emendas-pais-custom", filtro, normalizedPagination],
+    queryFn: ({ signal }) =>
+      fetchTopEmendasPorPais(filtro, normalizedPagination, { signal }),
+    ...paginatedQueryDefaults,
+  });
+}
+
+export function useTopTiposCustom(
+  filtro?: RankingEmendaFiltroInput,
+  pagination?: PaginationInput
+) {
+  const normalizedPagination = normalizePagination(pagination, 8);
+
+  return useQuery<{
+    total: number;
+    limit: number;
+    offset: number;
+    nodes: EmendaTipoRanking[];
+  }>({
+    queryKey: ["top-tipos-custom", filtro, normalizedPagination],
+    queryFn: ({ signal }) => fetchTopTiposEmendas(filtro, normalizedPagination, { signal }),
     ...paginatedQueryDefaults,
   });
 }

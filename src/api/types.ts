@@ -286,6 +286,46 @@ export interface TopEmendaPais {
   totalLiquidadoCents?: string;
 }
 
+export interface EmendaRankingResumo {
+  totalEmendas?: number;
+  totalAutores?: number;
+  totalPaises?: number;
+  totalTipos?: number;
+  totalEmpenhadoCents?: string;
+  totalLiquidadoCents?: string;
+  totalPagoCents?: string;
+  totalRpInscritosCents?: string;
+  totalRpCanceladosCents?: string;
+  totalRpPagosCents?: string;
+  ticketMedioPagoCents?: string;
+  periodo?: { anoInicio?: number; anoFim?: number };
+}
+
+export interface EmendaSerieAnualNode {
+  ano: number;
+  totalEmendas?: number;
+  totalAutores?: number;
+  totalPaises?: number;
+  totalTipos?: number;
+  totalEmpenhadoCents?: string;
+  totalLiquidadoCents?: string;
+  totalPagoCents?: string;
+  totalRpInscritosCents?: string;
+  totalRpCanceladosCents?: string;
+  totalRpPagosCents?: string;
+}
+
+export interface EmendaTipoRanking {
+  tipoEmenda: string;
+  totalEmendas?: number;
+  totalPagoCents: string;
+  totalEmpenhadoCents?: string;
+  totalLiquidadoCents?: string;
+  totalRpInscritosCents?: string;
+  totalRpCanceladosCents?: string;
+  totalRpPagosCents?: string;
+}
+
 export interface RankingEmendaFiltroInput {
   anoInicio?: number;
   anoFim?: number;
@@ -294,6 +334,7 @@ export interface RankingEmendaFiltroInput {
   pais?: string;
   apenasParlamentares?: boolean;
   cargoParlamentar?: CargoParlamentar;
+  apenasBancadas?: boolean;
 }
 
 // ─── Perfil Externo ───
