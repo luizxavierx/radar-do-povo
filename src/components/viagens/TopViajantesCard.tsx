@@ -1,7 +1,7 @@
 import { Crown, Plane } from "lucide-react";
 import type { Connection, ViagemPessoaRanking } from "@/api/types";
 import { EmptyState, ErrorStateWithRetry, LoadingState } from "@/components/StateViews";
-import { formatCents } from "@/lib/formatters";
+import { formatCents, formatCentsCompact } from "@/lib/formatters";
 import { filterVisibleTravelerRankings } from "@/lib/viagens";
 
 interface TopViajantesCardProps {
@@ -76,9 +76,14 @@ const TopViajantesCard = ({
               <span className="text-muted-foreground">
                 {(item.totalViagens ?? 0).toLocaleString("pt-BR")} viagens no recorte
               </span>
-              <span className="font-semibold text-primary">
-                {formatCents(item.totalGastoLiquidoCents)}
-              </span>
+              <div className="text-right">
+                <span className="block font-semibold text-primary">
+                  {formatCentsCompact(item.totalGastoLiquidoCents)}
+                </span>
+                <span className="block text-[10px] text-muted-foreground">
+                  {formatCents(item.totalGastoLiquidoCents)}
+                </span>
+              </div>
             </div>
           </article>
         ))}

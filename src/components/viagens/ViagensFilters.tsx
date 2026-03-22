@@ -10,10 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ViagensRecorte } from "@/services/viagensService";
 
 export interface ViagensFilterState {
-  recorte: ViagensRecorte;
   anoInicio: number;
   anoFim: number;
   orgaoSuperiorCodigo: string;
@@ -65,18 +63,12 @@ const TEXT_FILTER_KEYS: TextFilterKey[] = [
   "orgaoSolicitanteCodigo",
 ];
 
-const recorteOptions: { id: ViagensRecorte; label: string; hint: string }[] = [
-  { id: "geral", label: "Geral", hint: "Sem filtro de parlamentares" },
-  { id: "deputados", label: "Deputados", hint: "Recorte por cargo parlamentar" },
-  { id: "senadores", label: "Senadores", hint: "Recorte por cargo parlamentar" },
-];
-
 const fieldMeta: { key: TextFilterKey; label: string; placeholder: string }[] = [
   { key: "processoId", label: "Processo ID", placeholder: "0001234-25.2024.1.00.0000" },
   { key: "pcdp", label: "PCDP", placeholder: "Codigo da proposta/viagem" },
   { key: "cpfViajante", label: "CPF do viajante", placeholder: "Somente numeros" },
   { key: "nomeViajante", label: "Nome do viajante", placeholder: "Ex.: Kim Kataguiri" },
-  { key: "cargo", label: "Cargo", placeholder: "Ex.: Deputado Federal" },
+  { key: "cargo", label: "Cargo", placeholder: "Ex.: assessor, servidor ou ministro" },
   { key: "funcao", label: "Funcao", placeholder: "Funcao ou descricao da funcao" },
   { key: "destino", label: "Destino", placeholder: "Ex.: Brasilia" },
   { key: "motivo", label: "Motivo", placeholder: "Ex.: missao oficial" },
@@ -235,10 +227,10 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
               <Filter className="h-3.5 w-3.5" />
               Filtros da Area
             </p>
-            <h2 className="text-xl font-extrabold text-foreground">Recorte e filtros reais do banco</h2>
+            <h2 className="text-xl font-extrabold text-foreground">Filtros reais do banco</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Busca ampla, filtros exatos e filtros parciais do contrato oficial, com estado
-              mantido na propria sessao da pagina.
+              mantido apenas na propria sessao da pagina.
             </p>
           </div>
 
@@ -262,11 +254,9 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
           </article>
           <article className="rounded-2xl border border-border/70 bg-background/80 p-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Recorte
+              Escopo
             </p>
-            <p className="mt-2 text-sm font-bold text-foreground">
-              {recorteOptions.find((option) => option.id === value.recorte)?.label}
-            </p>
+            <p className="mt-2 text-sm font-bold text-foreground">Painel geral</p>
           </article>
           <article className="col-span-2 rounded-2xl border border-primary/20 bg-primary/5 p-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
@@ -280,25 +270,15 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
           </article>
         </div>
 
-        <div className="flex snap-x gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
-          {recorteOptions.map((option) => {
-            const active = value.recorte === option.id;
-
-            return (
-              <button
-                key={option.id}
-                onClick={() => onChange({ recorte: option.id })}
-                className={`min-w-[210px] snap-start rounded-2xl border px-4 py-3 text-left transition-all sm:min-w-0 ${
-                  active
-                    ? "border-primary/35 bg-primary/10 shadow-card"
-                    : "border-border bg-background hover:border-primary/20 hover:bg-muted/40"
-                }`}
-              >
-                <p className="text-sm font-bold text-foreground">{option.label}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{option.hint}</p>
-              </button>
-            );
-          })}
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+            Escopo atual
+          </p>
+          <p className="mt-2 text-sm font-bold text-foreground">Painel geral de viagens</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            O recorte parlamentar foi removido desta tela para manter a leitura mais simples e
+            direta.
+          </p>
         </div>
 
         <div className="rounded-[28px] border border-border/70 bg-background/60 p-4 sm:p-5">
@@ -425,7 +405,7 @@ const ViagensFilters = ({ value, onChange, onReset }: ViagensFiltersProps) => {
               {value.anoInicio} a {value.anoFim}
             </Badge>
             <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
-              Recorte: {recorteOptions.find((option) => option.id === value.recorte)?.label}
+              Painel geral
             </Badge>
             {activeBadges.map((badge) => (
               <Badge

@@ -9,8 +9,6 @@ import type {
   ViagemPessoaRanking,
 } from "@/api/types";
 
-export type ViagensRecorte = "geral" | "deputados" | "senadores";
-
 export interface ViagemDetalheInput {
   processoId: string;
   pcdp?: string;
@@ -81,9 +79,6 @@ export function normalizeViagensFilter(
     return { apenasParlamentares: false };
   }
 
-  const apenasParlamentares = filtro.apenasParlamentares === true;
-  const cargoParlamentar = apenasParlamentares ? filtro.cargoParlamentar : undefined;
-
   const normalized: RankingViagemFiltroInput = {
     anoInicio: filtro.anoInicio,
     anoFim: filtro.anoFim,
@@ -99,41 +94,12 @@ export function normalizeViagensFilter(
     funcao: trimOrUndefined(filtro.funcao),
     destino: trimOrUndefined(filtro.destino),
     motivo: trimOrUndefined(filtro.motivo),
-    apenasParlamentares,
-    cargoParlamentar,
-  };
-
-  const hasValue = Object.values(normalized).some((value) => value !== undefined);
-  return hasValue ? normalized : undefined;
-}
-
-export function applyRecorteToViagensFilter(
-  recorte: ViagensRecorte,
-  filtro: RankingViagemFiltroInput
-): RankingViagemFiltroInput {
-  const base: RankingViagemFiltroInput = {
-    ...filtro,
     apenasParlamentares: false,
     cargoParlamentar: undefined,
   };
 
-  if (recorte === "deputados") {
-    return {
-      ...base,
-      apenasParlamentares: true,
-      cargoParlamentar: "DEPUTADO",
-    };
-  }
-
-  if (recorte === "senadores") {
-    return {
-      ...base,
-      apenasParlamentares: true,
-      cargoParlamentar: "SENADOR",
-    };
-  }
-
-  return base;
+  const hasValue = Object.values(normalized).some((value) => value !== undefined);
+  return hasValue ? normalized : undefined;
 }
 
 export async function fetchResumoViagens(

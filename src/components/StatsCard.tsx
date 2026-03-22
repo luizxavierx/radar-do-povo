@@ -5,6 +5,7 @@ interface StatsCardProps {
   value: string;
   variant?: "green" | "yellow" | "blue";
   description?: string;
+  helper?: string;
   icon?: LucideIcon;
 }
 
@@ -28,6 +29,7 @@ const StatsCard = ({
   value,
   variant = "green",
   description,
+  helper,
   icon: Icon,
 }: StatsCardProps) => (
   <div
@@ -46,6 +48,7 @@ const StatsCard = ({
         ) : null}
       </div>
       <p className="mt-2 text-2xl font-bold font-display text-foreground">{value}</p>
+      {helper ? <p className="mt-1 text-[11px] font-medium text-foreground/80">{helper}</p> : null}
       {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
     </div>
   </div>

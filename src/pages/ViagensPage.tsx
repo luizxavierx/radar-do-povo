@@ -19,12 +19,10 @@ import { useTopOrgaosSuperioresViagens } from "@/hooks/useTopOrgaosSuperioresVia
 import { useTopViajantes } from "@/hooks/useTopViajantes";
 import { useViagensPainel } from "@/hooks/useViagensPainel";
 import type { RankingViagemFiltroInput, Viagem } from "@/api/types";
-import { formatCents, toBigInt } from "@/lib/formatters";
+import { formatCents, formatCentsCompact, formatCountCompact, toBigInt } from "@/lib/formatters";
 import {
-  applyRecorteToViagensFilter,
   fetchViagensPainel,
   normalizeViagensFilter,
-  type ViagensRecorte,
 } from "@/services/viagensService";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -35,7 +33,6 @@ const DEFAULT_SORT: ViagensSortKey = "data_desc";
 const VIAGENS_STORAGE_KEY = "radar:viagens:state";
 
 const DEFAULT_FILTERS: ViagensFilterState = {
-  recorte: "geral",
   anoInicio: DEFAULT_YEAR,
   anoFim: DEFAULT_YEAR,
   orgaoSuperiorCodigo: "",
@@ -52,27 +49,6 @@ const DEFAULT_FILTERS: ViagensFilterState = {
   motivo: "",
 };
 
-const recorteMeta: Record<
-  ViagensRecorte,
-  { label: string; description: string; eyebrow: string }
-> = {
-  geral: {
-    label: "Painel geral de viagens",
-    description: "Visao completa das viagens oficiais sem filtro por cargo parlamentar.",
-    eyebrow: "Recorte Geral",
-  },
-  deputados: {
-    label: "Recorte de deputados",
-    description: "Visao das viagens oficiais filtradas para deputados.",
-    eyebrow: "Camara Federal",
-  },
-  senadores: {
-    label: "Recorte de senadores",
-    description: "Visao das viagens oficiais filtradas para senadores.",
-    eyebrow: "Senado Federal",
-  },
-};
-
 function parseYear(value: string | null, fallback: number) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 2019 && parsed <= CURRENT_YEAR ? parsed : fallback;
@@ -81,13 +57,6 @@ function parseYear(value: string | null, fallback: number) {
 function parsePage(value: unknown) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-}
-
-function parseRecorte(value: unknown): ViagensRecorte {
-  if (value === "deputados" || value === "senadores" || value === "geral") {
-    return value;
-  }
-  return DEFAULT_FILTERS.recorte;
 }
 
 function normalizeStoredText(value: unknown) {
@@ -103,7 +72,6 @@ function buildFilterState(storedFilters: unknown): ViagensFilterState {
   const anoFim = parseYear(raw.anoFim as string | null, DEFAULT_FILTERS.anoFim);
 
   return {
-    recorte: parseRecorte(raw.recorte),
     anoInicio: Math.min(anoInicio, anoFim),
     anoFim: Math.max(anoInicio, anoFim),
     orgaoSuperiorCodigo: normalizeStoredText(raw.orgaoSuperiorCodigo),
@@ -158,30 +126,30 @@ const ViagensPage = () => {
   const offset = (currentPage - 1) * TABLE_LIMIT;
 
   const apiFilter = useMemo<RankingViagemFiltroInput>(
-    () =>
-      applyRecorteToViagensFilter(filters.recorte, {
-        anoInicio: filters.anoInicio,
-        anoFim: filters.anoFim,
-        orgaoSuperiorCodigo: filters.orgaoSuperiorCodigo,
-        orgaoSolicitanteCodigo: filters.orgaoSolicitanteCodigo,
-        search: filters.search,
-        situacao: filters.situacao,
-        processoId: filters.processoId,
-        pcdp: filters.pcdp,
-        cpfViajante: filters.cpfViajante,
-        nomeViajante: filters.nomeViajante,
-        cargo: filters.cargo,
-        funcao: filters.funcao,
-        destino: filters.destino,
-        motivo: filters.motivo,
-      }),
+    () => ({
+      anoInicio: filters.anoInicio,
+      anoFim: filters.anoFim,
+      orgaoSuperiorCodigo: filters.orgaoSuperiorCodigo,
+      orgaoSolicitanteCodigo: filters.orgaoSolicitanteCodigo,
+      search: filters.search,
+      situacao: filters.situacao,
+      processoId: filters.processoId,
+      pcdp: filters.pcdp,
+      cpfViajante: filters.cpfViajante,
+      nomeViajante: filters.nomeViajante,
+      cargo: filters.cargo,
+      funcao: filters.funcao,
+      destino: filters.destino,
+      motivo: filters.motivo,
+      apenasParlamentares: false,
+      cargoParlamentar: undefined,
+    }),
     [filters]
   );
 
   const rankingPagination = useMemo(() => ({ limit: RANKING_LIMIT, offset: 0 }), []);
   const tablePagination = useMemo(() => ({ limit: TABLE_LIMIT, offset }), [offset]);
   const normalizedFilter = useMemo(() => normalizeViagensFilter(apiFilter), [apiFilter]);
-  const recorteInfo = recorteMeta[filters.recorte];
 
   const resumoCoreQuery = useResumoViagens(apiFilter, {
     includePagamentos: false,
@@ -244,7 +212,6 @@ const ViagensPage = () => {
     setOrgaoRankingsReady(false);
     setSummaryComplementReady(false);
   }, [
-    filters.recorte,
     filters.anoInicio,
     filters.anoFim,
     filters.orgaoSuperiorCodigo,
@@ -290,7 +257,6 @@ const ViagensPage = () => {
   useEffect(() => {
     setSelectedViagem(null);
   }, [
-    filters.recorte,
     filters.anoInicio,
     filters.anoFim,
     filters.orgaoSuperiorCodigo,
@@ -412,24 +378,28 @@ const ViagensPage = () => {
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      {recorteInfo.eyebrow}
+                      Painel Geral
                     </p>
                     <h1 className="mt-2 max-w-4xl text-2xl font-extrabold leading-tight text-foreground sm:text-4xl">
                       Viagens oficiais com{" "}
                       <span className="bg-gradient-to-r from-cyan-600 via-sky-600 to-slate-900 bg-clip-text text-transparent">
-                        filtros reais, leitura rapida e detalhe sob demanda
+                        leitura rapida, gastos claros e detalhe sob demanda
                       </span>
                     </h1>
-                  </div>
-                  <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                    {recorteInfo.label}. {recorteInfo.description} Ranking, resumo e tabela
-                    respondem ao mesmo recorte sem expor os filtros na barra do navegador.
+                </div>
+                <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                    Painel geral de viagens oficiais com foco em leitura simples, gastos claros e
+                    comparacao por orgao. Ranking, resumo e tabela respondem ao mesmo recorte sem
+                    expor os filtros na barra do navegador.
                   </p>
                 </div>
 
                 <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
                   <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                     dados oficiais consolidados
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
+                    valores resumidos em milhoes e bilhoes
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
                     detalhe sob demanda por processo
@@ -440,13 +410,13 @@ const ViagensPage = () => {
               <div className="min-w-0 grid gap-3 sm:grid-cols-2 sm:gap-4">
                 <article className="rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:rounded-[28px] sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Recorte ativo
+                    Base consultada
                   </p>
                   <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
-                    {recorteInfo.label}
+                    Viagens oficiais
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Mesmo recorte aplicado no resumo, rankings e tabela.
+                    Leitura geral sem subdivisao parlamentar.
                   </p>
                 </article>
 
@@ -467,10 +437,10 @@ const ViagensPage = () => {
                     Total no recorte
                   </p>
                   <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
-                    {totalViagensPainel.toLocaleString("pt-BR")}
+                    {formatCountCompact(totalViagensPainel)}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Quantidade de viagens retornadas para o recorte atual.
+                    Exato: {totalViagensPainel.toLocaleString("pt-BR")} viagens.
                   </p>
                 </article>
 
@@ -479,10 +449,10 @@ const ViagensPage = () => {
                     Soma da pagina
                   </p>
                   <p className="mt-3 text-xl font-extrabold text-foreground sm:text-2xl">
-                    {formatCents(selectedTotal.toString())}
+                    {formatCentsCompact(selectedTotal.toString())}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Soma estimada dos itens exibidos na pagina atual.
+                    Exato: {formatCents(selectedTotal.toString())}.
                   </p>
                 </article>
               </div>

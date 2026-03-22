@@ -11,7 +11,7 @@ import type { ResumoViagens } from "@/api/types";
 import StatsCard from "@/components/StatsCard";
 import { ErrorStateWithRetry } from "@/components/StateViews";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCents } from "@/lib/formatters";
+import { formatCents, formatCentsCompact, formatCountCompact } from "@/lib/formatters";
 
 interface ViagensKpisProps {
   data?: ResumoViagens;
@@ -23,7 +23,7 @@ interface ViagensKpisProps {
 
 function moneyValue(value?: string, isPending?: boolean) {
   if (value !== undefined) {
-    return formatCents(value);
+    return formatCentsCompact(value);
   }
 
   return isPending ? "..." : "R$ 0,00";
@@ -31,7 +31,7 @@ function moneyValue(value?: string, isPending?: boolean) {
 
 function countValue(value?: number, isPending?: boolean) {
   if (value !== undefined) {
-    return value.toLocaleString("pt-BR");
+    return formatCountCompact(value);
   }
 
   return isPending ? "..." : "0";
@@ -78,14 +78,16 @@ const ViagensKpis = ({
         <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           <StatsCard
             label="Gasto liquido"
-            value={formatCents(data?.totalGastoLiquidoCents)}
+            value={formatCentsCompact(data?.totalGastoLiquidoCents)}
+            helper={formatCents(data?.totalGastoLiquidoCents)}
             description="Gasto bruto menos devolucoes"
             icon={Wallet}
             variant="green"
           />
           <StatsCard
             label="Gasto bruto"
-            value={formatCents(data?.totalGastoBrutoCents)}
+            value={formatCentsCompact(data?.totalGastoBrutoCents)}
+            helper={formatCents(data?.totalGastoBrutoCents)}
             description="Diarias, passagens e outros gastos"
             icon={CreditCard}
             variant="blue"
@@ -93,6 +95,11 @@ const ViagensKpis = ({
           <StatsCard
             label="Pagamentos"
             value={moneyValue(data?.totalPagamentosCents, isComplementLoading)}
+            helper={
+              data?.totalPagamentosCents !== undefined
+                ? formatCents(data.totalPagamentosCents)
+                : undefined
+            }
             description={
               isComplementLoading
                 ? "Complemento pesado carregando em segundo plano"
@@ -103,7 +110,8 @@ const ViagensKpis = ({
           />
           <StatsCard
             label="Passagens"
-            value={formatCents(data?.totalPassagensCents)}
+            value={formatCentsCompact(data?.totalPassagensCents)}
+            helper={formatCents(data?.totalPassagensCents)}
             description="Valor informado nas viagens"
             icon={CreditCard}
             variant="blue"
@@ -129,21 +137,24 @@ const ViagensKpis = ({
         <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           <StatsCard
             label="Diarias"
-            value={formatCents(data?.totalDiariasCents)}
+            value={formatCentsCompact(data?.totalDiariasCents)}
+            helper={formatCents(data?.totalDiariasCents)}
             description="Valor informado nas viagens"
             icon={Route}
             variant="yellow"
           />
           <StatsCard
             label="Viagens"
-            value={(data?.totalViagens ?? 0).toLocaleString("pt-BR")}
+            value={formatCountCompact(data?.totalViagens ?? 0)}
+            helper={(data?.totalViagens ?? 0).toLocaleString("pt-BR")}
             description="Processos distintos no recorte"
             icon={Plane}
             variant="yellow"
           />
           <StatsCard
             label="Viajantes"
-            value={(data?.totalViajantes ?? 0).toLocaleString("pt-BR")}
+            value={formatCountCompact(data?.totalViajantes ?? 0)}
+            helper={(data?.totalViajantes ?? 0).toLocaleString("pt-BR")}
             description="Chave distinta por CPF ou nome"
             icon={Users}
             variant="blue"
@@ -151,6 +162,11 @@ const ViagensKpis = ({
           <StatsCard
             label="Trechos"
             value={countValue(data?.totalTrechos, isComplementLoading)}
+            helper={
+              data?.totalTrechos !== undefined
+                ? data.totalTrechos.toLocaleString("pt-BR")
+                : undefined
+            }
             description={
               isComplementLoading
                 ? "Complemento pesado carregando em segundo plano"
