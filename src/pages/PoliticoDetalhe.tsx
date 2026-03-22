@@ -312,8 +312,8 @@ const PoliticoDetalhe = () => {
                 }}
               />
 
-              <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
+              <section className="flex flex-col gap-6 xl:flex-row xl:items-start">
+                <div className="min-w-0 rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6 xl:flex-1">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <h2 className="text-base font-bold text-foreground sm:text-lg">
@@ -329,7 +329,9 @@ const PoliticoDetalhe = () => {
                   </div>
 
                   {pieData.length === 0 ? (
-                    <EmptyState message="Sem valores de gastos para este periodo." />
+                    <div className="mt-4">
+                      <EmptyState message="Sem valores de gastos para este periodo." />
+                    </div>
                   ) : (
                     <div className="mt-4 grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
                       <div className="rounded-[28px] bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-4 ring-1 ring-border/60">
@@ -418,7 +420,7 @@ const PoliticoDetalhe = () => {
                   )}
                 </div>
 
-                <div className="space-y-4">
+                <div className="w-full space-y-4 xl:w-[320px] xl:flex-none">
                   <section className="rounded-[24px] border border-border/70 bg-card/85 p-4 shadow-card">
                     <h2 className="mb-3 text-sm font-bold">Painel financeiro</h2>
                     <div className="space-y-2 text-xs">
