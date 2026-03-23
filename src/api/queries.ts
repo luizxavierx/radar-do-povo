@@ -61,7 +61,109 @@ export const POLITICO_DOSSIE_COMPLETO_QUERY = `
         dataNascimento
         fotoUrl
         perfilExterno {
-          camara { id nome siglaPartido siglaUf email uri urlFoto fonte }
+          camara {
+            id
+            nome
+            nomeCivil
+            nomeCanonico
+            nomeEleitoral
+            siglaPartido
+            siglaUf
+            idLegislatura
+            email
+            uri
+            urlFoto
+            dataStatus
+            situacao
+            condicaoEleitoral
+            descricaoStatus
+            gabinete { nome predio sala andar telefone email }
+            sexo
+            urlWebsite
+            redesSociais
+            dataNascimento
+            dataFalecimento
+            ufNascimento
+            municipioNascimento
+            escolaridade
+            despesasRecentesResumo { totalItens totalDocumentoCents totalLiquidoCents totalGlosaCents }
+            despesasRecentes {
+              ano
+              mes
+              dataDocumento
+              tipoDespesa
+              tipoDocumento
+              nomeFornecedor
+              cnpjCpfFornecedor
+              urlDocumento
+              valorDocumentoCents
+              valorGlosaCents
+              valorLiquidoCents
+            }
+            discursosRecentes {
+              dataHoraInicio
+              dataHoraFim
+              tipoDiscurso
+              sumario
+              keywords
+              faseTitulo
+              urlAudio
+              urlTexto
+              urlVideo
+              uriEvento
+            }
+            eventosRecentes {
+              id
+              descricao
+              descricaoTipo
+              situacao
+              dataHoraInicio
+              dataHoraFim
+              localExterno
+              urlRegistro
+              uri
+              localCamara { nome predio sala andar }
+              orgaos { id sigla nome tipoOrgao uri }
+            }
+            frentes { id titulo idLegislatura uri }
+            historico {
+              dataHora
+              nome
+              nomeEleitoral
+              siglaPartido
+              siglaUf
+              situacao
+              condicaoEleitoral
+              descricaoStatus
+              email
+              urlFoto
+              idLegislatura
+              uri
+            }
+            mandatosExternos {
+              cargo
+              siglaUf
+              municipio
+              anoInicio
+              anoFim
+              siglaPartidoEleicao
+              uriPartidoEleicao
+            }
+            orgaos {
+              idOrgao
+              uriOrgao
+              siglaOrgao
+              nomeOrgao
+              nomePublicacao
+              titulo
+              codTitulo
+              dataInicio
+              dataFim
+            }
+            profissoes { dataHora codTipoProfissao titulo }
+            ocupacoes { titulo entidade entidadeUf entidadePais anoInicio anoFim }
+            fonte
+          }
           senado { codigo nome nomeCompleto siglaPartido uf email urlFoto urlPagina afastadoAtual fonte }
           tse { termoBusca datasetCandidatosUrl datasetResultadosUrl candidatosCdnBaseUrl divulgaCandContasUrl fonte }
           lexml { total documentos { titulo tipo data url } }
@@ -210,12 +312,113 @@ export const POLITICO_PERFIL_EXTERNO_QUERY = `
       nomeCanonico
       perfilExterno {
         camara @include(if: $includeCamara) {
+          id
           nome
+          nomeCivil
+          nomeCanonico
+          nomeEleitoral
           siglaPartido
           siglaUf
+          idLegislatura
           urlFoto
           email
           uri
+          dataStatus
+          situacao
+          condicaoEleitoral
+          descricaoStatus
+          gabinete {
+            nome
+            predio
+            sala
+            andar
+            telefone
+            email
+          }
+          sexo
+          urlWebsite
+          redesSociais
+          dataNascimento
+          dataFalecimento
+          ufNascimento
+          municipioNascimento
+          escolaridade
+          despesasRecentesResumo { totalItens totalDocumentoCents totalLiquidoCents totalGlosaCents }
+          despesasRecentes {
+            ano
+            mes
+            dataDocumento
+            tipoDespesa
+            tipoDocumento
+            nomeFornecedor
+            cnpjCpfFornecedor
+            urlDocumento
+            valorDocumentoCents
+            valorGlosaCents
+            valorLiquidoCents
+          }
+          discursosRecentes {
+            dataHoraInicio
+            dataHoraFim
+            tipoDiscurso
+            sumario
+            keywords
+            faseTitulo
+            urlAudio
+            urlTexto
+            urlVideo
+            uriEvento
+          }
+          eventosRecentes {
+            id
+            descricao
+            descricaoTipo
+            situacao
+            dataHoraInicio
+            dataHoraFim
+            localExterno
+            urlRegistro
+            uri
+            localCamara { nome predio sala andar }
+            orgaos { id sigla nome tipoOrgao uri }
+          }
+          frentes { id titulo idLegislatura uri }
+          historico {
+            dataHora
+            nome
+            nomeEleitoral
+            siglaPartido
+            siglaUf
+            situacao
+            condicaoEleitoral
+            descricaoStatus
+            email
+            urlFoto
+            idLegislatura
+            uri
+          }
+          mandatosExternos {
+            cargo
+            siglaUf
+            municipio
+            anoInicio
+            anoFim
+            siglaPartidoEleicao
+            uriPartidoEleicao
+          }
+          orgaos {
+            idOrgao
+            uriOrgao
+            siglaOrgao
+            nomeOrgao
+            nomePublicacao
+            titulo
+            codTitulo
+            dataInicio
+            dataFim
+          }
+          profissoes { dataHora codTipoProfissao titulo }
+          ocupacoes { titulo entidade entidadeUf entidadePais anoInicio anoFim }
           fonte
         }
         senado @include(if: $includeSenado) {

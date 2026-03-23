@@ -341,11 +341,143 @@ export interface RankingEmendaFiltroInput {
 export interface PerfilExternoCamara {
   id?: string;
   nome?: string;
+  nomeCivil?: string;
+  nomeCanonico?: string;
+  nomeEleitoral?: string;
   siglaPartido?: string;
   siglaUf?: string;
+  idLegislatura?: number;
   urlFoto?: string;
   email?: string;
   uri?: string;
+  dataStatus?: string;
+  situacao?: string;
+  condicaoEleitoral?: string;
+  descricaoStatus?: string;
+  gabinete?: {
+    nome?: string;
+    predio?: string;
+    sala?: string;
+    andar?: string;
+    telefone?: string;
+    email?: string;
+  };
+  sexo?: string;
+  urlWebsite?: string;
+  redesSociais?: string[];
+  dataNascimento?: string;
+  dataFalecimento?: string;
+  ufNascimento?: string;
+  municipioNascimento?: string;
+  escolaridade?: string;
+  despesasRecentesResumo?: {
+    totalItens?: number;
+    totalDocumentoCents?: string;
+    totalLiquidoCents?: string;
+    totalGlosaCents?: string;
+  };
+  despesasRecentes?: {
+    ano?: number;
+    mes?: number;
+    dataDocumento?: string;
+    tipoDespesa?: string;
+    tipoDocumento?: string;
+    nomeFornecedor?: string;
+    cnpjCpfFornecedor?: string;
+    urlDocumento?: string;
+    valorDocumentoCents?: string;
+    valorGlosaCents?: string;
+    valorLiquidoCents?: string;
+  }[];
+  discursosRecentes?: {
+    dataHoraInicio?: string;
+    dataHoraFim?: string;
+    tipoDiscurso?: string;
+    sumario?: string;
+    keywords?: string;
+    faseTitulo?: string;
+    urlAudio?: string;
+    urlTexto?: string;
+    urlVideo?: string;
+    uriEvento?: string;
+  }[];
+  eventosRecentes?: {
+    id?: string;
+    descricao?: string;
+    descricaoTipo?: string;
+    situacao?: string;
+    dataHoraInicio?: string;
+    dataHoraFim?: string;
+    localExterno?: string;
+    urlRegistro?: string;
+    uri?: string;
+    localCamara?: {
+      nome?: string;
+      predio?: string;
+      sala?: string;
+      andar?: string;
+    };
+    orgaos?: {
+      id?: string;
+      sigla?: string;
+      nome?: string;
+      tipoOrgao?: string;
+      uri?: string;
+    }[];
+  }[];
+  frentes?: {
+    id?: string;
+    titulo?: string;
+    idLegislatura?: number;
+    uri?: string;
+  }[];
+  historico?: {
+    dataHora?: string;
+    nome?: string;
+    nomeEleitoral?: string;
+    siglaPartido?: string;
+    siglaUf?: string;
+    situacao?: string;
+    condicaoEleitoral?: string;
+    descricaoStatus?: string;
+    email?: string;
+    urlFoto?: string;
+    idLegislatura?: number;
+    uri?: string;
+  }[];
+  mandatosExternos?: {
+    cargo?: string;
+    siglaUf?: string;
+    municipio?: string;
+    anoInicio?: string;
+    anoFim?: string;
+    siglaPartidoEleicao?: string;
+    uriPartidoEleicao?: string;
+  }[];
+  orgaos?: {
+    idOrgao?: string;
+    uriOrgao?: string;
+    siglaOrgao?: string;
+    nomeOrgao?: string;
+    nomePublicacao?: string;
+    titulo?: string;
+    codTitulo?: string;
+    dataInicio?: string;
+    dataFim?: string;
+  }[];
+  profissoes?: {
+    dataHora?: string;
+    codTipoProfissao?: number;
+    titulo?: string;
+  }[];
+  ocupacoes?: {
+    titulo?: string;
+    entidade?: string;
+    entidadeUf?: string;
+    entidadePais?: string;
+    anoInicio?: string;
+    anoFim?: string;
+  }[];
   fonte?: string;
 }
 

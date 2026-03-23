@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,10 +8,13 @@ import {
   Database,
   ExternalLink,
   Globe,
+  GraduationCap,
   Landmark,
+  Link as LinkIcon,
   Mail,
   MapPin,
   Plane,
+  Phone,
   FileText,
   Scale,
   User,
@@ -681,6 +684,26 @@ const SummaryRow = ({
   </div>
 );
 
+const ExternalSubcard = ({
+  title,
+  helper,
+  children,
+}: {
+  title: string;
+  helper?: string;
+  children: ReactNode;
+}) => (
+  <div className="rounded-2xl border border-border/70 bg-background/80 p-3">
+    <div className="mb-2 flex items-start justify-between gap-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {title}
+      </p>
+      {helper ? <p className="text-[10px] text-muted-foreground">{helper}</p> : null}
+    </div>
+    <div className="space-y-2">{children}</div>
+  </div>
+);
+
 const MobileViagemCard = ({ viagem }: { viagem: Viagem }) => (
   <article className="rounded-[22px] border border-border/70 bg-background/85 p-4 shadow-sm">
     <div className="flex items-start justify-between gap-3">
@@ -798,16 +821,301 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
       visible: Boolean(perfil.camara?.nome),
       content: (
         <>
-          <p className="font-semibold text-foreground">{perfil.camara?.nome}</p>
-          <p>
-            {perfil.camara?.siglaPartido}/{perfil.camara?.siglaUf}
-          </p>
-          {perfil.camara?.email ? (
-            <p className="inline-flex items-center gap-1">
-              <Mail className="h-3 w-3" />
-              {perfil.camara.email}
-            </p>
-          ) : null}
+          <div className="space-y-2">
+            <div>
+              <p className="font-semibold text-foreground">{perfil.camara?.nome}</p>
+              {perfil.camara?.nomeCivil &&
+              perfil.camara?.nomeCivil !== perfil.camara?.nome ? (
+                <p>Nome civil: {perfil.camara.nomeCivil}</p>
+              ) : null}
+              {perfil.camara?.nomeEleitoral &&
+              perfil.camara?.nomeEleitoral !== perfil.camara?.nome ? (
+                <p>Nome eleitoral: {perfil.camara.nomeEleitoral}</p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-[11px]">
+              {perfil.camara?.siglaPartido || perfil.camara?.siglaUf ? (
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
+                  {[perfil.camara?.siglaPartido, perfil.camara?.siglaUf].filter(Boolean).join("/")}
+                </span>
+              ) : null}
+              {perfil.camara?.situacao ? (
+                <span className="rounded-full bg-accent/10 px-2.5 py-1 font-semibold text-accent">
+                  {perfil.camara.situacao}
+                </span>
+              ) : null}
+              {perfil.camara?.condicaoEleitoral ? (
+                <span className="rounded-full bg-muted px-2.5 py-1 font-semibold text-muted-foreground">
+                  {perfil.camara.condicaoEleitoral}
+                </span>
+              ) : null}
+            </div>
+
+            {perfil.camara?.idLegislatura ? (
+              <p>Legislatura: {perfil.camara.idLegislatura}</p>
+            ) : null}
+
+            {perfil.camara?.dataStatus ? (
+              <p>Atualizado em {formatDate(perfil.camara.dataStatus)}</p>
+            ) : null}
+
+            {perfil.camara?.descricaoStatus ? <p>{perfil.camara.descricaoStatus}</p> : null}
+
+            {perfil.camara?.gabinete?.sala ||
+            perfil.camara?.gabinete?.andar ||
+            perfil.camara?.gabinete?.telefone ||
+            perfil.camara?.gabinete?.email ? (
+              <div className="rounded-2xl border border-border/70 bg-background/80 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Gabinete
+                </p>
+                <div className="mt-2 space-y-1.5">
+                  {perfil.camara?.gabinete?.nome ? <p>{perfil.camara.gabinete.nome}</p> : null}
+                  {perfil.camara?.gabinete?.sala ||
+                  perfil.camara?.gabinete?.predio ||
+                  perfil.camara?.gabinete?.andar ? (
+                    <p>
+                      {[
+                        perfil.camara?.gabinete?.predio && `Predio ${perfil.camara.gabinete.predio}`,
+                        perfil.camara?.gabinete?.andar && `${perfil.camara.gabinete.andar} andar`,
+                        perfil.camara?.gabinete?.sala && `Sala ${perfil.camara.gabinete.sala}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" | ")}
+                    </p>
+                  ) : null}
+                  {perfil.camara?.gabinete?.telefone ? (
+                    <p className="inline-flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      {perfil.camara.gabinete.telefone}
+                    </p>
+                  ) : null}
+                  {perfil.camara?.gabinete?.email ? (
+                    <p className="inline-flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      {perfil.camara.gabinete.email}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {perfil.camara?.escolaridade ? (
+              <p className="inline-flex items-center gap-1">
+                <GraduationCap className="h-3 w-3" />
+                {perfil.camara.escolaridade}
+              </p>
+            ) : null}
+
+            {perfil.camara?.dataNascimento ? (
+              <p className="inline-flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formatDate(perfil.camara.dataNascimento)}
+                {perfil.camara?.municipioNascimento || perfil.camara?.ufNascimento
+                  ? ` | ${[perfil.camara?.municipioNascimento, perfil.camara?.ufNascimento].filter(Boolean).join("/")}`
+                  : ""}
+              </p>
+            ) : null}
+
+            {perfil.camara?.sexo ? <p>Sexo: {perfil.camara.sexo}</p> : null}
+
+            {perfil.camara?.email ? (
+              <p className="inline-flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                {perfil.camara.email}
+              </p>
+            ) : null}
+            {perfil.camara?.urlWebsite ? (
+              <a
+                href={perfil.camara.urlWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                Site oficial <LinkIcon className="h-3 w-3" />
+              </a>
+            ) : null}
+            {perfil.camara?.redesSociais?.slice(0, 2).map((url) => (
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block truncate text-primary hover:underline"
+              >
+                {url}
+              </a>
+            ))}
+
+            {perfil.camara?.despesasRecentes?.length ? (
+              <ExternalSubcard
+                title="Cota parlamentar recente"
+                helper={`${perfil.camara?.despesasRecentesResumo?.totalItens ?? perfil.camara.despesasRecentes.length} registros recentes`}
+              >
+                {perfil.camara?.despesasRecentesResumo?.totalLiquidoCents ? (
+                  <p className="text-[11px] font-semibold text-primary">
+                    {formatCentsCompact(perfil.camara.despesasRecentesResumo.totalLiquidoCents)} liquidos no recorte recente
+                  </p>
+                ) : null}
+                <div className="space-y-2">
+                  {perfil.camara.despesasRecentes.slice(0, 3).map((despesa, index) => (
+                    <div
+                      key={`${despesa.dataDocumento || despesa.tipoDespesa || "despesa"}-${index}`}
+                      className="rounded-xl border border-border/60 bg-card/70 px-3 py-2"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground">
+                            {despesa.tipoDespesa || "Despesa parlamentar"}
+                          </p>
+                          {despesa.nomeFornecedor ? (
+                            <p className="truncate text-[11px] text-muted-foreground">
+                              {despesa.nomeFornecedor}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-primary">
+                            {formatCentsCompact(despesa.valorLiquidoCents)}
+                          </p>
+                          {despesa.dataDocumento ? (
+                            <p className="text-[10px] text-muted-foreground">
+                              {formatDate(despesa.dataDocumento)}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ExternalSubcard>
+            ) : null}
+
+            {perfil.camara?.mandatosExternos?.length ? (
+              <ExternalSubcard title="Mandatos anteriores">
+                <div className="space-y-2">
+                  {perfil.camara.mandatosExternos.slice(0, 3).map((mandato, index) => (
+                    <div key={`${mandato.cargo || "mandato"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                      <p className="font-semibold text-foreground">
+                        {mandato.cargo || "Cargo eletivo"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {[mandato.municipio, mandato.siglaUf].filter(Boolean).join("/")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {[mandato.anoInicio, mandato.anoFim].filter(Boolean).join(" - ")}
+                        {mandato.siglaPartidoEleicao ? ` | ${mandato.siglaPartidoEleicao}` : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </ExternalSubcard>
+            ) : null}
+
+            {perfil.camara?.orgaos?.length || perfil.camara?.frentes?.length ? (
+              <ExternalSubcard title="Atuacao institucional">
+                <div className="space-y-2">
+                  {perfil.camara?.orgaos?.slice(0, 3).map((orgao, index) => (
+                    <div key={`${orgao.idOrgao || orgao.siglaOrgao || "orgao"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                      <p className="font-semibold text-foreground">
+                        {orgao.titulo || "Membro"}{orgao.siglaOrgao ? ` - ${orgao.siglaOrgao}` : ""}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground line-clamp-2">
+                        {orgao.nomePublicacao || orgao.nomeOrgao}
+                      </p>
+                    </div>
+                  ))}
+                  {perfil.camara?.frentes?.slice(0, 2).map((frente, index) => (
+                    <div key={`${frente.id || "frente"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                      <p className="font-semibold text-foreground">{frente.titulo}</p>
+                      {frente.idLegislatura ? (
+                        <p className="text-[11px] text-muted-foreground">Legislatura {frente.idLegislatura}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </ExternalSubcard>
+            ) : null}
+
+            {perfil.camara?.profissoes?.length || perfil.camara?.ocupacoes?.length ? (
+              <ExternalSubcard title="Profissoes e ocupacoes">
+                <div className="flex flex-wrap gap-2">
+                  {perfil.camara?.profissoes?.slice(0, 4).map((profissao, index) =>
+                    profissao.titulo ? (
+                      <span
+                        key={`${profissao.titulo}-${index}`}
+                        className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                      >
+                        {profissao.titulo}
+                      </span>
+                    ) : null
+                  )}
+                </div>
+                {perfil.camara?.ocupacoes?.slice(0, 2).map((ocupacao, index) => (
+                  <div key={`${ocupacao.titulo || ocupacao.entidade || "ocupacao"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                    <p className="font-semibold text-foreground">
+                      {ocupacao.titulo || ocupacao.entidade || "Ocupacao registrada"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {[ocupacao.entidade, ocupacao.entidadeUf, ocupacao.entidadePais].filter(Boolean).join(" | ")}
+                    </p>
+                  </div>
+                ))}
+              </ExternalSubcard>
+            ) : null}
+
+            {perfil.camara?.historico?.length ? (
+              <ExternalSubcard title="Historico recente">
+                <div className="space-y-2">
+                  {perfil.camara.historico.slice(0, 3).map((item, index) => (
+                    <div key={`${item.dataHora || "historico"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground">
+                            {[item.situacao, item.condicaoEleitoral].filter(Boolean).join(" | ") || "Atualizacao parlamentar"}
+                          </p>
+                          {item.descricaoStatus ? (
+                            <p className="line-clamp-2 text-[11px] text-muted-foreground">{item.descricaoStatus}</p>
+                          ) : null}
+                        </div>
+                        {item.dataHora ? (
+                          <p className="shrink-0 text-[10px] text-muted-foreground">{formatDate(item.dataHora)}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ExternalSubcard>
+            ) : null}
+
+            {perfil.camara?.discursosRecentes?.length || perfil.camara?.eventosRecentes?.length ? (
+              <ExternalSubcard title="Atividade recente na Camara">
+                <div className="space-y-2">
+                  {perfil.camara?.discursosRecentes?.slice(0, 2).map((discurso, index) => (
+                    <div key={`${discurso.dataHoraInicio || "discurso"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                      <p className="font-semibold text-foreground">
+                        {discurso.tipoDiscurso || "Discurso registrado"}
+                      </p>
+                      {discurso.sumario ? (
+                        <p className="line-clamp-3 text-[11px] text-muted-foreground">{discurso.sumario}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                  {perfil.camara?.eventosRecentes?.slice(0, 2).map((evento, index) => (
+                    <div key={`${evento.id || evento.dataHoraInicio || "evento"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                      <p className="font-semibold text-foreground">
+                        {evento.descricao || evento.descricaoTipo || "Evento parlamentar"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {[evento.situacao, evento.dataHoraInicio && formatDate(evento.dataHoraInicio)].filter(Boolean).join(" | ")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </ExternalSubcard>
+            ) : null}
+          </div>
           {perfil.camara?.uri ? (
             <a
               href={perfil.camara.uri}
