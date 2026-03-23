@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BookKey, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookKey, CreditCard, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -8,6 +8,12 @@ import GoogleSignInButton from "@/components/members/GoogleSignInButton";
 import { Button } from "@/components/ui/button";
 import { useMemberSession } from "@/contexts/MemberSessionContext";
 import { DEFAULT_MEMBER_PLAN } from "@/lib/members";
+
+const accessSteps = [
+  "Entrar com a conta Google que vai administrar o acesso.",
+  "Gerar o checkout PIX do plano mensal dentro do portal.",
+  "Ativar a conta e emitir sua chave individual da API.",
+];
 
 const MembrosLoginPage = () => {
   const navigate = useNavigate();
@@ -51,31 +57,48 @@ const MembrosLoginPage = () => {
       <AppSidebar />
 
       <main className="lg:ml-72">
-        <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[1040px] items-center px-4 pb-10 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
-          <div className="grid w-full gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <section className="rounded-[34px] border border-white/70 bg-card/92 p-6 shadow-elevated sm:p-8">
+        <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[1100px] items-center px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+          <div className="grid w-full gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+            <section className="rounded-[34px] border border-white/70 bg-card/95 p-6 shadow-elevated sm:p-8">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                Acesso de membros
+                Acesso do membro
               </div>
+
               <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-                Entre para ativar checkout, plano e chave unica da API.
+                Entre na sua area para ativar a assinatura e administrar a API.
               </h1>
               <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
-                O login Google agora e validado no backend antes de abrir a sessao do portal. Isso
-                reduz fraude de identidade e prepara o checkout PIX com o usuario correto.
+                O portal foi desenhado para ser direto: autenticacao, pagamento, uso mensal e chave
+                da API no mesmo fluxo.
               </p>
 
-              <div className="mt-6 rounded-[28px] border border-border/70 bg-background/85 p-5 text-sm leading-6 text-muted-foreground">
-                <p className="font-semibold text-foreground">Fluxo de producao:</p>
-                <ul className="mt-3 space-y-2">
-                  <li>Login Google validado server-side com audience do seu client ID.</li>
-                  <li>Checkout PIX mensal de {DEFAULT_MEMBER_PLAN.priceLabel} gerado pelo Laravel.</li>
-                  <li>Webhook confirma pagamento e libera o membro para gerar a API key.</li>
+              <div className="mt-6 rounded-[28px] border border-border/70 bg-background/85 p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                  Jornada do acesso
+                </p>
+                <ul className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
+                  {accessSteps.map((item, index) => (
+                    <li key={item} className="flex items-start gap-3">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {index + 1}
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
-              <Button asChild variant="outline" className="mt-4 rounded-full">
+              <div className="mt-5 flex flex-wrap gap-3">
+                <div className="rounded-full border border-border/70 bg-background/85 px-4 py-2 text-sm font-medium text-foreground">
+                  {DEFAULT_MEMBER_PLAN.priceLabel}
+                </div>
+                <div className="rounded-full border border-border/70 bg-background/85 px-4 py-2 text-sm font-medium text-foreground">
+                  Ate {DEFAULT_MEMBER_PLAN.monthlyRequestLimit.toLocaleString("pt-BR")} requests por mes
+                </div>
+              </div>
+
+              <Button asChild variant="outline" className="mt-5 rounded-full">
                 <Link to="/membros/login" state={{ from: "/membros/docs" }}>
                   Ler documentacao oficial
                   <BookKey className="h-4 w-4" />
@@ -83,30 +106,65 @@ const MembrosLoginPage = () => {
               </Button>
             </section>
 
-            <section className="rounded-[34px] border border-slate-900/10 bg-slate-950 p-6 text-slate-50 shadow-elevated sm:p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
-                Continuar com conta
-              </p>
-              <h2 className="mt-3 text-2xl font-bold">Login padrao Google</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-300">
-                O portal agora usa o fluxo tradicional: o navegador vai para o Google, o backend
-                recebe o callback oficial e so depois devolve a sessao autenticada ao frontend.
-              </p>
-
-              <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-5">
-                <GoogleSignInButton
-                  onStartAuth={() => {
-                    startGoogleSignIn(nextPath);
-                  }}
-                  disabled={loading}
-                />
+            <section className="overflow-hidden rounded-[34px] border border-slate-900/10 bg-slate-950 text-slate-50 shadow-elevated">
+              <div className="border-b border-white/10 p-6 sm:p-8">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+                  Continuar com conta
+                </p>
+                <h2 className="mt-3 text-2xl font-bold">Login padrao Google</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  Voce sera redirecionado ao Google e, depois da confirmacao, retorna direto ao
+                  painel ja autenticado.
+                </p>
               </div>
 
-              {loading ? (
-                <p className="mt-4 text-sm text-slate-300">
-                  Redirecionando para o Google e preparando o callback seguro...
-                </p>
-              ) : null}
+              <div className="p-6 sm:p-8">
+                <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                  <GoogleSignInButton
+                    onStartAuth={() => {
+                      startGoogleSignIn(nextPath);
+                    }}
+                    disabled={loading}
+                  />
+
+                  {loading ? (
+                    <p className="mt-4 text-sm text-slate-300">
+                      Preparando o redirecionamento seguro para concluir o login.
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+                    <div className="inline-flex rounded-2xl bg-white/10 p-2.5 text-slate-100">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold">Sessao segura</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                      O backend conclui o callback e abre sua sessao no portal.
+                    </p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+                    <div className="inline-flex rounded-2xl bg-white/10 p-2.5 text-slate-100">
+                      <CreditCard className="h-4 w-4" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold">Checkout no painel</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                      Assim que entrar, voce acompanha assinatura, PIX e liberacao da chave.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-[24px] border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-300">
+                  Apos concluir o login, o portal segue para a sua proxima etapa e volta para{" "}
+                  <span className="font-semibold text-white">
+                    {nextPath === "/membros/dashboard" ? "o dashboard" : nextPath}
+                  </span>
+                  .
+                  <ArrowRight className="ml-2 inline h-4 w-4" />
+                </div>
+              </div>
             </section>
           </div>
         </div>

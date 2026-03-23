@@ -1,4 +1,4 @@
-import { CreditCard, Link2, ShieldCheck, TerminalSquare } from "lucide-react";
+import { BookKey, CreditCard, Link2, ShieldCheck, TerminalSquare } from "lucide-react";
 
 import MemberPortalShell from "@/components/members/MemberPortalShell";
 import {
@@ -8,9 +8,15 @@ import {
   PUSHINPAY_NOTICE,
 } from "@/lib/members";
 
+const quickstartSteps = [
+  "Entre no portal com sua conta Google.",
+  "Ative a assinatura mensal pelo checkout PIX.",
+  "Gere a chave da API no dashboard e use o header X-Api-Key.",
+];
+
 const endpointGroups = [
   {
-    title: "Infra e conta",
+    title: "Conta e status",
     items: ["GET /v1/health", "GET /v1/me"],
   },
   {
@@ -56,17 +62,8 @@ const curlExamples = [
   -H "X-Api-Key: SUA_CHAVE"`,
   `curl -i "${MEMBER_API_BASE_URL}/politicos/arthur%20lira/camara" \\
   -H "X-Api-Key: SUA_CHAVE"`,
-  `curl -i "${MEMBER_PORTAL_BASE_URL}/billing/pix" \\
-  -H "Cookie: radar_member_portal=SEU_COOKIE_DE_SESSAO" \\
-  -H "Content-Type: application/json" \\
-  -d '{}'`,
-];
-
-const billingChecklist = [
-  "Login Google verificado no backend por audience do client ID.",
-  "Checkout PIX criado server-side com token da PushinPay protegido.",
-  "Webhook atualiza o status da cobranca e ativa o acesso mensal.",
-  "Membro ativo gera ou rotaciona sua API key unica dentro do portal.",
+  `curl -i "${MEMBER_PORTAL_BASE_URL}/billing/pix/current" \\
+  -H "Cookie: radar_member_portal=SEU_COOKIE_DE_SESSAO"`,
 ];
 
 const pixResponseFields = [
@@ -83,61 +80,87 @@ const MembrosDocsPage = () => {
     <MemberPortalShell
       eyebrow="Docs oficiais"
       title="Documentacao da API para membros pagos"
-      intro="Esta area concentra o contrato da camada publica de membros e do portal de assinatura: autenticacao, limites, checkout PIX, webhook e emissao da API key."
+      intro="Aqui fica o contrato operacional da area de membros: acesso ao portal, ativacao por PIX, geracao da chave e leitura dos endpoints liberados."
     >
-      <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <article className="rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-card">
+      <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <article className="rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
           <div className="inline-flex rounded-2xl bg-primary/10 p-3 text-primary">
             <ShieldCheck className="h-5 w-5" />
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-foreground">Contrato base</h2>
-          <div className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
-            <p>
-              Base URL da API paga:{" "}
-              <span className="font-semibold text-foreground">{MEMBER_API_BASE_URL}</span>
-            </p>
-            <p>
-              Base URL do portal:{" "}
-              <span className="font-semibold text-foreground">{MEMBER_PORTAL_BASE_URL}</span>
-            </p>
-            <p>
-              Header padrao da API: <span className="font-semibold text-foreground">X-Api-Key</span>
-            </p>
-            <p>
-              Plano atual:{" "}
-              <span className="font-semibold text-foreground">{DEFAULT_MEMBER_PLAN.priceLabel}</span>
-            </p>
-            <p>
-              Limites por usuario:{" "}
-              <span className="font-semibold text-foreground">
-                {DEFAULT_MEMBER_PLAN.monthlyRequestLimit.toLocaleString("pt-BR")} por mes e{" "}
-                {DEFAULT_MEMBER_PLAN.perSecondLimit} req/s
-              </span>
-            </p>
+          <h2 className="mt-4 text-2xl font-bold text-foreground">Quickstart</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            O portal foi pensado para um onboarding curto: autenticar, ativar a assinatura e
+            começar a consumir a API publica com uma chave por conta.
+          </p>
+
+          <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
+            <p className="text-sm font-semibold text-foreground">Passos essenciais</p>
+            <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
+              {quickstartSteps.map((item, index) => (
+                <li key={item} className="flex items-start gap-3">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                    {index + 1}
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="mt-6 rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-            <p className="font-semibold text-foreground">Leitura operacional</p>
-            <p className="mt-2">
-              O portal comercial e a API paga reaproveitam os services do backend Laravel
-              principal. Isso evita duplicacao de regra e mantem a camada de membros alinhada com
-              os dados da plataforma.
-            </p>
-            <p className="mt-3">
-              O login Google agora usa OAuth tradicional com redirecionamento para o Google,
-              callback no backend e retorno controlado para o portal. Em producao, o ajuste
-              obrigatorio no Google Cloud e configurar a
-              <span className="font-semibold text-foreground"> redirect URI oficial</span> do
-              backend para esse fluxo.
-            </p>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+              <p className="font-semibold text-foreground">Base URL da API</p>
+              <p className="mt-2 break-all font-mono text-xs text-slate-700">{MEMBER_API_BASE_URL}</p>
+              <p className="mt-3">Header principal: X-Api-Key</p>
+            </div>
+
+            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+              <p className="font-semibold text-foreground">Portal de membros</p>
+              <p className="mt-2 break-all font-mono text-xs text-slate-700">
+                {MEMBER_PORTAL_BASE_URL}
+              </p>
+              <p className="mt-3">Sessao mantida por cookie seguro do portal.</p>
+            </div>
           </div>
         </article>
 
-        <article className="rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-card">
+        <article className="rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
           <div className="inline-flex rounded-2xl bg-primary/10 p-3 text-primary">
             <Link2 className="h-5 w-5" />
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-foreground">Grupos de endpoint liberados</h2>
+          <h2 className="mt-4 text-2xl font-bold text-foreground">Contrato base do plano</h2>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+              <p className="font-semibold text-foreground">Plano atual</p>
+              <p className="mt-2">{DEFAULT_MEMBER_PLAN.name}</p>
+              <p className="mt-1">{DEFAULT_MEMBER_PLAN.priceLabel}</p>
+            </div>
+
+            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+              <p className="font-semibold text-foreground">Limites</p>
+              <p className="mt-2">
+                {DEFAULT_MEMBER_PLAN.monthlyRequestLimit.toLocaleString("pt-BR")} requests por mes
+              </p>
+              <p className="mt-1">{DEFAULT_MEMBER_PLAN.perSecondLimit} req/s por conta</p>
+            </div>
+
+            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground md:col-span-2">
+              <p className="font-semibold text-foreground">Leitura operacional</p>
+              <p className="mt-2">
+                A camada de membros reutiliza os services do backend principal e expõe um contrato
+                mais enxuto para clientes pagantes, sem alterar a API interna do site.
+              </p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <article className="rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
+          <div className="inline-flex rounded-2xl bg-primary/10 p-3 text-primary">
+            <BookKey className="h-5 w-5" />
+          </div>
+          <h2 className="mt-4 text-2xl font-bold text-foreground">Endpoints liberados</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {endpointGroups.map((group) => (
               <section
@@ -147,7 +170,7 @@ const MembrosDocsPage = () => {
                 <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
                 <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                   {group.items.map((item) => (
-                    <li key={item} className="break-words rounded-2xl bg-white px-3 py-2 shadow-sm">
+                    <li key={item} className="rounded-2xl bg-white px-3 py-2 shadow-sm">
                       {item}
                     </li>
                   ))}
@@ -156,23 +179,15 @@ const MembrosDocsPage = () => {
             ))}
           </div>
         </article>
-      </section>
 
-      <section className="mt-6 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
-        <article className="rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-card">
+        <article className="rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
           <div className="inline-flex rounded-2xl bg-primary/10 p-3 text-primary">
             <CreditCard className="h-5 w-5" />
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-foreground">Fluxo de pagamento mensal</h2>
-          <ul className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
-            {billingChecklist.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-
-          <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-            <p className="font-semibold text-foreground">Rotas internas do portal</p>
-            <ul className="mt-3 space-y-2">
+          <h2 className="mt-4 text-2xl font-bold text-foreground">Portal e pagamento</h2>
+          <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
+            <p className="text-sm font-semibold text-foreground">Rotas internas do portal</p>
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               {portalEndpoints.map((endpoint) => (
                 <li key={endpoint} className="rounded-2xl bg-white px-3 py-2 shadow-sm">
                   {endpoint}
@@ -181,53 +196,27 @@ const MembrosDocsPage = () => {
             </ul>
           </div>
 
+          <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
+            <p className="text-sm font-semibold text-foreground">Fluxo de ativacao</p>
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+              <li>O portal cria o checkout PIX pelo backend.</li>
+              <li>O pagamento confirmado atualiza a cobranca e libera o plano.</li>
+              <li>Com a conta ativa, o membro pode gerar a chave unica da API.</li>
+            </ul>
+          </div>
+
           <div className="mt-5 rounded-[24px] border border-amber-300/60 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
             <p className="font-semibold">Aviso obrigatorio sobre a PUSHIN PAY</p>
             <p className="mt-2">{PUSHINPAY_NOTICE}</p>
-            <p className="mt-3">
-              Em producao, o webhook deve operar com URL e segredo configurados. Sem isso, o
-              backend deve falhar fechado e nao ativar acesso pago.
-            </p>
-          </div>
-        </article>
-
-        <article className="rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-card">
-          <h2 className="text-2xl font-bold text-foreground">Autenticacao e emissao da chave</h2>
-          <div className="mt-4 grid gap-3">
-            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-              <p className="font-semibold text-foreground">Portal</p>
-              <p className="mt-2">
-                O frontend inicia o login por redirect. O backend recebe o callback oficial do
-                Google, cria a sessao do portal em cookie seguro e devolve o navegador ja
-                autenticado para o painel.
-              </p>
-            </div>
-
-            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-              <p className="font-semibold text-foreground">API paga</p>
-              <p className="mt-2">
-                Cada usuario opera com sua propria API key. O header principal e{" "}
-                <span className="font-semibold text-foreground">X-Api-Key</span>. A chave antiga e
-                revogada automaticamente quando o membro gera uma nova.
-              </p>
-            </div>
-
-            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-              <p className="font-semibold text-foreground">Quota e vigencia</p>
-              <p className="mt-2">
-                O acesso depende de pagamento confirmado, vigencia mensal ativa e cota mensal ainda
-                disponivel para o usuario.
-              </p>
-            </div>
           </div>
         </article>
       </section>
 
-      <section className="mt-6 rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-card">
+      <section className="mt-6 rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
         <h2 className="text-2xl font-bold text-foreground">Contrato esperado do checkout PIX</h2>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-          O endpoint de billing abstrai a PushinPay e devolve ao portal apenas os campos
-          necessarios para renderizar o checkout com seguranca, sem expor credenciais no navegador.
+          O portal recebe apenas os dados necessarios para renderizar o checkout e acompanhar o
+          status da cobranca, sem expor credenciais do provider ao navegador.
         </p>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -242,7 +231,7 @@ const MembrosDocsPage = () => {
         </div>
       </section>
 
-      <section className="mt-6 rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-card">
+      <section className="mt-6 rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
         <div className="inline-flex rounded-2xl bg-primary/10 p-3 text-primary">
           <TerminalSquare className="h-5 w-5" />
         </div>

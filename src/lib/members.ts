@@ -99,7 +99,7 @@ export const MEMBER_PLAN = {
   slug: "membros-radar-mensal",
   name: "Radar do Povo Membros",
   description:
-    "Plano mensal para acesso autenticado a camada publica da API, com portal proprio, checkout PIX e geracao de chave exclusiva por membro.",
+    "Acesso mensal a camada publica da API com portal proprio, checkout PIX e chave individual por conta.",
   priceCents: 1500,
   priceLabel: "R$ 15/mensal",
   monthlyRequestLimit: 5000,
@@ -115,7 +115,7 @@ export function getMemberStatusMeta(status: MemberStatus) {
   if (status === "active") {
     return {
       label: "Acesso ativo",
-      description: "Plano confirmado e liberado para gerar ou rotacionar a API key unica do membro.",
+      description: "Assinatura confirmada, acesso liberado e chave pronta para uso nas integracoes.",
       badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
     };
   }
@@ -123,14 +123,54 @@ export function getMemberStatusMeta(status: MemberStatus) {
   if (status === "awaiting_payment") {
     return {
       label: "Aguardando pagamento",
-      description: "O PIX ja foi criado. Assim que o webhook confirmar o pagamento, o acesso e liberado.",
+      description: "O checkout ja foi emitido. Assim que o pagamento for confirmado, a conta e ativada.",
       badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
     };
   }
 
   return {
     label: "Cadastro iniciado",
-    description: "O login foi validado. Falta gerar e pagar o checkout PIX para ativar a conta.",
+    description: "Sua conta ja existe. Falta emitir o PIX e concluir a ativacao do plano.",
+    badgeClassName: "border-sky-200 bg-sky-50 text-sky-700",
+  };
+}
+
+export function getMemberChargeStatusMeta(status?: MemberPixCharge["status"] | null) {
+  if (status === "paid") {
+    return {
+      label: "Pagamento confirmado",
+      description: "Cobranca concluida com sucesso e pronta para refletir no acesso do membro.",
+      badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    };
+  }
+
+  if (status === "created") {
+    return {
+      label: "PIX aguardando pagamento",
+      description: "O QR Code esta pronto e o portal segue monitorando a confirmacao do pagamento.",
+      badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
+    };
+  }
+
+  if (status === "expired") {
+    return {
+      label: "PIX expirado",
+      description: "Essa cobranca expirou. Gere um novo PIX para continuar a ativacao ou renovacao.",
+      badgeClassName: "border-rose-200 bg-rose-50 text-rose-700",
+    };
+  }
+
+  if (status === "canceled") {
+    return {
+      label: "PIX cancelado",
+      description: "A cobranca foi cancelada. Gere um novo checkout para retomar o processo.",
+      badgeClassName: "border-slate-200 bg-slate-100 text-slate-700",
+    };
+  }
+
+  return {
+    label: "Checkout nao iniciado",
+    description: "Ainda nao existe uma cobranca em aberto para esta conta.",
     badgeClassName: "border-sky-200 bg-sky-50 text-sky-700",
   };
 }
