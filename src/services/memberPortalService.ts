@@ -13,6 +13,8 @@ type ErrorPayload = {
   message?: string;
 };
 
+const NORMALIZED_MEMBER_PORTAL_BASE_URL = MEMBER_PORTAL_BASE_URL.replace(/\/+$/, "");
+
 function readFromStorage(key: string): string | null {
   if (typeof window === "undefined") {
     return null;
@@ -73,10 +75,17 @@ async function memberPortalRequest<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${MEMBER_PORTAL_BASE_URL}${path}`, {
-    ...init,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${NORMALIZED_MEMBER_PORTAL_BASE_URL}${path}`, {
+      ...init,
+      headers,
+    });
+  } catch {
+    throw new Error(
+      "Nao foi possivel se comunicar com o portal de membros. Verifique a conexao e tente novamente."
+    );
+  }
 
   if (!response.ok) {
     const payload = await parseJson<ErrorPayload>(response);

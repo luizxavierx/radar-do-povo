@@ -16,7 +16,13 @@ const MemberRouteGate = ({ children }: { children: ReactNode }) => {
   }
 
   if (!account) {
-    return <Navigate to="/membros/login" replace state={{ from: location.pathname }} />;
+    return (
+      <Navigate
+        to="/membros/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    );
   }
 
   return <>{children}</>;

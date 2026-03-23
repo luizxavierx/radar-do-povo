@@ -91,6 +91,10 @@ const MembrosLoginPage = () => {
                   onCredential={(credential) => {
                     void handleGoogleCredential(credential);
                   }}
+                  onError={(message) => {
+                    toast.error(message);
+                  }}
+                  disabled={loading}
                 />
               </div>
 

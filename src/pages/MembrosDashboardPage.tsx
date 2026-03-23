@@ -55,8 +55,12 @@ const MembrosDashboardPage = () => {
       return;
     }
 
-    await navigator.clipboard.writeText(lastIssuedApiKey.plainTextKey);
-    toast.success("API key copiada.");
+    try {
+      await navigator.clipboard.writeText(lastIssuedApiKey.plainTextKey);
+      toast.success("API key copiada.");
+    } catch {
+      toast.error("Nao foi possivel copiar a API key automaticamente.");
+    }
   };
 
   if (!account || !membership || !usage) {

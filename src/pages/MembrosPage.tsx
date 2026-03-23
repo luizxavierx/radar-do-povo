@@ -99,7 +99,7 @@ const MembrosPage = () => {
                     </Button>
 
                     <Button asChild variant="outline" size="lg" className="h-12 rounded-full px-6">
-                      <Link to="/membros/docs">
+                      <Link to="/membros/login" state={{ from: "/membros/docs" }}>
                         Ver docs da API
                         <BookKey className="h-4 w-4" />
                       </Link>
@@ -123,7 +123,7 @@ const MembrosPage = () => {
                 <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                   <div className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
                     <BadgeCheck className="h-3.5 w-3.5" />
-                      Plano atual
+                    Plano atual
                   </div>
 
                   <h2 className="mt-4 text-2xl font-bold">{MEMBER_PLAN.name}</h2>

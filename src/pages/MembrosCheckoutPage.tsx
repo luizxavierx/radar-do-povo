@@ -37,8 +37,8 @@ const MembrosCheckoutPage = () => {
       return "Renovar ou antecipar mensalidade";
     }
 
-    return "Gerar PIX de R$ 15";
-  }, [membership?.status]);
+    return `Gerar PIX de ${membership?.priceLabel ?? "R$ 15/mensal"}`;
+  }, [membership?.priceLabel, membership?.status]);
 
   const handleGeneratePix = async () => {
     try {
@@ -54,8 +54,12 @@ const MembrosCheckoutPage = () => {
       return;
     }
 
-    await navigator.clipboard.writeText(latestCharge.qrCode);
-    toast.success("Codigo PIX copiado.");
+    try {
+      await navigator.clipboard.writeText(latestCharge.qrCode);
+      toast.success("Codigo PIX copiado.");
+    } catch {
+      toast.error("Nao foi possivel copiar o codigo PIX automaticamente.");
+    }
   };
 
   if (!account || !membership) {

@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
 
 type GoogleSignInButtonProps = {
   onCredential: (credential: string) => void;
+  onError?: (message: string) => void;
   onFallbackDemo?: () => void;
   className?: string;
+  disabled?: boolean;
 };
 
 declare global {
@@ -20,7 +22,6 @@ declare global {
             client_id: string;
             callback: (response: { credential?: string }) => void;
             auto_select?: boolean;
-            use_fedcm_for_prompt?: boolean;
           }) => void;
           renderButton: (
             element: HTMLElement,
@@ -45,14 +46,27 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || "";
 
 const GoogleSignInButton = ({
   onCredential,
+  onError,
   onFallbackDemo,
   className,
+  disabled = false,
 }: GoogleSignInButtonProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const initializedRef = useRef(false);
+  const onCredentialRef = useRef(onCredential);
+  const onErrorRef = useRef(onError);
   const [buttonWidth, setButtonWidth] = useState(320);
   const [mode, setMode] = useState<"loading" | "official" | "fallback">(
     GOOGLE_CLIENT_ID ? "loading" : "fallback"
   );
+
+  useEffect(() => {
+    onCredentialRef.current = onCredential;
+  }, [onCredential]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) {
@@ -60,23 +74,31 @@ const GoogleSignInButton = ({
       return;
     }
 
-    const render = () => {
+    const renderButton = () => {
       if (!window.google?.accounts?.id || !containerRef.current) {
         setMode("fallback");
         return;
       }
 
+      if (!initializedRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => {
+            if (response.credential) {
+              onCredentialRef.current(response.credential);
+              return;
+            }
+
+            onErrorRef.current?.(
+              "O Google nao retornou uma credencial valida. Tente novamente em uma nova janela."
+            );
+          },
+          auto_select: false,
+        });
+        initializedRef.current = true;
+      }
+
       containerRef.current.innerHTML = "";
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => {
-          if (response.credential) {
-            onCredential(response.credential);
-          }
-        },
-        auto_select: false,
-        use_fedcm_for_prompt: true,
-      });
       window.google.accounts.id.renderButton(containerRef.current, {
         type: "standard",
         theme: "outline",
@@ -90,18 +112,25 @@ const GoogleSignInButton = ({
     };
 
     if (window.google?.accounts?.id) {
-      render();
+      renderButton();
       return;
     }
 
     const existingScript = document.getElementById(GOOGLE_SCRIPT_ID) as HTMLScriptElement | null;
     if (existingScript) {
-      const handleExistingError = () => setMode("fallback");
-      existingScript.addEventListener("load", render, { once: true });
+      const handleExistingLoad = () => renderButton();
+      const handleExistingError = () => {
+        setMode("fallback");
+        onErrorRef.current?.(
+          "Nao foi possivel carregar o login Google agora. Atualize a pagina e tente novamente."
+        );
+      };
+
+      existingScript.addEventListener("load", handleExistingLoad, { once: true });
       existingScript.addEventListener("error", handleExistingError, { once: true });
 
       return () => {
-        existingScript.removeEventListener("load", render);
+        existingScript.removeEventListener("load", handleExistingLoad);
         existingScript.removeEventListener("error", handleExistingError);
       };
     }
@@ -111,15 +140,20 @@ const GoogleSignInButton = ({
     script.id = GOOGLE_SCRIPT_ID;
     script.async = true;
     script.defer = true;
-    script.onload = render;
-    script.onerror = () => setMode("fallback");
+    script.onload = () => renderButton();
+    script.onerror = () => {
+      setMode("fallback");
+      onErrorRef.current?.(
+        "Nao foi possivel carregar o login Google agora. Atualize a pagina e tente novamente."
+      );
+    };
     document.head.appendChild(script);
 
     return () => {
       script.onload = null;
       script.onerror = null;
     };
-  }, [buttonWidth, onCredential]);
+  }, [buttonWidth]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -143,10 +177,15 @@ const GoogleSignInButton = ({
   return (
     <div className={cn("space-y-3", className)}>
       {mode === "official" || mode === "loading" ? (
-        <div
-          ref={containerRef}
-          className="min-h-[44px] rounded-full bg-white/90 shadow-sm [&>div]:mx-auto"
-        />
+        <div className="relative">
+          <div
+            ref={containerRef}
+            className="min-h-[44px] rounded-full bg-white/90 shadow-sm [&>div]:mx-auto"
+          />
+          {disabled ? (
+            <div className="absolute inset-0 rounded-full bg-white/55" aria-hidden="true" />
+          ) : null}
+        </div>
       ) : null}
 
       {mode === "fallback" ? (
@@ -155,7 +194,7 @@ const GoogleSignInButton = ({
           variant="outline"
           size="lg"
           onClick={onFallbackDemo}
-          disabled={!MEMBER_PORTAL_DEMO || !onFallbackDemo}
+          disabled={disabled || !MEMBER_PORTAL_DEMO || !onFallbackDemo}
           className="h-12 w-full rounded-full border-border/80 bg-white text-foreground shadow-sm hover:bg-slate-50"
         >
           <Chrome className="h-4 w-4 text-[#4285F4]" />
