@@ -1,169 +1,136 @@
 import {
-  createDemoMemberSession,
-  createMemberSessionFromGoogleCredential,
-  createMockPixCharge,
-  MEMBER_PLAN,
+  MEMBER_PORTAL_BASE_URL,
+  MEMBER_PORTAL_DEMO,
   MEMBER_STORAGE_KEYS,
   type MemberPixCharge,
-  type MemberSession,
+  type MemberPortalAccount,
+  type MemberPortalAuthResponse,
+  type MemberPortalRotateKeyResponse,
 } from "@/lib/members";
 
-type CreatePixChargeInput = {
-  payerName?: string | null;
-  payerEmail?: string | null;
+type ErrorPayload = {
+  error?: string;
+  message?: string;
 };
 
-type PushinPayPixResponse = {
-  id: string;
-  qr_code: string;
-  status: "created" | "paid" | "expired";
-  value: number;
-  webhook_url?: string | null;
-  qr_code_base64?: string | null;
-  end_to_end_id?: string | null;
-  payer_name?: string | null;
-  payer_national_registration?: string | null;
-};
-
-const MEMBER_PIX_ENDPOINT = import.meta.env.VITE_MEMBER_PIX_ENDPOINT?.trim() || "";
-const MEMBER_PIX_MOCK =
-  (import.meta.env.VITE_MEMBER_PIX_MOCK ?? "true").toLowerCase() !== "false";
-
-function readJsonFromStorage<T>(key: string): T | null {
+function readFromStorage(key: string): string | null {
   if (typeof window === "undefined") {
     return null;
   }
 
   try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-      return null;
-    }
-
-    return JSON.parse(raw) as T;
+    return window.sessionStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
-function writeJsonToStorage(key: string, value: unknown) {
+function writeToStorage(key: string, value: string) {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(key, JSON.stringify(value));
+  window.sessionStorage.setItem(key, value);
 }
 
-export function getStoredMemberSession() {
-  return readJsonFromStorage<MemberSession>(MEMBER_STORAGE_KEYS.session);
+export function getStoredPortalToken() {
+  return readFromStorage(MEMBER_STORAGE_KEYS.portalToken);
 }
 
-export function storeMemberSession(session: MemberSession) {
-  writeJsonToStorage(MEMBER_STORAGE_KEYS.session, session);
+export function storePortalToken(token: string) {
+  writeToStorage(MEMBER_STORAGE_KEYS.portalToken, token);
 }
 
-export function updateStoredMemberSession(
-  updater: (session: MemberSession) => MemberSession
-): MemberSession | null {
-  const current = getStoredMemberSession();
-  if (!current) {
+export function clearStoredPortalToken() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(MEMBER_STORAGE_KEYS.portalToken);
+}
+
+async function parseJson<T>(response: Response): Promise<T | null> {
+  try {
+    return (await response.json()) as T;
+  } catch {
     return null;
   }
-
-  const nextSession = updater(current);
-  storeMemberSession(nextSession);
-  return nextSession;
 }
 
-export function clearStoredMemberSession() {
-  if (typeof window === "undefined") {
-    return;
+async function memberPortalRequest<T>(
+  path: string,
+  init: RequestInit = {},
+  token = getStoredPortalToken()
+): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+
+  if (init.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
-  window.localStorage.removeItem(MEMBER_STORAGE_KEYS.session);
-}
-
-export function getStoredPixCharge() {
-  return readJsonFromStorage<MemberPixCharge>(MEMBER_STORAGE_KEYS.pixCharge);
-}
-
-export function storePixCharge(charge: MemberPixCharge) {
-  writeJsonToStorage(MEMBER_STORAGE_KEYS.pixCharge, charge);
-}
-
-export function clearStoredPixCharge() {
-  if (typeof window === "undefined") {
-    return;
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
-  window.localStorage.removeItem(MEMBER_STORAGE_KEYS.pixCharge);
-}
-
-export function signInWithGoogleCredential(credential: string) {
-  const session = createMemberSessionFromGoogleCredential(credential);
-  if (!session) {
-    throw new Error("Nao foi possivel validar o retorno do Google.");
-  }
-
-  clearStoredPixCharge();
-  storeMemberSession(session);
-  return session;
-}
-
-export function signInDemoMember() {
-  const session = createDemoMemberSession();
-  clearStoredPixCharge();
-  storeMemberSession(session);
-  return session;
-}
-
-function mapPushinPayResponse(payload: PushinPayPixResponse): MemberPixCharge {
-  return {
-    id: payload.id,
-    qrCode: payload.qr_code,
-    status: payload.status,
-    value: payload.value,
-    webhookUrl: payload.webhook_url ?? null,
-    qrCodeImage: payload.qr_code_base64 || createMockPixCharge(payload.payer_name).qrCodeImage,
-    endToEndId: payload.end_to_end_id ?? null,
-    payerName: payload.payer_name ?? null,
-    payerNationalRegistration: payload.payer_national_registration ?? null,
-    mode: "live",
-    createdAt: new Date().toISOString(),
-  };
-}
-
-export async function createPixCharge({
-  payerName,
-  payerEmail,
-}: CreatePixChargeInput): Promise<MemberPixCharge> {
-  if (!MEMBER_PIX_ENDPOINT || MEMBER_PIX_MOCK) {
-    const mockCharge = createMockPixCharge(payerName);
-    storePixCharge(mockCharge);
-    return mockCharge;
-  }
-
-  const response = await fetch(MEMBER_PIX_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      value: MEMBER_PLAN.priceCents,
-      plan_slug: MEMBER_PLAN.slug,
-      payer_name: payerName,
-      payer_email: payerEmail,
-    }),
+  const response = await fetch(`${MEMBER_PORTAL_BASE_URL}${path}`, {
+    ...init,
+    headers,
   });
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-    throw new Error(payload?.message || "Nao foi possivel gerar o PIX agora.");
+    const payload = await parseJson<ErrorPayload>(response);
+    throw new Error(payload?.message || payload?.error || "Nao foi possivel concluir a operacao.");
   }
 
-  const payload = (await response.json()) as PushinPayPixResponse;
-  const charge = mapPushinPayResponse(payload);
-  storePixCharge(charge);
-  return charge;
+  return (await response.json()) as T;
+}
+
+export async function signInWithGoogleCredential(credential: string): Promise<MemberPortalAuthResponse> {
+  const response = await memberPortalRequest<MemberPortalAuthResponse>("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ credential }),
+  }, null);
+
+  storePortalToken(response.token);
+  return response;
+}
+
+export async function fetchMemberAccount(): Promise<MemberPortalAccount> {
+  return memberPortalRequest<MemberPortalAccount>("/me");
+}
+
+export async function logoutMember(): Promise<void> {
+  const token = getStoredPortalToken();
+
+  try {
+    if (token) {
+      await memberPortalRequest<{ ok: boolean }>("/auth/logout", { method: "POST" }, token);
+    }
+  } finally {
+    clearStoredPortalToken();
+  }
+}
+
+export async function createPixCharge(): Promise<MemberPixCharge> {
+  return memberPortalRequest<MemberPixCharge>("/billing/pix", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function fetchCurrentPixCharge(): Promise<MemberPixCharge | null> {
+  const payload = await memberPortalRequest<{ latestCharge: MemberPixCharge | null }>("/billing/pix/current");
+  return payload.latestCharge;
+}
+
+export async function rotateMemberApiKey(): Promise<MemberPortalRotateKeyResponse> {
+  return memberPortalRequest<MemberPortalRotateKeyResponse>("/api-key/rotate", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export function isMemberPortalDemoEnabled() {
+  return MEMBER_PORTAL_DEMO;
 }

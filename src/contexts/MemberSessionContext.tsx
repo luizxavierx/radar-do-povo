@@ -7,93 +7,136 @@ import {
   type ReactNode,
 } from "react";
 
-import type { MemberPixCharge, MemberSession } from "@/lib/members";
+import type {
+  MemberPixCharge,
+  MemberPortalAccount,
+  MemberPortalRotateKeyResponse,
+} from "@/lib/members";
 import {
-  clearStoredMemberSession,
-  clearStoredPixCharge,
-  createPixCharge as createPixChargeRequest,
-  getStoredMemberSession,
-  getStoredPixCharge,
-  signInDemoMember,
+  clearStoredPortalToken,
+  createPixCharge,
+  fetchMemberAccount,
+  getStoredPortalToken,
+  logoutMember,
+  rotateMemberApiKey,
   signInWithGoogleCredential,
-  updateStoredMemberSession,
 } from "@/services/memberPortalService";
 
 type MemberSessionContextValue = {
-  session: MemberSession | null;
-  pixCharge: MemberPixCharge | null;
-  signInFromGoogle: (credential: string) => MemberSession;
-  signInDemo: () => MemberSession;
-  signOut: () => void;
-  createPixCharge: (input: { payerName?: string | null; payerEmail?: string | null }) => Promise<MemberPixCharge>;
-  clearPixCharge: () => void;
+  account: MemberPortalAccount | null;
+  bootstrapping: boolean;
+  loading: boolean;
+  lastIssuedApiKey: MemberPortalRotateKeyResponse["issuedKey"] | null;
+  signInFromGoogle: (credential: string) => Promise<MemberPortalAccount>;
+  signOut: () => Promise<void>;
+  refreshAccount: () => Promise<MemberPortalAccount | null>;
+  createCheckoutPix: () => Promise<MemberPixCharge>;
+  rotateApiKey: () => Promise<MemberPortalRotateKeyResponse["issuedKey"]>;
+  clearIssuedApiKey: () => void;
 };
 
 const MemberSessionContext = createContext<MemberSessionContextValue | null>(null);
 
 export const MemberSessionProvider = ({ children }: { children: ReactNode }) => {
-  const [session, setSession] = useState<MemberSession | null>(null);
-  const [pixCharge, setPixCharge] = useState<MemberPixCharge | null>(null);
+  const [account, setAccount] = useState<MemberPortalAccount | null>(null);
+  const [bootstrapping, setBootstrapping] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [lastIssuedApiKey, setLastIssuedApiKey] =
+    useState<MemberPortalRotateKeyResponse["issuedKey"] | null>(null);
 
   useEffect(() => {
-    setSession(getStoredMemberSession());
-    setPixCharge(getStoredPixCharge());
+    const token = getStoredPortalToken();
+    if (!token) {
+      setBootstrapping(false);
+      return;
+    }
+
+    fetchMemberAccount()
+      .then((response) => {
+        setAccount(response);
+      })
+      .catch(() => {
+        clearStoredPortalToken();
+        setAccount(null);
+      })
+      .finally(() => {
+        setBootstrapping(false);
+      });
   }, []);
 
   const value = useMemo<MemberSessionContextValue>(
     () => ({
-      session,
-      pixCharge,
-      signInFromGoogle: (credential: string) => {
-        const nextSession = signInWithGoogleCredential(credential);
-        setSession(nextSession);
-        return nextSession;
+      account,
+      bootstrapping,
+      loading,
+      lastIssuedApiKey,
+      signInFromGoogle: async (credential: string) => {
+        setLoading(true);
+        try {
+          const response = await signInWithGoogleCredential(credential);
+          setLastIssuedApiKey(null);
+          setAccount(response.account);
+          return response.account;
+        } finally {
+          setLoading(false);
+        }
       },
-      signInDemo: () => {
-        const nextSession = signInDemoMember();
-        setSession(nextSession);
-        return nextSession;
+      signOut: async () => {
+        setLoading(true);
+        try {
+          await logoutMember();
+        } finally {
+          setAccount(null);
+          setLastIssuedApiKey(null);
+          setLoading(false);
+        }
       },
-      signOut: () => {
-        clearStoredMemberSession();
-        clearStoredPixCharge();
-        setSession(null);
-        setPixCharge(null);
-      },
-      createPixCharge: async (input) => {
-        const charge = await createPixChargeRequest(input);
-        setPixCharge(charge);
-
-        if (session && session.membershipStatus !== "active") {
-          const nextSession = updateStoredMemberSession((current) => ({
-            ...current,
-            membershipStatus: "awaiting_payment",
-          }));
-
-          if (nextSession) {
-            setSession(nextSession);
-          }
+      refreshAccount: async () => {
+        if (!getStoredPortalToken()) {
+          setAccount(null);
+          return null;
         }
 
-        return charge;
-      },
-      clearPixCharge: () => {
-        clearStoredPixCharge();
-        setPixCharge(null);
-
-        if (session && session.membershipStatus === "awaiting_payment") {
-          const nextSession = updateStoredMemberSession((current) => ({
-            ...current,
-            membershipStatus: "pending_checkout",
-          }));
-
-          if (nextSession) {
-            setSession(nextSession);
-          }
+        setLoading(true);
+        try {
+          const response = await fetchMemberAccount();
+          setAccount(response);
+          return response;
+        } catch (error) {
+          clearStoredPortalToken();
+          setAccount(null);
+          throw error;
+        } finally {
+          setLoading(false);
         }
+      },
+      createCheckoutPix: async () => {
+        setLoading(true);
+        try {
+          const charge = await createPixCharge();
+          const nextAccount = await fetchMemberAccount();
+          setAccount(nextAccount);
+          return charge;
+        } finally {
+          setLoading(false);
+        }
+      },
+      rotateApiKey: async () => {
+        setLoading(true);
+        try {
+          const response = await rotateMemberApiKey();
+          setAccount(response.account);
+          setLastIssuedApiKey(response.issuedKey);
+          return response.issuedKey;
+        } finally {
+          setLoading(false);
+        }
+      },
+      clearIssuedApiKey: () => {
+        setLastIssuedApiKey(null);
       },
     }),
-    [pixCharge, session]
+    [account, bootstrapping, lastIssuedApiKey, loading]
   );
 
   return <MemberSessionContext.Provider value={value}>{children}</MemberSessionContext.Provider>;

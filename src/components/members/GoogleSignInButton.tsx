@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Chrome } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { MEMBER_PORTAL_DEMO } from "@/lib/members";
 import { cn } from "@/lib/utils";
 
 type GoogleSignInButtonProps = {
   onCredential: (credential: string) => void;
-  onFallbackDemo: () => void;
+  onFallbackDemo?: () => void;
   className?: string;
 };
 
@@ -154,17 +155,20 @@ const GoogleSignInButton = ({
           variant="outline"
           size="lg"
           onClick={onFallbackDemo}
+          disabled={!MEMBER_PORTAL_DEMO || !onFallbackDemo}
           className="h-12 w-full rounded-full border-border/80 bg-white text-foreground shadow-sm hover:bg-slate-50"
         >
           <Chrome className="h-4 w-4 text-[#4285F4]" />
-          Continuar com Google
+          {MEMBER_PORTAL_DEMO ? "Continuar com Google" : "Google nao configurado"}
         </Button>
       ) : null}
 
       <p className="text-xs leading-5 text-muted-foreground">
         {GOOGLE_CLIENT_ID
-          ? "Entrando com Google Identity Services para agilizar o onboarding dos membros."
-          : "Google Client ID ainda nao configurado. O botao acima entra em modo demonstracao local para validar a experiencia."}
+          ? "Entrando com Google Identity Services com validacao server-side para o onboarding dos membros."
+          : MEMBER_PORTAL_DEMO
+            ? "Google Client ID ainda nao configurado. O ambiente local continua com fallback de demonstracao."
+            : "Google Client ID ainda nao configurado. Defina a chave no frontend e no backend antes de publicar."}
       </p>
     </div>
   );

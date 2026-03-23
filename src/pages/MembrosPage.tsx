@@ -19,7 +19,7 @@ const highlights = [
     icon: KeyRound,
     title: "Uma chave unica por membro",
     description:
-      "Cada conta ativa recebe sua propria chave de API para consumo seguro dos endpoints liberados.",
+      "Cada conta ativa gera sua propria chave de API no portal, com rotacao segura e revogacao da chave anterior.",
   },
   {
     icon: Bot,
@@ -31,7 +31,7 @@ const highlights = [
     icon: ShieldCheck,
     title: "Camada publica separada da API interna",
     description:
-      "A area de membros reaproveita os services da API principal sem alterar o contrato do site publico.",
+      "A area de membros reaproveita os services do Laravel principal sem alterar o contrato da API interna do site.",
   },
 ];
 
@@ -40,19 +40,19 @@ const onboardingSteps = [
     step: "01",
     title: "Entrar com Google",
     description:
-      "O login padrao Google prepara o cadastro do membro e reduz atrito no primeiro acesso.",
+      "O login padrao Google e validado no backend antes da sessao do portal ser aberta.",
   },
   {
     step: "02",
     title: "Gerar o PIX mensal",
     description:
-      "O checkout do plano mensal gera QR Code e codigo copia e cola para pagamento de R$ 15.",
+      "O checkout do plano mensal e criado no backend e gera QR Code e codigo copia e cola para pagamento de R$ 15.",
   },
   {
     step: "03",
     title: "Receber a chave da API",
     description:
-      "Depois da confirmacao do pagamento, a conta ativa passa a operar com sua chave exclusiva.",
+      "Depois da confirmacao do pagamento, o membro pode gerar sua chave exclusiva diretamente no painel.",
   },
 ];
 
@@ -86,7 +86,8 @@ const MembrosPage = () => {
 
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
                     Organizamos um fluxo proprio para membros com login Google, plano mensal em
-                    PIX, documentacao oficial e uma camada publica da API focada em uso recorrente.
+                    PIX, documentacao oficial, webhook de pagamento e uma camada publica da API
+                    focada em uso recorrente.
                   </p>
 
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -122,7 +123,7 @@ const MembrosPage = () => {
                 <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                   <div className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
                     <BadgeCheck className="h-3.5 w-3.5" />
-                    Plano atual
+                      Plano atual
                   </div>
 
                   <h2 className="mt-4 text-2xl font-bold">{MEMBER_PLAN.name}</h2>
@@ -136,7 +137,7 @@ const MembrosPage = () => {
                     </p>
                     <p className="mt-3 text-4xl font-extrabold">{MEMBER_PLAN.priceLabel}</p>
                     <p className="mt-2 text-sm text-slate-300">
-                      Checkout PIX mensal com liberacao operacional apos confirmacao do pagamento.
+                      Checkout PIX mensal gerado pelo backend, com liberacao operacional apos confirmacao do pagamento.
                     </p>
                   </div>
 

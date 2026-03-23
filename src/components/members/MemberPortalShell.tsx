@@ -4,6 +4,7 @@ import {
   CreditCard,
   LayoutDashboard,
   LogOut,
+  RefreshCw,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -35,8 +36,8 @@ const MemberPortalShell = ({
   children,
 }: MemberPortalShellProps) => {
   const location = useLocation();
-  const { session, signOut } = useMemberSession();
-  const statusMeta = session ? getMemberStatusMeta(session.membershipStatus) : null;
+  const { account, loading, signOut, refreshAccount } = useMemberSession();
+  const statusMeta = account ? getMemberStatusMeta(account.membership.status) : null;
 
   return (
     <div>
@@ -59,22 +60,22 @@ const MemberPortalShell = ({
               </div>
 
               <div className="flex flex-col gap-3 lg:min-w-[280px] lg:max-w-[320px]">
-                {session ? (
+                {account ? (
                   <div className="rounded-[24px] border border-border/70 bg-background/85 p-4">
                     <div className="flex items-center gap-3">
                       <img
                         src={
-                          session.picture ||
+                          account.user.avatarUrl ||
                           "https://api.dicebear.com/9.x/initials/svg?seed=Radar%20Membro"
                         }
-                        alt={session.name}
+                        alt={account.user.name}
                         className="h-12 w-12 rounded-2xl border border-border/70 bg-white object-cover"
                       />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-foreground">
-                          {session.name}
+                          {account.user.name}
                         </p>
-                        <p className="truncate text-xs text-muted-foreground">{session.email}</p>
+                        <p className="truncate text-xs text-muted-foreground">{account.user.email}</p>
                       </div>
                     </div>
                     {statusMeta ? (
@@ -88,15 +89,28 @@ const MemberPortalShell = ({
                         <p className="mt-1 font-normal leading-5">{statusMeta.description}</p>
                       </div>
                     ) : null}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={signOut}
-                      className="mt-4 w-full rounded-2xl"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sair da area de membros
-                    </Button>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void refreshAccount()}
+                        disabled={loading}
+                        className="w-full rounded-2xl"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                        Atualizar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void signOut()}
+                        disabled={loading}
+                        className="w-full rounded-2xl"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sair
+                      </Button>
+                    </div>
                   </div>
                 ) : null}
 

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
   CheckCircle2,
   Copy,
   CreditCard,
   Loader2,
   QrCode,
+  RefreshCw,
   ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,42 +13,60 @@ import { toast } from "sonner";
 import MemberPortalShell from "@/components/members/MemberPortalShell";
 import { Button } from "@/components/ui/button";
 import { useMemberSession } from "@/contexts/MemberSessionContext";
-import { MEMBER_PLAN, PUSHINPAY_NOTICE } from "@/lib/members";
+import { PUSHINPAY_NOTICE } from "@/lib/members";
 
 const MembrosCheckoutPage = () => {
-  const { session, pixCharge, createPixCharge, clearPixCharge } = useMemberSession();
-  const [submitting, setSubmitting] = useState(false);
+  const { account, createCheckoutPix, refreshAccount, loading } = useMemberSession();
+  const latestCharge = account?.latestCharge ?? null;
+  const membership = account?.membership ?? null;
+
+  useEffect(() => {
+    if (latestCharge?.status !== "created") {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      void refreshAccount().catch(() => undefined);
+    }, 15000);
+
+    return () => window.clearInterval(interval);
+  }, [latestCharge?.status, refreshAccount]);
+
+  const checkoutLabel = useMemo(() => {
+    if (membership?.status === "active") {
+      return "Renovar ou antecipar mensalidade";
+    }
+
+    return "Gerar PIX de R$ 15";
+  }, [membership?.status]);
 
   const handleGeneratePix = async () => {
-    setSubmitting(true);
-
     try {
-      await createPixCharge({
-        payerName: session?.name,
-        payerEmail: session?.email,
-      });
-      toast.success("PIX gerado com sucesso.");
+      const charge = await createCheckoutPix();
+      toast.success(`PIX ${charge.status === "created" ? "gerado" : "atualizado"} com sucesso.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel gerar o PIX.");
-    } finally {
-      setSubmitting(false);
     }
   };
 
   const handleCopyPix = async () => {
-    if (!pixCharge?.qrCode) {
+    if (!latestCharge?.qrCode) {
       return;
     }
 
-    await navigator.clipboard.writeText(pixCharge.qrCode);
+    await navigator.clipboard.writeText(latestCharge.qrCode);
     toast.success("Codigo PIX copiado.");
   };
+
+  if (!account || !membership) {
+    return null;
+  }
 
   return (
     <MemberPortalShell
       eyebrow="Checkout PIX"
       title="Assinatura mensal da area de membros"
-      intro="O front do checkout ja esta preparado para um fluxo PIX mensal: resumo do plano, aviso obrigatorio sobre a PushinPay, QR Code, copia e cola e referencia da cobranca."
+      intro="O checkout agora e gerado pelo backend Laravel com token da PushinPay protegido no servidor e status retornado ao portal de membros."
     >
       <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
         <article className="rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-card">
@@ -57,15 +76,17 @@ const MembrosCheckoutPage = () => {
           <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
             Plano mensal
           </p>
-          <h2 className="mt-3 text-3xl font-extrabold text-foreground">{MEMBER_PLAN.priceLabel}</h2>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">{MEMBER_PLAN.description}</p>
+          <h2 className="mt-3 text-3xl font-extrabold text-foreground">{membership.priceLabel}</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            O billing e criado no Laravel e entrega ao front apenas QR Code, copia e cola e estado da cobranca.
+          </p>
 
           <div className="mt-6 rounded-[24px] border border-border/70 bg-background/85 p-4">
             <p className="text-sm font-semibold text-foreground">Parametros do checkout</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li>Valor enviado para o backend de cobranca: {MEMBER_PLAN.priceCents} centavos.</li>
-              <li>Webhook recomendado para confirmacao real do pagamento.</li>
-              <li>Fluxo preparado para server-side, sem expor o token da PushinPay no navegador.</li>
+              <li>Valor cobrado: {membership.priceCents} centavos.</li>
+              <li>Webhook previsto: atualiza a cobranca e ativa o plano apos pagamento.</li>
+              <li>Chave da PushinPay permanece exclusivamente no backend.</li>
             </ul>
           </div>
 
@@ -82,33 +103,33 @@ const MembrosCheckoutPage = () => {
           <Button
             type="button"
             size="lg"
-            onClick={handleGeneratePix}
-            disabled={submitting}
+            onClick={() => void handleGeneratePix()}
+            disabled={loading}
             className="mt-6 h-12 w-full rounded-full"
           >
-            {submitting ? (
+            {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Gerando PIX
+                Atualizando checkout
               </>
             ) : (
               <>
                 <QrCode className="h-4 w-4" />
-                Gerar PIX de R$ 15
+                {checkoutLabel}
               </>
             )}
           </Button>
 
-          {pixCharge ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={clearPixCharge}
-              className="mt-3 h-11 w-full rounded-full"
-            >
-              Limpar cobranca atual
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void refreshAccount()}
+            disabled={loading}
+            className="mt-3 h-11 w-full rounded-full"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Atualizar status do pagamento
+          </Button>
         </article>
 
         <article className="rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-card">
@@ -116,17 +137,24 @@ const MembrosCheckoutPage = () => {
             QR Code da cobranca
           </p>
 
-          {pixCharge ? (
+          {latestCharge ? (
             <div className="mt-4 grid gap-5 lg:grid-cols-[260px_1fr]">
               <div className="rounded-[28px] border border-border/70 bg-white p-4">
-                <img
-                  src={pixCharge.qrCodeImage}
-                  alt="QR Code PIX do plano mensal"
-                  className="mx-auto aspect-square w-full max-w-[220px] rounded-2xl border border-border/70 bg-white object-contain"
-                />
+                {latestCharge.qrCodeBase64 ? (
+                  <img
+                    src={latestCharge.qrCodeBase64}
+                    alt="QR Code PIX do plano mensal"
+                    className="mx-auto aspect-square w-full max-w-[220px] rounded-2xl border border-border/70 bg-white object-contain"
+                  />
+                ) : (
+                  <div className="mx-auto flex aspect-square w-full max-w-[220px] items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 text-sm text-muted-foreground">
+                    QR Code indisponivel
+                  </div>
+                )}
+
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  {pixCharge.status}
+                  {latestCharge.status}
                 </div>
               </div>
 
@@ -134,20 +162,21 @@ const MembrosCheckoutPage = () => {
                 <div className="rounded-[24px] border border-border/70 bg-background/85 p-4">
                   <p className="text-sm font-semibold text-foreground">Referencia da cobranca</p>
                   <p className="mt-2 break-all font-mono text-sm text-muted-foreground">
-                    {pixCharge.id}
+                    {latestCharge.id}
                   </p>
                 </div>
 
                 <div className="rounded-[24px] border border-border/70 bg-background/85 p-4">
                   <p className="text-sm font-semibold text-foreground">Codigo PIX copia e cola</p>
                   <p className="mt-2 break-all font-mono text-xs leading-6 text-muted-foreground">
-                    {pixCharge.qrCode}
+                    {latestCharge.qrCode || "Aguarde a emissao do QR Code."}
                   </p>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleCopyPix}
+                    onClick={() => void handleCopyPix()}
                     className="mt-4 rounded-full"
+                    disabled={!latestCharge.qrCode}
                   >
                     <Copy className="h-4 w-4" />
                     Copiar codigo PIX
@@ -157,24 +186,33 @@ const MembrosCheckoutPage = () => {
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
                     <p className="font-semibold text-foreground">Valor</p>
-                    <p className="mt-2">{MEMBER_PLAN.priceLabel}</p>
-                    <p className="mt-1 text-xs">Cobrado em centavos no endpoint de billing.</p>
+                    <p className="mt-2">{membership.priceLabel}</p>
+                    <p className="mt-1 text-xs">{latestCharge.value} centavos no provider.</p>
                   </div>
 
                   <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-                    <p className="font-semibold text-foreground">Modo atual</p>
-                    <p className="mt-2 uppercase">{pixCharge.mode}</p>
+                    <p className="font-semibold text-foreground">Atualizacao</p>
+                    <p className="mt-2">
+                      {latestCharge.updatedAt
+                        ? new Date(latestCharge.updatedAt).toLocaleString("pt-BR")
+                        : "Sem atualizacao registrada."}
+                    </p>
                     <p className="mt-1 text-xs">
-                      Use o endpoint server-side real para trocar o modo mock pelo fluxo live.
+                      O portal consulta o estado mais recente salvo pelo webhook.
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-                  Assim que o backend de billing estiver plugado de ponta a ponta, esse mesmo
-                  checkout vai refletir o status real da transacao e habilitar a emissao da chave
-                  unica do membro.
-                </div>
+                {latestCharge.status === "paid" ? (
+                  <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                    Pagamento confirmado. Volte ao painel para gerar a sua chave unica da API.
+                  </div>
+                ) : (
+                  <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+                    Enquanto a cobranca estiver em <strong>{latestCharge.status}</strong>, o portal
+                    continua aguardando a confirmacao do webhook para ativar o plano.
+                  </div>
+                )}
               </div>
             </div>
           ) : (

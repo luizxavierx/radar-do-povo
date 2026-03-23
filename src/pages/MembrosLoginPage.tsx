@@ -7,12 +7,12 @@ import AppSidebar from "@/components/AppSidebar";
 import GoogleSignInButton from "@/components/members/GoogleSignInButton";
 import { Button } from "@/components/ui/button";
 import { useMemberSession } from "@/contexts/MemberSessionContext";
-import { MEMBER_PLAN } from "@/lib/members";
+import { DEFAULT_MEMBER_PLAN, MEMBER_PORTAL_DEMO } from "@/lib/members";
 
 const MembrosLoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { session, signInDemo, signInFromGoogle } = useMemberSession();
+  const { account, bootstrapping, loading, signInFromGoogle } = useMemberSession();
 
   const nextPath =
     typeof location.state === "object" &&
@@ -23,25 +23,19 @@ const MembrosLoginPage = () => {
       : "/membros/dashboard";
 
   useEffect(() => {
-    if (session) {
+    if (!bootstrapping && account) {
       navigate(nextPath, { replace: true });
     }
-  }, [navigate, nextPath, session]);
+  }, [account, bootstrapping, navigate, nextPath]);
 
-  const handleGoogleCredential = (credential: string) => {
+  const handleGoogleCredential = async (credential: string) => {
     try {
-      const nextSession = signInFromGoogle(credential);
-      toast.success(`Sessao iniciada para ${nextSession.name}.`);
+      const nextAccount = await signInFromGoogle(credential);
+      toast.success(`Sessao iniciada para ${nextAccount.user.name}.`);
       navigate(nextPath, { replace: true });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel entrar com Google.");
     }
-  };
-
-  const handleDemoFallback = () => {
-    const nextSession = signInDemo();
-    toast.success(`Modo demonstracao ativado para ${nextSession.name}.`);
-    navigate(nextPath, { replace: true });
   };
 
   return (
@@ -57,19 +51,19 @@ const MembrosLoginPage = () => {
                 Acesso de membros
               </div>
               <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-                Entre para continuar com checkout, documentacao e painel da API.
+                Entre para ativar checkout, plano e chave unica da API.
               </h1>
               <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
-                O login Google simplifica o cadastro inicial e prepara a conta do membro para a
-                ativacao da assinatura mensal.
+                O login Google agora e validado no backend antes de abrir a sessao do portal. Isso
+                reduz fraude de identidade e prepara o checkout PIX com o usuario correto.
               </p>
 
               <div className="mt-6 rounded-[28px] border border-border/70 bg-background/85 p-5 text-sm leading-6 text-muted-foreground">
-                <p className="font-semibold text-foreground">O que voce encontra depois do login:</p>
+                <p className="font-semibold text-foreground">Fluxo de producao:</p>
                 <ul className="mt-3 space-y-2">
-                  <li>Checkout PIX com valor mensal de {MEMBER_PLAN.priceLabel}.</li>
-                  <li>Painel inicial do membro com status do plano e area de acesso.</li>
-                  <li>Documentacao oficial dos endpoints liberados para membros.</li>
+                  <li>Login Google validado server-side com audience do seu client ID.</li>
+                  <li>Checkout PIX mensal de {DEFAULT_MEMBER_PLAN.priceLabel} gerado pelo Laravel.</li>
+                  <li>Webhook confirma pagamento e libera o membro para gerar a API key.</li>
                 </ul>
               </div>
 
@@ -87,25 +81,27 @@ const MembrosLoginPage = () => {
               </p>
               <h2 className="mt-3 text-2xl font-bold">Login padrao Google</h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">
-                Use o botao oficial do Google quando o client ID estiver configurado. Enquanto isso,
-                o ambiente local continua com um fallback de demonstracao para validarmos a UX.
+                O Google continua sendo a porta de entrada padrao. No ambiente publicado, o portal
+                so deve ser usado com o client ID configurado no frontend e no backend.
               </p>
 
               <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-5">
                 <GoogleSignInButton
-                  onCredential={handleGoogleCredential}
-                  onFallbackDemo={handleDemoFallback}
+                  onCredential={(credential) => {
+                    void handleGoogleCredential(credential);
+                  }}
                 />
               </div>
 
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleDemoFallback}
-                className="mt-4 h-11 w-full rounded-full"
-              >
-                Entrar em modo demonstracao
-              </Button>
+              {MEMBER_PORTAL_DEMO ? (
+                <p className="mt-4 text-xs leading-5 text-slate-400">
+                  O modo demonstracao continua disponivel apenas para homologacao local.
+                </p>
+              ) : null}
+
+              {loading ? (
+                <p className="mt-4 text-sm text-slate-300">Validando credencial e abrindo sessao...</p>
+              ) : null}
             </section>
           </div>
         </div>
