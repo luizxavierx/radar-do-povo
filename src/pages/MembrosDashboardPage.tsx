@@ -202,6 +202,21 @@ const MembrosDashboardPage = () => {
             </div>
           </div>
 
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+              <p className="font-semibold text-foreground">Plano</p>
+              <p className="mt-2">{membership.planName}</p>
+            </div>
+            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+              <p className="font-semibold text-foreground">Limite tecnico</p>
+              <p className="mt-2">{membership.perSecondLimit} req/s por conta</p>
+            </div>
+            <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+              <p className="font-semibold text-foreground">Base da API</p>
+              <p className="mt-2 truncate font-mono text-xs text-slate-700">{MEMBER_API_BASE_URL}</p>
+            </div>
+          </div>
+
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
               <p className="font-semibold text-foreground">Ciclo ativo</p>
@@ -292,6 +307,16 @@ const MembrosDashboardPage = () => {
             <p className="font-semibold text-foreground">Base da API</p>
             <p className="mt-2 break-all font-mono text-xs text-slate-700">{MEMBER_API_BASE_URL}</p>
             <p className="mt-3">Header principal: X-Api-Key</p>
+          </div>
+
+          <div className="mt-4 rounded-[24px] border border-slate-900/10 bg-slate-950 p-4 text-slate-50">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+              Workspace do membro
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              O portal foi pensado para reduzir contexto espalhado: assinatura, checkout, docs e
+              provisionamento da chave convivem na mesma conta.
+            </p>
           </div>
 
           {membership.status === "active" ? (

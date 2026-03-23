@@ -90,7 +90,7 @@ const MembrosDocsPage = () => {
           <h2 className="mt-4 text-2xl font-bold text-foreground">Quickstart</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             O portal foi pensado para um onboarding curto: autenticar, ativar a assinatura e
-            começar a consumir a API publica com uma chave por conta.
+            comecar a consumir a API publica com uma chave por conta.
           </p>
 
           <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
@@ -147,7 +147,7 @@ const MembrosDocsPage = () => {
             <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground md:col-span-2">
               <p className="font-semibold text-foreground">Leitura operacional</p>
               <p className="mt-2">
-                A camada de membros reutiliza os services do backend principal e expõe um contrato
+                A camada de membros reutiliza os services do backend principal e expoe um contrato
                 mais enxuto para clientes pagantes, sem alterar a API interna do site.
               </p>
             </div>
@@ -210,6 +210,28 @@ const MembrosDocsPage = () => {
             <p className="mt-2">{PUSHINPAY_NOTICE}</p>
           </div>
         </article>
+      </section>
+
+      <section className="mt-6 rounded-[30px] border border-border/70 bg-slate-950 p-6 text-slate-50 shadow-card">
+        <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+              Leituras rapidas
+            </p>
+            <h2 className="mt-3 text-2xl font-bold">O que um membro precisa saber para integrar</h2>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-300">
+              A conta paga primeiro e gera a chave depois.
+            </div>
+            <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-300">
+              O header principal da API continua sendo X-Api-Key.
+            </div>
+            <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-300">
+              O portal existe para reduzir suporte manual e concentrar operacao.
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="mt-6 rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">

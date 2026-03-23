@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ArrowRight, BookKey, CreditCard, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookKey, CreditCard, KeyRound, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -13,6 +13,24 @@ const accessSteps = [
   "Entrar com a conta Google que vai administrar o acesso.",
   "Gerar o checkout PIX do plano mensal dentro do portal.",
   "Ativar a conta e emitir sua chave individual da API.",
+];
+
+const loginBenefits = [
+  {
+    icon: ShieldCheck,
+    title: "Autenticacao clara",
+    description: "Seu acesso fica vinculado a uma conta de identidade conhecida.",
+  },
+  {
+    icon: CreditCard,
+    title: "Billing no mesmo fluxo",
+    description: "Checkout, pagamento e liberacao do plano ficam no painel.",
+  },
+  {
+    icon: KeyRound,
+    title: "Integracao sem ruido",
+    description: "A chave da API aparece no momento certo, dentro da conta certa.",
+  },
 ];
 
 const MembrosLoginPage = () => {
@@ -98,6 +116,23 @@ const MembrosLoginPage = () => {
                 </div>
               </div>
 
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                {loginBenefits.map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-[24px] border border-border/70 bg-white/88 px-4 py-4 shadow-card"
+                  >
+                    <div className="inline-flex rounded-2xl bg-primary/10 p-2.5 text-primary">
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-foreground">{item.title}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
               <Button asChild variant="outline" className="mt-5 rounded-full">
                 <Link to="/membros/login" state={{ from: "/membros/docs" }}>
                   Ler documentacao oficial
@@ -156,13 +191,18 @@ const MembrosLoginPage = () => {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-[24px] border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-300">
-                  Apos concluir o login, o portal segue para a sua proxima etapa e volta para{" "}
-                  <span className="font-semibold text-white">
-                    {nextPath === "/membros/dashboard" ? "o dashboard" : nextPath}
-                  </span>
-                  .
-                  <ArrowRight className="ml-2 inline h-4 w-4" />
+                <div className="mt-5 rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+                    Retorno da sessao
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">
+                    Depois do login, o portal volta para{" "}
+                    <span className="font-semibold text-white">
+                      {nextPath === "/membros/dashboard" ? "o dashboard" : nextPath}
+                    </span>
+                    .
+                    <ArrowRight className="ml-2 inline h-4 w-4" />
+                  </p>
                 </div>
               </div>
             </section>

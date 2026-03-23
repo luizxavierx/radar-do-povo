@@ -3,7 +3,9 @@ import {
   BadgeCheck,
   BookKey,
   CreditCard,
+  Gauge,
   KeyRound,
+  LockKeyhole,
   LayoutDashboard,
   ShieldCheck,
   Sparkles,
@@ -15,9 +17,21 @@ import { Button } from "@/components/ui/button";
 import { MEMBER_PLAN, PUSHINPAY_NOTICE } from "@/lib/members";
 
 const heroHighlights = [
-  "Login com Google e area segura para cada membro.",
-  "Checkout mensal em PIX com confirmacao de pagamento no portal.",
-  "Chave individual para consumir a API publica do Radar do Povo.",
+  {
+    icon: LockKeyhole,
+    title: "Login e conta",
+    description: "Acesso com Google e sessao centralizada no portal de membros.",
+  },
+  {
+    icon: CreditCard,
+    title: "Assinatura mensal",
+    description: "Checkout PIX com confirmacao refletida direto no painel.",
+  },
+  {
+    icon: KeyRound,
+    title: "API individual",
+    description: "Uma chave ativa por conta para consumir a camada publica.",
+  },
 ];
 
 const featureCards = [
@@ -66,6 +80,24 @@ const planIncludes = [
   "Portal para checkout, renovacao, documentacao e emissao da chave.",
 ];
 
+const saasSignals = [
+  {
+    icon: LayoutDashboard,
+    label: "Portal unificado",
+    value: "Conta, billing e API",
+  },
+  {
+    icon: Gauge,
+    label: "Operacao previsivel",
+    value: "Cota e status no painel",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Contrato separado",
+    value: "API publica sem misturar a interna",
+  },
+];
+
 const MembrosPage = () => {
   return (
     <div>
@@ -90,7 +122,7 @@ const MembrosPage = () => {
 
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
                     A area de membros foi organizada como um produto SaaS: onboarding claro,
-                    assinatura mensal em PIX, documentacao oficial e painel de conta sem ruído
+                    assinatura mensal em PIX, documentacao oficial e painel de conta sem ruido
                     operacional.
                   </p>
 
@@ -113,10 +145,16 @@ const MembrosPage = () => {
                   <div className="mt-8 grid gap-3 sm:grid-cols-3">
                     {heroHighlights.map((item) => (
                       <div
-                        key={item}
-                        className="rounded-[24px] border border-border/70 bg-white/85 px-4 py-4 text-sm leading-6 text-muted-foreground shadow-card"
+                        key={item.title}
+                        className="rounded-[24px] border border-border/70 bg-white/88 px-4 py-4 shadow-card"
                       >
-                        {item}
+                        <div className="inline-flex rounded-2xl bg-primary/10 p-2.5 text-primary">
+                          <item.icon className="h-4 w-4" />
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-foreground">{item.title}</p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          {item.description}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -151,6 +189,23 @@ const MembrosPage = () => {
                         className="rounded-[20px] border border-white/10 bg-white/5 px-4 py-3"
                       >
                         {item}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                    {saasSignals.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-[20px] border border-white/10 bg-white/5 px-3 py-3"
+                      >
+                        <div className="inline-flex rounded-xl bg-white/10 p-2 text-white">
+                          <item.icon className="h-4 w-4" />
+                        </div>
+                        <p className="mt-3 text-[11px] uppercase tracking-[0.16em] text-slate-300">
+                          {item.label}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-white">{item.value}</p>
                       </div>
                     ))}
                   </div>
@@ -233,10 +288,20 @@ const MembrosPage = () => {
                 </ul>
               </div>
 
-              <div className="mt-5 rounded-[24px] border border-amber-300/60 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-                <p className="font-semibold">Aviso sobre a PUSHIN PAY</p>
-                <p className="mt-2">{PUSHINPAY_NOTICE}</p>
+              <div className="mt-5 rounded-[24px] border border-border/70 bg-slate-950 p-5 text-slate-50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+                  Linguagem do produto
+                </p>
+                <p className="mt-3 text-lg font-semibold">
+                  Um portal de membros mais proximo de um SaaS do que de uma tela tecnica.
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  A proposta aqui e deixar o membro sempre sabendo onde esta no fluxo: entrar,
+                  ativar, acompanhar e integrar.
+                </p>
               </div>
+
+              <p className="mt-5 text-xs leading-6 text-muted-foreground">{PUSHINPAY_NOTICE}</p>
             </article>
           </section>
         </div>

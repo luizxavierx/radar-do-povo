@@ -104,6 +104,16 @@ const MembrosCheckoutPage = () => {
             <p className="mt-3 text-sm leading-6 text-muted-foreground">{chargeMeta.description}</p>
           </div>
 
+          <div className="mt-5 rounded-[24px] border border-slate-900/10 bg-slate-950 p-4 text-slate-50">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+              Billing do membro
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              O portal centraliza a emissao do PIX e a leitura do status para que a ativacao do
+              plano aconteca no mesmo fluxo da conta.
+            </p>
+          </div>
+
           <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
             <p className="text-sm font-semibold text-foreground">Passo a passo</p>
             <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
