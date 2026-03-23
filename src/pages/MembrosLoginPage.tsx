@@ -7,12 +7,12 @@ import AppSidebar from "@/components/AppSidebar";
 import GoogleSignInButton from "@/components/members/GoogleSignInButton";
 import { Button } from "@/components/ui/button";
 import { useMemberSession } from "@/contexts/MemberSessionContext";
-import { DEFAULT_MEMBER_PLAN, MEMBER_PORTAL_DEMO } from "@/lib/members";
+import { DEFAULT_MEMBER_PLAN } from "@/lib/members";
 
 const MembrosLoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { account, bootstrapping, loading, signInFromGoogle } = useMemberSession();
+  const { account, bootstrapping, loading, startGoogleSignIn } = useMemberSession();
 
   const nextPath =
     typeof location.state === "object" &&
@@ -28,15 +28,23 @@ const MembrosLoginPage = () => {
     }
   }, [account, bootstrapping, navigate, nextPath]);
 
-  const handleGoogleCredential = async (credential: string) => {
-    try {
-      const nextAccount = await signInFromGoogle(credential);
-      toast.success(`Sessao iniciada para ${nextAccount.user.name}.`);
-      navigate(nextPath, { replace: true });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel entrar com Google.");
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const errorMessage = params.get("erro");
+    if (!errorMessage) {
+      return;
     }
-  };
+
+    toast.error(errorMessage);
+    params.delete("erro");
+    navigate(
+      {
+        pathname: location.pathname,
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true }
+    );
+  }, [location.pathname, location.search, navigate]);
 
   return (
     <div>
@@ -68,7 +76,7 @@ const MembrosLoginPage = () => {
               </div>
 
               <Button asChild variant="outline" className="mt-4 rounded-full">
-                <Link to="/membros/docs">
+                <Link to="/membros/login" state={{ from: "/membros/docs" }}>
                   Ler documentacao oficial
                   <BookKey className="h-4 w-4" />
                 </Link>
@@ -81,31 +89,23 @@ const MembrosLoginPage = () => {
               </p>
               <h2 className="mt-3 text-2xl font-bold">Login padrao Google</h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">
-                O Google continua sendo a porta de entrada padrao. No ambiente publicado, o portal
-                so deve ser usado com o client ID configurado no frontend e no backend, com os
-                dominios reais liberados em Authorized JavaScript Origins.
+                O portal agora usa o fluxo tradicional: o navegador vai para o Google, o backend
+                recebe o callback oficial e so depois devolve a sessao autenticada ao frontend.
               </p>
 
               <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-5">
                 <GoogleSignInButton
-                  onCredential={(credential) => {
-                    void handleGoogleCredential(credential);
-                  }}
-                  onError={(message) => {
-                    toast.error(message);
+                  onStartAuth={() => {
+                    startGoogleSignIn(nextPath);
                   }}
                   disabled={loading}
                 />
               </div>
 
-              {MEMBER_PORTAL_DEMO ? (
-                <p className="mt-4 text-xs leading-5 text-slate-400">
-                  O modo demonstracao continua disponivel apenas para homologacao local.
-                </p>
-              ) : null}
-
               {loading ? (
-                <p className="mt-4 text-sm text-slate-300">Validando credencial e abrindo sessao...</p>
+                <p className="mt-4 text-sm text-slate-300">
+                  Redirecionando para o Google e preparando o callback seguro...
+                </p>
               ) : null}
             </section>
           </div>

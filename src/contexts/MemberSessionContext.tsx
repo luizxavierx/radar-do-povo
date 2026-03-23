@@ -13,13 +13,12 @@ import type {
   MemberPortalRotateKeyResponse,
 } from "@/lib/members";
 import {
+  buildGoogleAuthRedirectUrl,
   clearStoredPortalToken,
   createPixCharge,
   fetchMemberAccount,
-  getStoredPortalToken,
   logoutMember,
   rotateMemberApiKey,
-  signInWithGoogleCredential,
 } from "@/services/memberPortalService";
 
 type MemberSessionContextValue = {
@@ -27,7 +26,7 @@ type MemberSessionContextValue = {
   bootstrapping: boolean;
   loading: boolean;
   lastIssuedApiKey: MemberPortalRotateKeyResponse["issuedKey"] | null;
-  signInFromGoogle: (credential: string) => Promise<MemberPortalAccount>;
+  startGoogleSignIn: (returnTo?: string) => void;
   signOut: () => Promise<void>;
   refreshAccount: () => Promise<MemberPortalAccount | null>;
   createCheckoutPix: () => Promise<MemberPixCharge>;
@@ -45,12 +44,6 @@ export const MemberSessionProvider = ({ children }: { children: ReactNode }) => 
     useState<MemberPortalRotateKeyResponse["issuedKey"] | null>(null);
 
   useEffect(() => {
-    const token = getStoredPortalToken();
-    if (!token) {
-      setBootstrapping(false);
-      return;
-    }
-
     fetchMemberAccount()
       .then((response) => {
         setAccount(response);
@@ -70,16 +63,10 @@ export const MemberSessionProvider = ({ children }: { children: ReactNode }) => 
       bootstrapping,
       loading,
       lastIssuedApiKey,
-      signInFromGoogle: async (credential: string) => {
+      startGoogleSignIn: (returnTo = "/membros/dashboard") => {
         setLoading(true);
-        try {
-          const response = await signInWithGoogleCredential(credential);
-          setLastIssuedApiKey(null);
-          setAccount(response.account);
-          return response.account;
-        } finally {
-          setLoading(false);
-        }
+        clearStoredPortalToken();
+        window.location.assign(buildGoogleAuthRedirectUrl(returnTo));
       },
       signOut: async () => {
         setLoading(true);
@@ -92,11 +79,6 @@ export const MemberSessionProvider = ({ children }: { children: ReactNode }) => 
         }
       },
       refreshAccount: async () => {
-        if (!getStoredPortalToken()) {
-          setAccount(null);
-          return null;
-        }
-
         setLoading(true);
         try {
           const response = await fetchMemberAccount();

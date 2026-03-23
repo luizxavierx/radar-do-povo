@@ -43,7 +43,8 @@ const endpointGroups = [
 ];
 
 const portalEndpoints = [
-  "POST /auth/google",
+  "GET /auth/google/redirect",
+  "GET /auth/google/callback",
   "GET /me",
   "POST /billing/pix",
   "GET /billing/pix/current",
@@ -56,7 +57,7 @@ const curlExamples = [
   `curl -i "${MEMBER_API_BASE_URL}/politicos/arthur%20lira/camara" \\
   -H "X-Api-Key: SUA_CHAVE"`,
   `curl -i "${MEMBER_PORTAL_BASE_URL}/billing/pix" \\
-  -H "Authorization: Bearer SUA_SESSAO_DO_PORTAL" \\
+  -H "Cookie: radar_member_portal=SEU_COOKIE_DE_SESSAO" \\
   -H "Content-Type: application/json" \\
   -d '{}'`,
 ];
@@ -123,10 +124,11 @@ const MembrosDocsPage = () => {
               os dados da plataforma.
             </p>
             <p className="mt-3">
-              O login Google usa Google Identity Services com callback no navegador. Em producao,
-              o ajuste obrigatorio no Google Cloud e liberar os dominios do frontend em
-              <span className="font-semibold text-foreground"> Authorized JavaScript Origins</span>,
-              nao configurar redirect URI para esse fluxo.
+              O login Google agora usa OAuth tradicional com redirecionamento para o Google,
+              callback no backend e retorno controlado para o portal. Em producao, o ajuste
+              obrigatorio no Google Cloud e configurar a
+              <span className="font-semibold text-foreground"> redirect URI oficial</span> do
+              backend para esse fluxo.
             </p>
           </div>
         </article>
@@ -195,8 +197,9 @@ const MembrosDocsPage = () => {
             <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
               <p className="font-semibold text-foreground">Portal</p>
               <p className="mt-2">
-                O frontend carrega uma sessao do portal via Google e recebe um token proprio de
-                sessao para operar checkout, consulta do membro e rotacao da API key.
+                O frontend inicia o login por redirect. O backend recebe o callback oficial do
+                Google, cria a sessao do portal em cookie seguro e devolve o navegador ja
+                autenticado para o painel.
               </p>
             </div>
 

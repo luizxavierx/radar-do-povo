@@ -1,10 +1,8 @@
 import {
   MEMBER_PORTAL_BASE_URL,
-  MEMBER_PORTAL_DEMO,
   MEMBER_STORAGE_KEYS,
   type MemberPixCharge,
   type MemberPortalAccount,
-  type MemberPortalAuthResponse,
   type MemberPortalRotateKeyResponse,
 } from "@/lib/members";
 
@@ -51,6 +49,15 @@ export function clearStoredPortalToken() {
   window.sessionStorage.removeItem(MEMBER_STORAGE_KEYS.portalToken);
 }
 
+export function buildGoogleAuthRedirectUrl(returnTo = "/membros/dashboard"): string {
+  const normalizedReturnTo =
+    returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/membros/dashboard";
+  const url = new URL(`${NORMALIZED_MEMBER_PORTAL_BASE_URL}/auth/google/redirect`);
+  url.searchParams.set("return_to", normalizedReturnTo);
+
+  return url.toString();
+}
+
 async function parseJson<T>(response: Response): Promise<T | null> {
   try {
     return (await response.json()) as T;
@@ -80,6 +87,7 @@ async function memberPortalRequest<T>(
     response = await fetch(`${NORMALIZED_MEMBER_PORTAL_BASE_URL}${path}`, {
       ...init,
       headers,
+      credentials: "include",
     });
   } catch {
     throw new Error(
@@ -95,16 +103,6 @@ async function memberPortalRequest<T>(
   return (await response.json()) as T;
 }
 
-export async function signInWithGoogleCredential(credential: string): Promise<MemberPortalAuthResponse> {
-  const response = await memberPortalRequest<MemberPortalAuthResponse>("/auth/google", {
-    method: "POST",
-    body: JSON.stringify({ credential }),
-  }, null);
-
-  storePortalToken(response.token);
-  return response;
-}
-
 export async function fetchMemberAccount(): Promise<MemberPortalAccount> {
   return memberPortalRequest<MemberPortalAccount>("/me");
 }
@@ -113,9 +111,7 @@ export async function logoutMember(): Promise<void> {
   const token = getStoredPortalToken();
 
   try {
-    if (token) {
-      await memberPortalRequest<{ ok: boolean }>("/auth/logout", { method: "POST" }, token);
-    }
+    await memberPortalRequest<{ ok: boolean }>("/auth/logout", { method: "POST" }, token);
   } finally {
     clearStoredPortalToken();
   }
@@ -129,7 +125,9 @@ export async function createPixCharge(): Promise<MemberPixCharge> {
 }
 
 export async function fetchCurrentPixCharge(): Promise<MemberPixCharge | null> {
-  const payload = await memberPortalRequest<{ latestCharge: MemberPixCharge | null }>("/billing/pix/current");
+  const payload = await memberPortalRequest<{ latestCharge: MemberPixCharge | null }>(
+    "/billing/pix/current"
+  );
   return payload.latestCharge;
 }
 
@@ -138,8 +136,4 @@ export async function rotateMemberApiKey(): Promise<MemberPortalRotateKeyRespons
     method: "POST",
     body: JSON.stringify({}),
   });
-}
-
-export function isMemberPortalDemoEnabled() {
-  return MEMBER_PORTAL_DEMO;
 }
