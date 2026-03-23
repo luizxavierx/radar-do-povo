@@ -99,7 +99,7 @@ const featuredFallback = [
     search: "lula",
     nomeCanonico: "lula",
     nome: "Luiz Inacio Lula da Silva",
-    foto: "https://commons.wikimedia.org/wiki/Special:FilePath/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28m%C3%A3o_pitoca%29.jpg",
+    foto: "https://admin.cnnbrasil.com.br/wp-content/uploads/sites/12/2025/08/Lula-4-e1756342280766.jpg?w=1200&h=1200&crop=1",
   },
   {
     key: "bolsonaro",
