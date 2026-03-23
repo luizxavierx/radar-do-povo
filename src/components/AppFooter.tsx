@@ -4,6 +4,7 @@ import {
   ChevronRight,
   FileText,
   House,
+  KeyRound,
   Landmark,
   Mail,
   Plane,
@@ -21,12 +22,14 @@ const primaryLinks = [
   { label: "Viagens", path: "/viagens", icon: Plane },
   { label: "Rankings", path: "/rankings", icon: BarChart3 },
   { label: "Busca", path: "/busca", icon: Search },
+  { label: "Membros", path: "/membros", icon: KeyRound },
 ];
 
 const institutionalLinks = [
   { label: "Termos", path: "/termos", icon: ScrollText },
   { label: "Metodologia", path: "/metodologia", icon: BookOpenText },
   { label: "Diretriz editorial", path: "/diretrizes-editoriais", icon: FileText },
+  { label: "Docs da API", path: "/membros/docs", icon: KeyRound },
   { label: "Contato", path: "/contato", icon: Send },
 ];
 
