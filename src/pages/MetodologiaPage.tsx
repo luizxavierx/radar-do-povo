@@ -4,12 +4,12 @@ const sections = [
   {
     title: "Origem dos dados",
     paragraphs: [
-      "Os dados exibidos no Radar do Povo partem de bases publicas e documentos disponibilizados por orgaos oficiais.",
-      "Cada tela organiza esses dados em recortes analiticos voltados para leitura mais clara de gastos, autoria, volume e concentracao.",
+      "Os dados exibidos no Radar do Povo partem de bases publicas, APIs oficiais e documentos disponibilizados por orgaos institucionais.",
+      "Cada tela reorganiza esse material em recortes analiticos voltados para leitura mais clara de gastos, autoria, volume, concentracao e historico.",
     ],
   },
   {
-    title: "Tratamento e agregacao",
+    title: "Recortes, filtros e agregacao",
     paragraphs: [
       "Os totais e rankings podem resultar de filtros por periodo, orgao, autor, viajante ou outras chaves presentes na base.",
       "Sempre que possivel, o painel preserva o detalhe rastreavel por registro para permitir verificacao do numero agregado.",
@@ -21,10 +21,17 @@ const sections = [
     ],
   },
   {
-    title: "Atualizacao e cache",
+    title: "Atualizacao, cache e consistencia",
     paragraphs: [
-      "Para manter desempenho e estabilidade, partes do painel usam cache temporario de consulta.",
-      "Mesmo com cache, os resultados seguem vinculados ao estado mais recente disponivel na base oficial no momento da atualizacao do sistema.",
+      "Para manter desempenho e estabilidade, partes do painel usam cache temporario de consulta e enriquecimento externo.",
+      "Mesmo com cache, o compromisso do projeto continua sendo refletir a base oficial mais recente disponivel quando a plataforma atualiza seus recortes.",
+    ],
+  },
+  {
+    title: "Leitura recomendada",
+    paragraphs: [
+      "A interpretacao mais segura combina indicador agregado, detalhe do registro e fonte institucional correspondente.",
+      "Quando houver divergencia entre visao resumida e documento original, a referencia final deve ser a base publica de origem.",
     ],
   },
 ];

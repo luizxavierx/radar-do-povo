@@ -2,29 +2,29 @@ import InstitutionalPageShell from "@/components/InstitutionalPageShell";
 
 const sections = [
   {
-    title: "Canal de contato",
+    title: "Quando entrar em contato",
     paragraphs: [
-      "O canal institucional do projeto e destinado a correcoes, observacoes editoriais, duvidas sobre recortes e contato profissional.",
-      "Mensagens claras com link, periodo e tela relacionada ajudam a acelerar a analise do caso.",
+      "Use este canal para relatar correcoes, observacoes editoriais, problemas de exibicao, sugestoes de melhoria e contatos profissionais relacionados ao projeto.",
+      "Quando houver uma divergencia de leitura, vale informar a pagina, o politico, o recorte de anos e o ponto exato que precisa de revisao.",
+    ],
+  },
+  {
+    title: "Como facilitar a analise",
+    paragraphs: [
+      "Mensagens objetivas com link, filtro aplicado e descricao curta do problema ajudam a equipe a reproduzir o caso mais rapido.",
+      "Se houver diferenca entre painel e fonte oficial, envie tambem a referencia publica usada na comparacao.",
     ],
     bullets: [
-      "Email: radardopovo@proton.me",
+      "Email institucional: radardopovo@proton.me",
       "Inclua a rota da pagina ou o nome do politico quando houver.",
       "Se possivel, informe o recorte de anos e filtros utilizados.",
     ],
   },
   {
-    title: "Quando entrar em contato",
-    paragraphs: [
-      "Use esse canal para reportar problemas de exibicao, divergencias de leitura, sugestoes de melhoria e pedidos institucionais relacionados ao projeto.",
-      "O contato nao substitui a comunicacao oficial com o orgao de origem do dado.",
-    ],
-  },
-  {
     title: "Escopo do suporte",
     paragraphs: [
-      "A equipe do projeto pode revisar apresentacao, metodologia, nomenclaturas e integridade do painel.",
-      "Questões sobre autenticidade administrativa do documento original devem ser verificadas junto ao orgao que publicou a base oficial.",
+      "A equipe do projeto pode revisar apresentacao, metodologia, nomenclaturas, integridade do painel e comportamento das telas.",
+      "Questoes sobre autenticidade administrativa do documento original devem ser verificadas junto ao orgao responsavel pela base oficial.",
     ],
   },
 ];
@@ -32,8 +32,8 @@ const sections = [
 const ContatoPage = () => (
   <InstitutionalPageShell
     eyebrow="Contato"
-    title="Contato institucional"
-    intro="Canal dedicado para correcoes, observacoes sobre o painel e comunicacao relacionada ao projeto."
+    title="Fale com o Radar do Povo"
+    intro="Canal dedicado para correcoes, observacoes sobre o painel e comunicacao institucional relacionada ao projeto."
     sections={sections}
   />
 );
