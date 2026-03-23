@@ -529,7 +529,7 @@ const RankingsPage = () => {
             <div className="space-y-4">
 
               {/* Tipo chart */}
-              <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+              <section className="overflow-hidden rounded-3xl border border-border bg-card p-5 sm:p-6">
                 <div className="mb-5">
                   <h2 className="text-base font-bold text-foreground">Composicao por tipo</h2>
                   <p className="text-xs text-muted-foreground">
@@ -544,9 +544,9 @@ const RankingsPage = () => {
                 ) : null}
 
                 {tipoChartData.length ? (
-                  <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[220px_minmax(0,1fr)]">
-                    <div className="rounded-[28px] border border-border bg-gradient-to-b from-primary/5 via-background to-background p-4 sm:p-5">
-                      <div className="relative mx-auto h-[220px] w-[220px]">
+                  <div className="grid min-w-0 gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[220px_minmax(0,1fr)]">
+                    <div className="min-w-0 overflow-hidden rounded-[28px] border border-border bg-gradient-to-b from-primary/5 via-background to-background p-4 sm:p-5">
+                      <div className="relative mx-auto aspect-square w-full max-w-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -573,7 +573,7 @@ const RankingsPage = () => {
                         </ResponsiveContainer>
 
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                          <div className="min-w-[112px] rounded-full border border-border bg-card/95 px-4 py-3 text-center shadow-sm backdrop-blur-sm">
+                          <div className="w-full max-w-[132px] rounded-full border border-border bg-card/95 px-3 py-3 text-center shadow-sm backdrop-blur-sm">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Top 6</p>
                             <p className="mt-1 text-lg font-bold text-foreground">{tipoCoverage.toFixed(1)}%</p>
                             <p className="text-[11px] text-muted-foreground">do valor pago</p>
@@ -595,7 +595,7 @@ const RankingsPage = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="min-w-0 space-y-3">
                       {tipoChartData.map((item) => (
                         <BreakdownListItem
                           key={item.nome}
@@ -729,7 +729,7 @@ const InsightPill = ({ label, value, helper }: { label: string; value: string; h
 );
 
 const BreakdownStatCard = ({ label, value, helper }: { label: string; value: string; helper: string }) => (
-  <div className="rounded-[22px] border border-border bg-background px-4 py-3">
+  <div className="min-w-0 overflow-hidden rounded-[22px] border border-border bg-background px-4 py-3">
     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
     <p className="mt-1.5 line-clamp-2 text-sm font-bold leading-5 text-foreground sm:text-base">{value}</p>
     <p className="mt-0.5 text-[11px] text-muted-foreground">{helper}</p>
@@ -756,7 +756,7 @@ const BreakdownListItem = ({
   const width = share > 0 ? `${Math.min(100, Math.max(8, share))}%` : "0%";
 
   return (
-    <article className="rounded-[24px] border border-border bg-background px-4 py-4">
+    <article className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-background px-4 py-4">
       <div className="flex flex-col gap-3 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <div
@@ -771,14 +771,14 @@ const BreakdownListItem = ({
           </div>
 
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-foreground">{title}</p>
+            <p className="break-words text-sm font-semibold text-foreground">{title}</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p>
           </div>
         </div>
 
-        <div className="flex items-end justify-between gap-3 min-[520px]:block min-[520px]:text-right">
-          <p className="text-sm font-bold text-foreground">{value}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{shareLabel}</p>
+        <div className="min-w-0 flex items-end justify-between gap-3 min-[520px]:block min-[520px]:text-right">
+          <p className="break-words text-sm font-bold text-foreground">{value}</p>
+          <p className="mt-0.5 break-words text-[11px] text-muted-foreground">{shareLabel}</p>
         </div>
       </div>
 
