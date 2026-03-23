@@ -1,21 +1,33 @@
-import { ArrowUpRight, Mail, Scale, ShieldCheck } from "lucide-react";
+import {
+  BarChart3,
+  BookOpenText,
+  ChevronRight,
+  FileText,
+  House,
+  Landmark,
+  Mail,
+  Plane,
+  ScrollText,
+  Search,
+  Send,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
 const primaryLinks = [
-  { label: "Home", path: "/" },
-  { label: "Viagens", path: "/viagens" },
-  { label: "Rankings", path: "/rankings" },
-  { label: "Busca", path: "/busca" },
+  { label: "Home", path: "/", icon: House },
+  { label: "Viagens", path: "/viagens", icon: Plane },
+  { label: "Rankings", path: "/rankings", icon: BarChart3 },
+  { label: "Busca", path: "/busca", icon: Search },
 ];
 
 const institutionalLinks = [
-  { label: "Termos", path: "/termos" },
-  { label: "Metodologia", path: "/metodologia" },
-  { label: "Diretriz editorial", path: "/diretrizes-editoriais" },
-  { label: "Contato", path: "/contato" },
+  { label: "Termos", path: "/termos", icon: ScrollText },
+  { label: "Metodologia", path: "/metodologia", icon: BookOpenText },
+  { label: "Diretriz editorial", path: "/diretrizes-editoriais", icon: FileText },
+  { label: "Contato", path: "/contato", icon: Send },
 ];
 
 type AppFooterProps = {
@@ -32,7 +44,7 @@ const AppFooter = ({ className }: AppFooterProps) => {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(180px,0.7fr)_minmax(220px,0.8fr)]">
           <section className="min-w-0">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-              <ShieldCheck className="h-3.5 w-3.5" />
+              <Landmark className="h-3.5 w-3.5" />
               Rodape institucional
             </div>
 
@@ -51,6 +63,7 @@ const AppFooter = ({ className }: AppFooterProps) => {
             <div className="mt-3 grid gap-2">
               {primaryLinks.map((item) => {
                 const active = location.pathname === item.path;
+                const Icon = item.icon;
 
                 return (
                   <Link
@@ -63,8 +76,11 @@ const AppFooter = ({ className }: AppFooterProps) => {
                         : "border-border/70 bg-background text-foreground hover:border-primary/20 hover:bg-muted/60"
                     )}
                   >
-                    <span>{item.label}</span>
-                    <ArrowUpRight className="h-4 w-4" />
+                    <span className="inline-flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </Link>
                 );
               })}
@@ -79,6 +95,7 @@ const AppFooter = ({ className }: AppFooterProps) => {
               <div className="mt-3 grid gap-2">
                 {institutionalLinks.map((item) => {
                   const active = location.pathname === item.path;
+                  const Icon = item.icon;
 
                   return (
                     <Link
@@ -91,8 +108,11 @@ const AppFooter = ({ className }: AppFooterProps) => {
                           : "border-border/70 bg-background text-foreground hover:border-primary/20 hover:bg-muted/60"
                       )}
                     >
-                      <span>{item.label}</span>
-                      <Scale className="h-4 w-4" />
+                      <span className="inline-flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </Link>
                   );
                 })}
@@ -111,7 +131,7 @@ const AppFooter = ({ className }: AppFooterProps) => {
                   <Mail className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">radardopovo@proton.me</span>
                 </span>
-                <ArrowUpRight className="h-4 w-4 flex-shrink-0" />
+                <ChevronRight className="h-4 w-4 flex-shrink-0" />
               </a>
             </section>
           </div>
