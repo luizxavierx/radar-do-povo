@@ -46,7 +46,6 @@ import {
 import type {
   EmendaSerieAnualNode,
   RankingEmendaFiltroInput,
-  TopEmendaPais,
   TopGastadorEmenda,
 } from "@/api/types";
 
@@ -55,6 +54,7 @@ const DEFAULT_END_YEAR = Math.max(2019, CURRENT_YEAR - 1);
 const DEFAULT_START_YEAR = Math.max(2019, DEFAULT_END_YEAR - 5);
 const years = Array.from({ length: Math.max(CURRENT_YEAR - 2018, 1) }, (_, i) => CURRENT_YEAR - i);
 const typeChartColors = ["#0f766e", "#2563eb", "#f59e0b", "#14b8a6", "#7c3aed", "#ef4444"];
+const countryChartColors = ["#1d4ed8", "#0284c7", "#0f766e", "#7c3aed", "#f97316", "#dc2626"];
 const rankIcons = [Crown, Trophy, Medal];
 const ufOptions = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS",
@@ -109,6 +109,7 @@ const RankingsPage = () => {
   const tiposNodes   = (tiposQuery.data?.nodes ?? []).slice(0, 6);
   const paisNodes    = (paisesQuery.data?.nodes ?? []).slice(0, 6);
   const singleYearNode = seriesNodes.length === 1 ? seriesNodes[0] : null;
+  const totalPagoNumber = centsToNumber(resumo?.totalPagoCents ?? "0");
 
   const serieChartData = useMemo(
     () =>
@@ -121,19 +122,52 @@ const RankingsPage = () => {
     [seriesNodes]
   );
 
-  const tipoChartData = useMemo(() => {
-    const total = tiposNodes.reduce((acc, item) => acc + centsToNumber(item.totalPagoCents), 0);
-    return tiposNodes.map((item, index) => {
-      const value = centsToNumber(item.totalPagoCents);
-      return {
-        nome:        item.tipoEmenda || "Nao informado",
-        value,
-        totalEmendas: item.totalEmendas ?? 0,
-        color:       typeChartColors[index % typeChartColors.length],
-        share:       total > 0 ? (value / total) * 100 : 0,
-      };
-    });
-  }, [tiposNodes]);
+  const tipoChartData = useMemo(
+    () =>
+      tiposNodes.map((item, index) => {
+        const value = centsToNumber(item.totalPagoCents);
+        return {
+          rank: index + 1,
+          nome: item.tipoEmenda || "Nao informado",
+          value,
+          totalEmendas: item.totalEmendas ?? 0,
+          totalPagoCents: item.totalPagoCents,
+          color: typeChartColors[index % typeChartColors.length],
+          share: totalPagoNumber > 0 ? (value / totalPagoNumber) * 100 : 0,
+        };
+      }),
+    [tiposNodes, totalPagoNumber]
+  );
+
+  const tipoCoverage = useMemo(
+    () => tipoChartData.reduce((acc, item) => acc + item.share, 0),
+    [tipoChartData]
+  );
+
+  const topTipo = tipoChartData[0] ?? null;
+
+  const paisChartData = useMemo(
+    () =>
+      paisNodes.map((item, index) => {
+        const value = centsToNumber(item.totalPagoCents);
+        return {
+          rank: index + 1,
+          nome: item.pais || "Nao informado",
+          totalEmendas: item.totalEmendas ?? 0,
+          totalPagoCents: item.totalPagoCents,
+          share: totalPagoNumber > 0 ? (value / totalPagoNumber) * 100 : 0,
+          color: countryChartColors[index % countryChartColors.length],
+        };
+      }),
+    [paisNodes, totalPagoNumber]
+  );
+
+  const paisCoverage = useMemo(
+    () => paisChartData.reduce((acc, item) => acc + item.share, 0),
+    [paisChartData]
+  );
+
+  const topPais = paisChartData[0] ?? null;
 
   const annualHighlights = useMemo(() => {
     if (!seriesNodes.length) {
@@ -198,7 +232,7 @@ const RankingsPage = () => {
                 />
                 <HeroSummaryCard
                   label="Periodo"
-                  value={`${anoInicio} – ${anoFim}`}
+                  value={`${anoInicio} - ${anoFim}`}
                   helper="Recorte anual aplicado"
                 />
                 <HeroSummaryCard
@@ -347,7 +381,7 @@ const RankingsPage = () => {
                   label="Ticket medio pago"
                   value={formatCentsCompact(ticketMedioPagoCents)}
                   helper={formatCents(ticketMedioPagoCents)}
-                  description={`${formatCountCompact(resumo.totalTipos ?? 0)} tipos · ${formatCountCompact(resumo.totalPaises ?? 0)} paises`}
+                  description={`${formatCountCompact(resumo.totalTipos ?? 0)} tipos e ${formatCountCompact(resumo.totalPaises ?? 0)} paises`}
                   icon={PieChartIcon}
                   variant="blue"
                 />
@@ -510,54 +544,69 @@ const RankingsPage = () => {
                 ) : null}
 
                 {tipoChartData.length ? (
-                  <div className="grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[160px_minmax(0,1fr)]">
-                    <div className="mx-auto h-[192px] w-[192px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={tipoChartData}
-                            dataKey="value"
-                            nameKey="nome"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={52}
-                            outerRadius={86}
-                            paddingAngle={2}
-                            stroke="transparent"
-                          >
-                            {tipoChartData.map((item) => (
-                              <Cell key={item.nome} fill={item.color} />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip
-                            formatter={(value: number) =>
-                              value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
-                            }
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
+                  <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[220px_minmax(0,1fr)]">
+                    <div className="rounded-[28px] border border-border bg-gradient-to-b from-primary/5 via-background to-background p-4 sm:p-5">
+                      <div className="relative mx-auto h-[220px] w-[220px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={tipoChartData}
+                              dataKey="value"
+                              nameKey="nome"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={58}
+                              outerRadius={92}
+                              paddingAngle={2}
+                              stroke="transparent"
+                            >
+                              {tipoChartData.map((item) => (
+                                <Cell key={item.nome} fill={item.color} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip
+                              formatter={(value: number) =>
+                                value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
+                              }
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
 
-                    <div className="space-y-2">
-                      {tipoChartData.map((item) => (
-                        <div
-                          key={item.nome}
-                          className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-3.5 py-3"
-                        >
-                          <div className="flex min-w-0 items-center gap-2.5">
-                            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
-                            <div className="min-w-0">
-                              <p className="truncate text-xs font-semibold text-foreground">{item.nome}</p>
-                              <p className="text-[11px] text-muted-foreground">{formatCountCompact(item.totalEmendas)} emendas</p>
-                            </div>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <p className="text-xs font-bold text-primary">
-                              {formatCentsCompact(String(Math.round(item.value * 100)))}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground">{item.share.toFixed(1)}%</p>
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <div className="min-w-[112px] rounded-full border border-border bg-card/95 px-4 py-3 text-center shadow-sm backdrop-blur-sm">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Top 6</p>
+                            <p className="mt-1 text-lg font-bold text-foreground">{tipoCoverage.toFixed(1)}%</p>
+                            <p className="text-[11px] text-muted-foreground">do valor pago</p>
                           </div>
                         </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
+                        <BreakdownStatCard
+                          label="Tipo lider"
+                          value={topTipo?.nome ?? "-"}
+                          helper={topTipo ? formatCentsCompact(topTipo.totalPagoCents) : "Sem dado"}
+                        />
+                        <BreakdownStatCard
+                          label="Maior fatia"
+                          value={topTipo ? `${topTipo.share.toFixed(1)}%` : "-"}
+                          helper={topTipo ? `${formatCountCompact(topTipo.totalEmendas)} emendas` : "Sem dado"}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {tipoChartData.map((item) => (
+                        <BreakdownListItem
+                          key={item.nome}
+                          accentColor={item.color}
+                          eyebrow={`#${item.rank}`}
+                          title={item.nome}
+                          subtitle={`${formatCountCompact(item.totalEmendas)} emendas`}
+                          value={formatCentsCompact(item.totalPagoCents)}
+                          share={item.share}
+                          shareLabel={`${item.share.toFixed(1)}% do pago`}
+                        />
                       ))}
                     </div>
                   </div>
@@ -567,9 +616,9 @@ const RankingsPage = () => {
               {/* Países */}
               <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
                 <div className="mb-4">
-                  <h2 className="text-base font-bold text-foreground">Paises e localidade</h2>
+                  <h2 className="text-base font-bold text-foreground">Localidade de aplicacao</h2>
                   <p className="text-xs text-muted-foreground">
-                    Concentracao geografica da localidade de aplicacao.
+                    Veja onde o valor pago mais se concentra dentro do recorte ativo.
                   </p>
                 </div>
 
@@ -579,27 +628,37 @@ const RankingsPage = () => {
                   <EmptyState message="Nenhum pais encontrado para este recorte." />
                 ) : null}
 
-                <div className="space-y-2">
-                  {paisNodes.map((item: TopEmendaPais, index) => (
-                    <div
-                      key={`${item.pais}-${index}`}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-3.5 py-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-foreground">
-                          {index + 1}. {item.pais}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {formatCountCompact(item.totalEmendas ?? 0)} emendas
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-xs font-bold text-primary">{formatCentsCompact(item.totalPagoCents)}</p>
-                        <p className="text-[11px] text-muted-foreground">{formatCents(item.totalPagoCents)}</p>
-                      </div>
+                {paisChartData.length ? (
+                  <div className="space-y-4">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <BreakdownStatCard
+                        label="Lider geografico"
+                        value={topPais?.nome ?? "-"}
+                        helper={topPais ? formatCentsCompact(topPais.totalPagoCents) : "Sem dado"}
+                      />
+                      <BreakdownStatCard
+                        label="Cobertura top 6"
+                        value={`${paisCoverage.toFixed(1)}%`}
+                        helper="Participacao sobre o valor pago"
+                      />
                     </div>
-                  ))}
-                </div>
+
+                    <div className="space-y-3">
+                      {paisChartData.map((item) => (
+                        <BreakdownListItem
+                          key={`${item.nome}-${item.rank}`}
+                          accentColor={item.color}
+                          eyebrow={`#${item.rank}`}
+                          title={item.nome}
+                          subtitle={`${formatCountCompact(item.totalEmendas)} emendas`}
+                          value={formatCentsCompact(item.totalPagoCents)}
+                          share={item.share}
+                          shareLabel={`${item.share.toFixed(1)}% do pago`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </section>
             </div>
           </section>
@@ -669,6 +728,67 @@ const InsightPill = ({ label, value, helper }: { label: string; value: string; h
   </div>
 );
 
+const BreakdownStatCard = ({ label, value, helper }: { label: string; value: string; helper: string }) => (
+  <div className="rounded-[22px] border border-border bg-background px-4 py-3">
+    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+    <p className="mt-1.5 line-clamp-2 text-sm font-bold leading-5 text-foreground sm:text-base">{value}</p>
+    <p className="mt-0.5 text-[11px] text-muted-foreground">{helper}</p>
+  </div>
+);
+
+const BreakdownListItem = ({
+  accentColor,
+  eyebrow,
+  title,
+  subtitle,
+  value,
+  share,
+  shareLabel,
+}: {
+  accentColor: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  value: string;
+  share: number;
+  shareLabel: string;
+}) => {
+  const width = share > 0 ? `${Math.min(100, Math.max(8, share))}%` : "0%";
+
+  return (
+    <article className="rounded-[24px] border border-border bg-background px-4 py-4">
+      <div className="flex flex-col gap-3 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-[11px] font-bold"
+            style={{
+              color: accentColor,
+              borderColor: `${accentColor}33`,
+              backgroundColor: `${accentColor}14`,
+            }}
+          >
+            {eyebrow}
+          </div>
+
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-foreground">{title}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p>
+          </div>
+        </div>
+
+        <div className="flex items-end justify-between gap-3 min-[520px]:block min-[520px]:text-right">
+          <p className="text-sm font-bold text-foreground">{value}</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">{shareLabel}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 h-2 rounded-full bg-border/60">
+        <div className="h-2 rounded-full" style={{ width, backgroundColor: accentColor }} />
+      </div>
+    </article>
+  );
+};
+
 const AnnualBar = ({
   label, value, helper, ratio, tone,
 }: {
@@ -706,26 +826,26 @@ const RankingAuthorRow = ({ node, rank }: { node: TopGastadorEmenda; rank: numbe
   const RankIcon = rank <= 3 ? rankIcons[rank - 1] : null;
 
   return (
-    <article className="rounded-2xl border border-border bg-background px-4 py-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <article className="rounded-[28px] border border-border bg-background px-4 py-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20 sm:px-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Rank + name */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             {RankIcon
               ? <RankIcon className="h-4 w-4 text-primary" />
-              : <span className="text-[11px] font-bold">#{rank}</span>
+              : <span className="text-xs font-bold">#{rank}</span>
             }
           </div>
           <div className="min-w-0">
-            <h3 className="truncate text-sm font-bold text-foreground">{node.nomeAutorEmenda}</h3>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
+            <h3 className="truncate text-sm font-bold text-foreground sm:text-base">{node.nomeAutorEmenda}</h3>
+            <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
               {formatCountCompact(node.totalEmendas ?? 0)} emendas registradas
             </p>
           </div>
         </div>
 
         {/* Metrics */}
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 min-[520px]:grid-cols-3 lg:w-[440px]">
           {/* Pago — destaque */}
           <div className="rounded-2xl border border-primary/20 bg-primary/8 px-3.5 py-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-primary/70">Pago</p>
