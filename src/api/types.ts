@@ -505,6 +505,8 @@ export interface PerfilExternoTSE {
 
 export interface PerfilExternoLexML {
   total?: number;
+  limit?: number;
+  offset?: number;
   documentos?: {
     titulo?: string;
     identificador?: string;

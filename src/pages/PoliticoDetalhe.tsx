@@ -1,10 +1,12 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Banknote,
   Building2,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Database,
   ExternalLink,
   Globe,
@@ -38,6 +40,7 @@ import {
 import type { Emenda, PerfilExterno, Viagem } from "@/api/types";
 
 const PAGE_SIZE = 10;
+const LEXML_PAGE_SIZE = 10;
 const CURRENT_YEAR = new Date().getFullYear();
 const DEFAULT_END_YEAR = Math.max(2019, CURRENT_YEAR - 1);
 const years = Array.from({ length: Math.max(CURRENT_YEAR - 2018, 1) }, (_, i) => CURRENT_YEAR - i);
@@ -51,6 +54,7 @@ const PoliticoDetalhe = () => {
   const [anoFim, setAnoFim] = useState(DEFAULT_END_YEAR);
   const [viagensOffset, setViagensOffset] = useState(0);
   const [emendasOffset, setEmendasOffset] = useState(0);
+  const [lexmlOffset, setLexmlOffset] = useState(0);
 
   const nomeBusca = decodeURIComponent(id || "").trim();
   const { data: politico, isLoading, error } = usePoliticoDossieCompleto(nomeBusca, {
@@ -60,6 +64,8 @@ const PoliticoDetalhe = () => {
     viagensOffset,
     emendasLimit: PAGE_SIZE,
     emendasOffset,
+    lexmlLimit: LEXML_PAGE_SIZE,
+    lexmlOffset,
     passagensLimit: 12,
     pagamentosLimit: 12,
     trechosLimit: 12,
@@ -75,6 +81,10 @@ const PoliticoDetalhe = () => {
     error: noticiasError,
     refetch: refetchNoticias,
   } = usePoliticoNoticias(nomePoliticoNoticias, 6);
+
+  useEffect(() => {
+    setLexmlOffset(0);
+  }, [nomeBusca]);
 
   const gastos = politico?.gastos;
   const totalDiariasCents = toBigInt(gastos?.totalDiariasCents);
@@ -630,9 +640,14 @@ const PoliticoDetalhe = () => {
                 )}
               </section>
 
-                {politico.perfilExterno ? (
-                  <PerfilExternoSection perfil={politico.perfilExterno} />
-                ) : null}
+                  {politico.perfilExterno ? (
+                  <PerfilExternoSection
+                    perfil={politico.perfilExterno}
+                    lexmlLimit={LEXML_PAGE_SIZE}
+                    lexmlOffset={lexmlOffset}
+                    onLexmlPageChange={setLexmlOffset}
+                  />
+                  ) : null}
               </div>
             ) : null}
           </div>
@@ -812,7 +827,24 @@ const DossieSkeleton = () => (
   </div>
 );
 
-const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
+const PerfilExternoSection = ({
+  perfil,
+  lexmlLimit,
+  lexmlOffset,
+  onLexmlPageChange,
+}: {
+  perfil: PerfilExterno;
+  lexmlLimit: number;
+  lexmlOffset: number;
+  onLexmlPageChange: (offset: number) => void;
+}) => {
+  const lexmlDocs = perfil.lexml?.documentos ?? [];
+  const lexmlTotal = perfil.lexml?.total ?? 0;
+  const lexmlPageStart = lexmlDocs.length > 0 ? lexmlOffset + 1 : 0;
+  const lexmlPageEnd = lexmlOffset + lexmlDocs.length;
+  const lexmlHasPrevious = lexmlOffset > 0;
+  const lexmlHasNext = lexmlOffset + lexmlDocs.length < lexmlTotal;
+
   const cards = [
     {
       key: "camara",
@@ -1182,23 +1214,62 @@ const PerfilExternoSection = ({ perfil }: { perfil: PerfilExterno }) => {
       key: "lexml",
       icon: Landmark,
       label: "LexML",
-      visible: Boolean((perfil.lexml?.total ?? 0) > 0),
+      visible: Boolean(lexmlTotal > 0),
       content: (
         <>
           <p className="font-semibold text-foreground">
-            {perfil.lexml?.total ?? 0} documentos legislativos
+            {lexmlTotal} documentos legislativos
           </p>
-          {perfil.lexml?.documentos?.slice(0, 2).map((doc, index) => (
-            <a
-              key={index}
-              href={doc.url || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block truncate text-primary hover:underline"
-            >
-              {doc.titulo}
-            </a>
-          ))}
+          <p className="text-[11px] text-muted-foreground">
+            {lexmlPageStart > 0
+              ? `${lexmlPageStart}-${lexmlPageEnd} de ${lexmlTotal.toLocaleString("pt-BR")} resultados`
+              : "Nenhum documento nesta pagina"}
+          </p>
+
+          <div className="space-y-2">
+            {lexmlDocs.map((doc, index) => (
+              <a
+                key={`${doc.url || doc.identificador || doc.titulo || "lexml"}-${index}`}
+                href={doc.url || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-xl border border-border/60 bg-card/70 px-3 py-2 transition-colors hover:border-primary/20 hover:bg-primary/5"
+              >
+                <p className="line-clamp-2 font-semibold text-foreground">{doc.titulo}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {[doc.tipo, doc.data].filter(Boolean).join(" | ")}
+                </p>
+              </a>
+            ))}
+          </div>
+
+          {lexmlTotal > lexmlLimit ? (
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+              <button
+                type="button"
+                onClick={() => onLexmlPageChange(Math.max(0, lexmlOffset - lexmlLimit))}
+                disabled={!lexmlHasPrevious}
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Anterior
+              </button>
+
+              <span className="text-[11px] font-medium text-muted-foreground">
+                Pagina {Math.floor(lexmlOffset / lexmlLimit) + 1} de {Math.max(1, Math.ceil(lexmlTotal / lexmlLimit))}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => onLexmlPageChange(lexmlOffset + lexmlLimit)}
+                disabled={!lexmlHasNext}
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Proxima
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : null}
         </>
       ),
     },

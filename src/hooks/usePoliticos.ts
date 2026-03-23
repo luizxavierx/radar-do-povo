@@ -136,6 +136,8 @@ export interface PoliticoDossieQueryOptions {
   viagensOffset?: number;
   emendasLimit?: number;
   emendasOffset?: number;
+  lexmlLimit?: number;
+  lexmlOffset?: number;
   passagensLimit?: number;
   pagamentosLimit?: number;
   trechosLimit?: number;
@@ -155,6 +157,8 @@ export function usePoliticoDossieCompleto(
     viagensOffset: options.viagensOffset ?? 0,
     emendasLimit: options.emendasLimit ?? 20,
     emendasOffset: options.emendasOffset ?? 0,
+    lexmlLimit: options.lexmlLimit ?? 10,
+    lexmlOffset: options.lexmlOffset ?? 0,
     passagensLimit: options.passagensLimit ?? 12,
     pagamentosLimit: options.pagamentosLimit ?? 12,
     trechosLimit: options.trechosLimit ?? 12,
