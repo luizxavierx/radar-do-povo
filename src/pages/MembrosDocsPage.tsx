@@ -122,6 +122,12 @@ const MembrosDocsPage = () => {
               principal. Isso evita duplicacao de regra e mantem a camada de membros alinhada com
               os dados da plataforma.
             </p>
+            <p className="mt-3">
+              O login Google usa Google Identity Services com callback no navegador. Em producao,
+              o ajuste obrigatorio no Google Cloud e liberar os dominios do frontend em
+              <span className="font-semibold text-foreground"> Authorized JavaScript Origins</span>,
+              nao configurar redirect URI para esse fluxo.
+            </p>
           </div>
         </article>
 
@@ -176,6 +182,10 @@ const MembrosDocsPage = () => {
           <div className="mt-5 rounded-[24px] border border-amber-300/60 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
             <p className="font-semibold">Aviso obrigatorio sobre a PUSHIN PAY</p>
             <p className="mt-2">{PUSHINPAY_NOTICE}</p>
+            <p className="mt-3">
+              Em producao, o webhook deve operar com URL e segredo configurados. Sem isso, o
+              backend deve falhar fechado e nao ativar acesso pago.
+            </p>
           </div>
         </article>
 

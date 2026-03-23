@@ -82,7 +82,8 @@ const MembrosLoginPage = () => {
               <h2 className="mt-3 text-2xl font-bold">Login padrao Google</h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">
                 O Google continua sendo a porta de entrada padrao. No ambiente publicado, o portal
-                so deve ser usado com o client ID configurado no frontend e no backend.
+                so deve ser usado com o client ID configurado no frontend e no backend, com os
+                dominios reais liberados em Authorized JavaScript Origins.
               </p>
 
               <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-5">

@@ -2,14 +2,14 @@
 
 ## Objetivo
 
-O portal de membros do Radar do Povo concentra o fluxo comercial e tecnico da camada publica da API na mesma stack Laravel da API principal, sem alterar o contrato interno usado pelo site.
+O portal de membros do Radar do Povo concentra o fluxo comercial e tecnico da camada publica da API dentro da mesma app Laravel da API principal, sem alterar o contrato interno usado pelo site.
 
 Hoje o fluxo integrado cobre:
 
 - login inicial com Google, validado no backend
 - sessao propria do portal para checkout e painel do membro
 - checkout PIX mensal criado server-side via PushinPay
-- webhook de confirmacao para ativar o plano
+- webhook autenticado para ativar o plano
 - geracao e rotacao da API key unica do membro
 - documentacao oficial da API paga
 
@@ -56,8 +56,19 @@ Rotas principais:
 5. O membro gera o checkout PIX em `POST /billing/pix`.
 6. O Laravel cria a cobranca na PushinPay e devolve QR Code, copia e cola e status.
 7. A PushinPay chama o webhook configurado quando o pagamento muda de estado.
-8. Ao receber `paid`, o backend ativa o acesso mensal do usuario.
+8. Ao receber a primeira transicao real para `paid`, o backend ativa o acesso mensal do usuario.
 9. O membro ativo gera ou rotaciona sua API key em `POST /api-key/rotate`.
+
+## Google em producao
+
+Este fluxo usa Google Identity Services com callback no navegador, nao OAuth por redirecionamento classico.
+
+Por isso, no Google Cloud Console, o ponto obrigatorio e:
+
+- configurar `Authorized JavaScript Origins` com os dominios reais do frontend
+- usar o mesmo `CLIENT_ID` no frontend e no backend
+
+Nao depende de `redirect URI` para abrir a sessao do portal.
 
 ## Variaveis de ambiente do backend
 
@@ -99,7 +110,14 @@ O portal usa:
 
 - `POST /billing/pix` para criar ou recuperar a cobranca ativa
 - `GET /me` para refletir o estado salvo do checkout
-- `POST /billing/pushinpay/webhook` para confirmacao assíncrona
+- `POST /billing/pushinpay/webhook` para confirmacao assincrona
+
+Regras de seguranca assumidas por esta implementacao:
+
+- `PUSHINPAY_WEBHOOK_URL` deve estar configurada
+- `PUSHINPAY_WEBHOOK_SECRET` deve estar configurado
+- o webhook deve falhar fechado quando esse segredo estiver ausente
+- o plano so deve ser ativado na primeira transicao real para `paid`
 
 Payload esperado pelo frontend:
 
@@ -120,6 +138,7 @@ Payload esperado pelo frontend:
 - ao gerar uma nova, a anterior e revogada
 - a chave em texto puro e mostrada no portal somente no momento da geracao
 - o backend armazena apenas o hash da chave em `member_api_keys`
+- a API publica so deve responder para usuarios com janela de acesso ativa
 
 ## Aviso obrigatorio
 
@@ -164,6 +183,6 @@ O portal ficou preparado para producao dentro da mesma app Laravel:
 - login Google com verificacao server-side
 - sessao do portal em tabela propria
 - checkout PIX server-side
-- webhook com segredo configuravel
+- webhook protegido por segredo obrigatorio em producao
 - ativacao mensal do usuario apos pagamento
 - emissao segura da API key sob demanda no painel
