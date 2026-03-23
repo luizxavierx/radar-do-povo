@@ -95,14 +95,18 @@ export const MEMBER_PORTAL_BASE_URL =
 export const MEMBER_PORTAL_DEMO =
   (import.meta.env.VITE_MEMBER_PORTAL_DEMO ?? "false").toLowerCase() === "true";
 
-export const DEFAULT_MEMBER_PLAN = {
+export const MEMBER_PLAN = {
   slug: "membros-radar-mensal",
   name: "Radar do Povo Membros",
+  description:
+    "Plano mensal para acesso autenticado a camada publica da API, com portal proprio, checkout PIX e geracao de chave exclusiva por membro.",
   priceCents: 1500,
   priceLabel: "R$ 15/mensal",
   monthlyRequestLimit: 5000,
   perSecondLimit: 1,
 } as const;
+
+export const DEFAULT_MEMBER_PLAN = MEMBER_PLAN;
 
 export const PUSHINPAY_NOTICE =
   "A PUSHIN PAY atua exclusivamente como processadora de pagamentos e nao possui qualquer responsabilidade pela entrega, suporte, conteudo, qualidade ou cumprimento das obrigacoes relacionadas aos produtos ou servicos oferecidos pelo vendedor.";
