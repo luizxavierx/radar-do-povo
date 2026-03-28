@@ -1,18 +1,9 @@
 export type MemberStatus = "pending_checkout" | "awaiting_payment" | "active";
 
 export type MemberPortalUser = {
-  id: number;
   name: string;
   email: string;
   avatarUrl?: string | null;
-  googleSub?: string | null;
-  status: string;
-  planSlug: string;
-  monthlyRequestLimit: number;
-  portalLastLoginAt?: string | null;
-  apiAccessStartsAt?: string | null;
-  apiAccessEndsAt?: string | null;
-  lastApiRequestAt?: string | null;
 };
 
 export type MemberPortalMembership = {
@@ -65,16 +56,10 @@ export type MemberPortalApiKey = {
 };
 
 export type MemberPixCharge = {
-  id: string;
   status: "created" | "paid" | "expired" | "canceled";
   value: number;
   qrCode?: string | null;
   qrCodeBase64?: string | null;
-  webhookUrl?: string | null;
-  endToEndId?: string | null;
-  payerName?: string | null;
-  payerEmail?: string | null;
-  payerNationalRegistration?: string | null;
   paidAt?: string | null;
   expiresAt?: string | null;
   expiresInSeconds?: number | null;
@@ -117,7 +102,7 @@ export const MEMBER_PLAN = {
   slug: "membros-radar-mensal",
   name: "Radar do Povo Membros",
   description:
-    "Acesso mensal a camada publica da API com portal proprio, PIX com janela curta e chave individual por conta.",
+    "Assinatura mensal para acessar a API de membros com checkout PIX, painel de conta e chave individual por operacao.",
   priceCents: 1500,
   priceLabel: "R$ 15/mensal",
   monthlyRequestLimit: 5000,
@@ -167,7 +152,7 @@ export function getMemberChargeStatusMeta(status?: MemberPixCharge["status"] | n
     return {
       label: "PIX aguardando pagamento",
       description:
-        "O QR Code esta pronto. O portal monitora o pagamento e trata a cobranca como valida por 15 minutos.",
+        "O QR Code esta pronto. Assim que o pagamento for confirmado, o acesso avanca automaticamente.",
       badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
     };
   }

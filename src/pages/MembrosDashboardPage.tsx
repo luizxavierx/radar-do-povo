@@ -19,7 +19,6 @@ import {
   formatMemberDateTime,
   getMemberChargeStatusMeta,
   getMemberStatusMeta,
-  MEMBER_API_BASE_URL,
 } from "@/lib/members";
 
 const MembrosDashboardPage = () => {
@@ -72,7 +71,7 @@ const MembrosDashboardPage = () => {
     <MemberPortalShell
       eyebrow="Painel do membro"
       title={`Bem-vindo, ${account.user.name.split(" ")[0] ?? "membro"}.`}
-      intro="Este painel foi reorganizado como um workspace de conta: assinatura, checkout, cota mensal e chave da API seguem a mesma jornada."
+      intro="Seu painel concentra assinatura, uso mensal, checkout e chave da API em uma leitura unica de conta, com foco no que realmente importa para a operacao."
     >
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-[28px] border border-border/70 bg-card/92 p-5 shadow-card">
@@ -166,12 +165,16 @@ const MembrosDashboardPage = () => {
               <p className="mt-2">{membership.planName}</p>
             </div>
             <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-              <p className="font-semibold text-foreground">Limite tecnico</p>
-              <p className="mt-2">{membership.perSecondLimit} req/s por conta</p>
+              <p className="font-semibold text-foreground">Ciclo atual</p>
+              <p className="mt-2">
+                {membership.currentPeriodEndsAt
+                  ? `Ativo ate ${formatMemberDateTime(membership.currentPeriodEndsAt)}`
+                  : "Aguardando confirmacao do pagamento."}
+              </p>
             </div>
             <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-              <p className="font-semibold text-foreground">Base da API</p>
-              <p className="mt-2 truncate font-mono text-xs text-slate-700">{MEMBER_API_BASE_URL}</p>
+              <p className="font-semibold text-foreground">Proximo passo</p>
+              <p className="mt-2">{journey.primaryAction.label}</p>
             </div>
           </div>
 
@@ -288,9 +291,15 @@ const MembrosDashboardPage = () => {
           </div>
 
           <div className="mt-4 rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-            <p className="font-semibold text-foreground">Base da API</p>
-            <p className="mt-2 break-all font-mono text-xs text-slate-700">{MEMBER_API_BASE_URL}</p>
-            <p className="mt-3">Header principal: X-Api-Key</p>
+            <p className="font-semibold text-foreground">Boas praticas com a chave</p>
+            <p className="mt-2">
+              Use a chave so nos seus integradores, armazene em local seguro e rotacione sempre que
+              houver troca de equipe ou suspeita de exposicao.
+            </p>
+            <p className="mt-3 text-xs">
+              A documentacao oficial no portal mostra a base da API, os headers e os exemplos de
+              uso.
+            </p>
           </div>
 
           <div className="mt-4 rounded-[24px] border border-slate-900/10 bg-slate-950 p-4 text-slate-50">
@@ -298,8 +307,8 @@ const MembrosDashboardPage = () => {
               Leitura operacional
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              A conta segue uma ordem previsivel: autenticar, pagar, liberar e integrar. Isso
-              reduz suporte manual e deixa o estado da assinatura visivel no proprio portal.
+              A conta segue uma ordem previsivel: entrar, ativar, emitir a chave e integrar. Isso
+              reduz suporte manual e deixa claro o que falta fazer em cada etapa.
             </p>
           </div>
 

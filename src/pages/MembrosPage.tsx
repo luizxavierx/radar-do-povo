@@ -20,7 +20,7 @@ const heroHighlights = [
   {
     icon: LockKeyhole,
     title: "Login e conta",
-    description: "Acesso com Google, callback server-side e sessao centralizada no portal.",
+    description: "Acesso com Google e sessao protegida para administrar assinatura, checkout e chave.",
   },
   {
     icon: CreditCard,
@@ -49,9 +49,9 @@ const featureCards = [
   },
   {
     icon: ShieldCheck,
-    title: "Camada publica independente da API interna",
+    title: "Ambiente proprio para membros",
     description:
-      "A experiencia comercial fica separada do consumo interno da plataforma, sem misturar contratos nem acessos.",
+      "A experiencia do assinante fica organizada em um portal proprio, com onboarding, assinatura e integracao no mesmo lugar.",
   },
 ];
 
@@ -75,7 +75,7 @@ const journeySteps = [
 
 const planIncludes = [
   "Ate 5.000 requisicoes por mes por conta.",
-  "Limite tecnico inicial de 1 requisicao por segundo.",
+  "Ritmo inicial de 1 requisicao por segundo por conta.",
   "Acesso aos endpoints de noticias, dossie, viagens e rankings.",
   `Portal para checkout, renovacao, documentacao e emissao da chave, com PIX de ${MEMBER_PIX_EXPIRATION_MINUTES} minutos.`,
 ];
@@ -93,8 +93,8 @@ const saasSignals = [
   },
   {
     icon: ShieldCheck,
-    label: "Contrato separado",
-    value: "API publica sem misturar a interna",
+    label: "Operacao guiada",
+    value: "Ativacao, pagamento e uso",
   },
 ];
 
@@ -293,11 +293,11 @@ const MembrosPage = () => {
                   Linguagem do produto
                 </p>
                 <p className="mt-3 text-lg font-semibold">
-                  Um portal de membros mais proximo de um SaaS do que de uma tela tecnica.
+                  Um portal de membros com leitura de produto, onboarding claro e operacao simples.
                 </p>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  A proposta aqui e deixar o membro sempre sabendo onde esta no fluxo: entrar,
-                  ativar, acompanhar e integrar.
+                  A proposta aqui e deixar o membro sempre orientado: entrar, ativar a assinatura,
+                  acompanhar o status e integrar a API sem excesso de complexidade.
                 </p>
               </div>
 

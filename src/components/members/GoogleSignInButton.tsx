@@ -54,7 +54,7 @@ const GoogleSignInButton = ({
           Sem senha nova
         </span>
         <span className="rounded-full border border-border/70 bg-background/85 px-3 py-1.5">
-          Sessao criada no backend
+          Sessao protegida no portal
         </span>
         <span className="rounded-full border border-border/70 bg-background/85 px-3 py-1.5">
           Retorno automatico ao portal

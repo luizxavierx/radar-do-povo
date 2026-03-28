@@ -32,7 +32,7 @@ const MembrosCheckoutPage = () => {
 
   useEffect(() => {
     setSecondsLeft(latestCharge?.expiresInSeconds ?? null);
-  }, [latestCharge?.expiresInSeconds, latestCharge?.id]);
+  }, [latestCharge?.expiresInSeconds, latestCharge?.updatedAt]);
 
   useEffect(() => {
     if (effectiveChargeStatus !== "created") {
@@ -56,7 +56,7 @@ const MembrosCheckoutPage = () => {
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [effectiveChargeStatus, latestCharge?.id, secondsLeft]);
+  }, [effectiveChargeStatus, latestCharge?.updatedAt, secondsLeft]);
 
   useEffect(() => {
     if (effectiveChargeStatus === "created" && secondsLeft === 0) {
@@ -110,7 +110,7 @@ const MembrosCheckoutPage = () => {
     <MemberPortalShell
       eyebrow="Checkout PIX"
       title="Ative ou renove sua assinatura mensal"
-      intro="O checkout agora segue uma leitura de SaaS: estado da cobranca, validade do PIX, referencia do pagamento e o proximo passo da conta no mesmo painel."
+      intro="O checkout foi organizado para mostrar apenas o que importa: valor, QR Code, prazo de pagamento e atualizacao do status da sua assinatura."
     >
       <section className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
         <article className="rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
@@ -123,8 +123,8 @@ const MembrosCheckoutPage = () => {
           </p>
           <h2 className="mt-3 text-3xl font-extrabold text-foreground">{membership.priceLabel}</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            O PIX e emitido no backend e refletido aqui com validade curta, para que o membro
-            acompanhe um checkout limpo e previsivel.
+            Gere o PIX do plano mensal, acompanhe a janela de pagamento e volte ao painel assim
+            que a confirmacao aparecer no portal.
           </p>
 
           <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
@@ -182,7 +182,7 @@ const MembrosCheckoutPage = () => {
             <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
               <p className="font-semibold text-foreground">Valor do plano</p>
               <p className="mt-2">{membership.priceLabel}</p>
-              <p className="mt-1 text-xs">{membership.priceCents} centavos.</p>
+              <p className="mt-1 text-xs">Valor exibido no checkout mensal.</p>
             </div>
             <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
               <p className="font-semibold text-foreground">Ciclo atual</p>
@@ -276,13 +276,6 @@ const MembrosCheckoutPage = () => {
 
               <div className="space-y-4">
                 <div className="rounded-[24px] border border-border/70 bg-background/85 p-4">
-                  <p className="text-sm font-semibold text-foreground">Referencia da cobranca</p>
-                  <p className="mt-2 break-all font-mono text-sm text-muted-foreground">
-                    {latestCharge.id}
-                  </p>
-                </div>
-
-                <div className="rounded-[24px] border border-border/70 bg-background/85 p-4">
                   <p className="text-sm font-semibold text-foreground">Codigo copia e cola</p>
                   <p className="mt-2 break-all font-mono text-xs leading-6 text-muted-foreground">
                     {latestCharge.qrCode || "O codigo aparecera assim que a cobranca for emitida."}
@@ -303,7 +296,7 @@ const MembrosCheckoutPage = () => {
                   <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
                     <p className="font-semibold text-foreground">Valor</p>
                     <p className="mt-2">{membership.priceLabel}</p>
-                    <p className="mt-1 text-xs">{latestCharge.value} centavos no provider.</p>
+                    <p className="mt-1 text-xs">Cobranca mensal emitida para esta conta.</p>
                   </div>
 
                   <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
@@ -337,8 +330,8 @@ const MembrosCheckoutPage = () => {
                   </div>
                 ) : (
                   <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-                    Enquanto o status seguir como <strong>{effectiveChargeStatus}</strong>, o portal
-                    continua aguardando a confirmacao do pagamento para liberar o acesso.
+                    Enquanto o pagamento nao for confirmado, o portal continua aguardando a
+                    atualizacao da cobranca para liberar o acesso.
                   </div>
                 )}
               </div>

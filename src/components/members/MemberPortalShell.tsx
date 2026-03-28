@@ -41,6 +41,7 @@ const MemberPortalShell = ({
   const { account, loading, signOut, refreshAccount } = useMemberSession();
   const statusMeta = account ? getMemberStatusMeta(account.membership.status) : null;
   const journey = account?.journey;
+  const accessLabel = statusMeta?.label ?? "Conta em preparacao";
   const periodLabel =
     account?.membership.currentPeriodEndsAt
       ? new Date(account.membership.currentPeriodEndsAt).toLocaleDateString("pt-BR")
@@ -159,11 +160,9 @@ const MemberPortalShell = ({
                             </div>
                             <div className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-3">
                               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-300">
-                                Conta
+                                Acesso
                               </p>
-                              <p className="mt-2 text-sm font-semibold capitalize">
-                                {account.user.status}
-                              </p>
+                              <p className="mt-2 text-sm font-semibold">{accessLabel}</p>
                             </div>
                           </div>
 

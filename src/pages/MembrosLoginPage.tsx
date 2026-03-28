@@ -18,18 +18,18 @@ const accessSteps = [
 const loginBenefits = [
   {
     icon: ShieldCheck,
-    title: "Autenticacao clara",
-    description: "Seu acesso fica vinculado a uma conta de identidade conhecida.",
+    title: "Acesso confiavel",
+    description: "A mesma conta valida assinatura, checkout e emissao da chave da API.",
   },
   {
     icon: CreditCard,
-    title: "Billing no mesmo fluxo",
-    description: "Checkout, pagamento e liberacao do plano ficam no painel, com PIX de curta validade.",
+    title: "Assinatura no mesmo painel",
+    description: "Checkout, pagamento e liberacao do plano seguem a mesma jornada dentro da conta.",
   },
   {
     icon: KeyRound,
-    title: "Integracao sem ruido",
-    description: "A chave da API aparece no momento certo, dentro da conta certa.",
+    title: "Integracao objetiva",
+    description: "A chave da API aparece na etapa certa, sem misturar login, billing e consumo.",
   },
 ];
 
@@ -137,8 +137,8 @@ const MembrosLoginPage = () => {
               </div>
 
               <Button asChild variant="outline" className="mt-5 rounded-full">
-                <Link to="/membros/login" state={{ from: "/membros/docs" }}>
-                  Ler documentacao oficial
+                <Link to="/membros">
+                  Conhecer o plano
                   <BookKey className="h-4 w-4" />
                 </Link>
               </Button>
@@ -151,8 +151,8 @@ const MembrosLoginPage = () => {
                 </p>
                 <h2 className="mt-3 text-2xl font-bold">Login padrao Google</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  Voce sera redirecionado ao Google e, depois da confirmacao, retorna direto ao
-                  painel ja autenticado.
+                  Voce segue para o Google, confirma a conta e volta direto para o portal pronto
+                  para continuar a ativacao.
                 </p>
               </div>
 
@@ -179,7 +179,7 @@ const MembrosLoginPage = () => {
                     </div>
                     <p className="mt-3 text-sm font-semibold">Sessao segura</p>
                     <p className="mt-2 text-sm leading-6 text-slate-300">
-                      O backend conclui o callback e abre sua sessao no portal.
+                      O portal conclui o login e abre sua sessao para voce seguir no painel.
                     </p>
                   </div>
 
@@ -197,14 +197,11 @@ const MembrosLoginPage = () => {
 
                 <div className="mt-5 rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
-                    Retorno da sessao
+                    Depois do login
                   </p>
                   <p className="mt-3 text-sm leading-6 text-slate-300">
-                    Depois do login, o portal volta para{" "}
-                    <span className="font-semibold text-white">
-                      {nextPath === "/membros/dashboard" ? "o dashboard" : nextPath}
-                    </span>
-                    .
+                    O portal leva voce de volta para a proxima etapa da conta, seja o painel, o
+                    checkout ou a documentacao.
                     <ArrowRight className="ml-2 inline h-4 w-4" />
                   </p>
                 </div>
