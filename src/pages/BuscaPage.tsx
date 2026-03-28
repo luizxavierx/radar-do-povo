@@ -8,7 +8,7 @@ import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { usePoliticos } from "@/hooks/usePoliticos";
 import { graphqlRequest } from "@/api/graphqlClient";
-import { POLITICOS_LIST_QUERY } from "@/api/queries";
+import { POLITICO_BASICO_QUERY, POLITICOS_LIST_QUERY } from "@/api/queries";
 import { buildPoliticoPath } from "@/lib/politicos";
 import type { Connection, PoliticoResumo } from "@/api/types";
 
@@ -72,6 +72,53 @@ const BuscaPage = () => {
     setUf("");
     setCargoAtual("");
     setOffset(0);
+  };
+
+  const handleOpenPolitico = async (politico: PoliticoResumo) => {
+    const baseLookup =
+      politico.nomeCompleto?.trim() ||
+      politico.nomeCanonico?.replace(/-/g, " ").trim() ||
+      "";
+
+    if (politico.nomeCompleto?.trim()) {
+      navigate(
+        buildPoliticoPath({
+          nomeCompleto: politico.nomeCompleto,
+          nomeCanonico: politico.nomeCanonico,
+          id: politico.id,
+        })
+      );
+      return;
+    }
+
+    try {
+      const detalhe = await queryClient.fetchQuery({
+        queryKey: ["politico-route-resolver", politico.id, politico.nomeCanonico],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ politico: Pick<PoliticoResumo, "id" | "nomeCanonico" | "nomeCompleto"> | null }>(
+            POLITICO_BASICO_QUERY,
+            { id: politico.id, nomeCanonico: politico.nomeCanonico },
+            { signal, timeoutMs: 10_000 }
+          ).then((data) => data.politico),
+        staleTime: 30 * 60_000,
+      });
+
+      navigate(
+        buildPoliticoPath({
+          nomeCompleto: detalhe?.nomeCompleto || baseLookup,
+          nomeCanonico: detalhe?.nomeCanonico || politico.nomeCanonico,
+          id: detalhe?.id || politico.id,
+        })
+      );
+    } catch {
+      navigate(
+        buildPoliticoPath({
+          nomeCompleto: baseLookup,
+          nomeCanonico: politico.nomeCanonico,
+          id: politico.id,
+        })
+      );
+    }
   };
 
   return (
@@ -179,7 +226,9 @@ const BuscaPage = () => {
             {data?.nodes.map((politico) => (
               <button
                 key={politico.id}
-                onClick={() => navigate(buildPoliticoPath(politico))}
+                onClick={() => {
+                  void handleOpenPolitico(politico);
+                }}
                 className="w-full text-left"
               >
                 <PoliticianResultCard politico={politico} />

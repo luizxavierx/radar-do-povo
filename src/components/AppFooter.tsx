@@ -26,10 +26,10 @@ const primaryLinks = [
 ];
 
 const institutionalLinks = [
+  { label: "Docs da API", path: "/membros/docs", icon: KeyRound },
   { label: "Termos", path: "/termos", icon: ScrollText },
   { label: "Metodologia", path: "/metodologia", icon: BookOpenText },
   { label: "Diretriz editorial", path: "/diretrizes-editoriais", icon: FileText },
-  { label: "Docs da API", path: "/membros/docs", icon: KeyRound },
   { label: "Contato", path: "/contato", icon: Send },
 ];
 

@@ -52,7 +52,6 @@ export type MemberPortalApiKey = {
   prefix?: string | null;
   lastUsedAt?: string | null;
   expiresAt?: string | null;
-  plainTextKey?: string | null;
 };
 
 export type MemberPixCharge = {
