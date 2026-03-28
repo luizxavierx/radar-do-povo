@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Activity, BadgeCheck, Building2, Clock3, Plane, ShieldCheck } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Plane, Wallet } from "lucide-react";
 
+import type { RankingViagemFiltroInput, Viagem } from "@/api/types";
 import AppSidebar from "@/components/AppSidebar";
-import TopGastadoresCard from "@/components/viagens/TopGastadoresCard";
-import TopOrgaosCard from "@/components/viagens/TopOrgaosCard";
-import TopViajantesCard from "@/components/viagens/TopViajantesCard";
 import ViagemDetailDrawer from "@/components/viagens/ViagemDetailDrawer";
+import ViagensAnalyticsDeck from "@/components/viagens/ViagensAnalyticsDeck";
 import ViagensFilters, { type ViagensFilterState } from "@/components/viagens/ViagensFilters";
 import ViagensKpis from "@/components/viagens/ViagensKpis";
 import ViagensTable, { type ViagensSortKey } from "@/components/viagens/ViagensTable";
+import { type PaginationDensity } from "@/components/PaginationControls";
 import { normalizePagination } from "@/hooks/queryShared";
 import { useDetalheViagem } from "@/hooks/useDetalheViagem";
 import { useResumoViagens } from "@/hooks/useResumoViagens";
@@ -19,23 +18,20 @@ import { useTopOrgaosSolicitantesViagens } from "@/hooks/useTopOrgaosSolicitante
 import { useTopOrgaosSuperioresViagens } from "@/hooks/useTopOrgaosSuperioresViagens";
 import { useTopViajantes } from "@/hooks/useTopViajantes";
 import { useViagensPainel } from "@/hooks/useViagensPainel";
-import type { RankingViagemFiltroInput, Viagem } from "@/api/types";
-import { formatCents, toBigInt } from "@/lib/formatters";
-import {
-  applyRecorteToViagensFilter,
-  fetchViagensPainel,
-  normalizeViagensFilter,
-  type ViagensRecorte,
-} from "@/services/viagensService";
+import { formatCents, formatCentsCompact, formatCountCompact } from "@/lib/formatters";
+import { fetchViagensPainel, normalizeViagensFilter } from "@/services/viagensService";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const DEFAULT_YEAR = CURRENT_YEAR - 1;
-const TABLE_LIMIT = 20;
-const RANKING_LIMIT = 10;
+const DEFAULT_TABLE_LIMIT = 20;
+const TABLE_LIMIT_OPTIONS = [20, 40, 60];
+const RANKING_LIMIT = 5;
 const DEFAULT_SORT: ViagensSortKey = "data_desc";
+const DEFAULT_DENSITY: PaginationDensity = "comfortable";
+const VIAGENS_STORAGE_KEY = "radar:viagens:state";
+const VIAGENS_SAVED_VIEW_KEY = "radar:viagens:saved-view";
 
 const DEFAULT_FILTERS: ViagensFilterState = {
-  recorte: "geral",
   anoInicio: DEFAULT_YEAR,
   anoFim: DEFAULT_YEAR,
   orgaoSuperiorCodigo: "",
@@ -52,157 +48,174 @@ const DEFAULT_FILTERS: ViagensFilterState = {
   motivo: "",
 };
 
-const recorteMeta: Record<
-  ViagensRecorte,
-  { label: string; description: string; eyebrow: string }
-> = {
-  geral: {
-    label: "Painel geral de viagens",
-    description:
-      "KPIs, rankings e tabela principal sempre consultados pelos endpoints gerais da API.",
-    eyebrow: "Recorte Geral",
-  },
-  deputados: {
-    label: "Recorte de deputados",
-    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar DEPUTADO.",
-    eyebrow: "Camara Federal",
-  },
-  senadores: {
-    label: "Recorte de senadores",
-    description: "KPIs, rankings e tabela principal filtrados por cargo parlamentar SENADOR.",
-    eyebrow: "Senado Federal",
-  },
-};
-
 function parseYear(value: string | null, fallback: number) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 2019 && parsed <= CURRENT_YEAR ? parsed : fallback;
 }
 
-function parsePage(value: string | null) {
+function parsePage(value: unknown) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-function parseRecorte(value: string | null): ViagensRecorte {
-  if (value === "deputados" || value === "senadores" || value === "geral") {
-    return value;
-  }
-  return DEFAULT_FILTERS.recorte;
+function parseTableLimit(value: unknown) {
+  const parsed = Number(value);
+  return TABLE_LIMIT_OPTIONS.includes(parsed) ? parsed : DEFAULT_TABLE_LIMIT;
 }
 
-function buildFilterState(searchParams: URLSearchParams): ViagensFilterState {
-  const anoInicio = parseYear(searchParams.get("anoInicio"), DEFAULT_FILTERS.anoInicio);
-  const anoFim = parseYear(searchParams.get("anoFim"), DEFAULT_FILTERS.anoFim);
+function parseDensity(value: unknown): PaginationDensity {
+  return value === "compact" ? "compact" : DEFAULT_DENSITY;
+}
+
+function normalizeStoredText(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function buildFilterState(storedFilters: unknown): ViagensFilterState {
+  const raw =
+    storedFilters && typeof storedFilters === "object"
+      ? (storedFilters as Record<string, unknown>)
+      : {};
+  const anoInicio = parseYear(raw.anoInicio as string | null, DEFAULT_FILTERS.anoInicio);
+  const anoFim = parseYear(raw.anoFim as string | null, DEFAULT_FILTERS.anoFim);
 
   return {
-    recorte: parseRecorte(searchParams.get("recorte")),
     anoInicio: Math.min(anoInicio, anoFim),
     anoFim: Math.max(anoInicio, anoFim),
-    orgaoSuperiorCodigo: searchParams.get("orgaoSuperiorCodigo") || "",
-    orgaoSolicitanteCodigo: searchParams.get("orgaoSolicitanteCodigo") || "",
-    search: searchParams.get("search") || "",
-    situacao: searchParams.get("situacao") || "",
-    processoId: searchParams.get("processoId") || "",
-    pcdp: searchParams.get("pcdp") || "",
-    cpfViajante: searchParams.get("cpfViajante") || "",
-    nomeViajante: searchParams.get("nomeViajante") || "",
-    cargo: searchParams.get("cargo") || "",
-    funcao: searchParams.get("funcao") || "",
-    destino: searchParams.get("destino") || "",
-    motivo: searchParams.get("motivo") || "",
+    orgaoSuperiorCodigo: normalizeStoredText(raw.orgaoSuperiorCodigo),
+    orgaoSolicitanteCodigo: normalizeStoredText(raw.orgaoSolicitanteCodigo),
+    search: normalizeStoredText(raw.search),
+    situacao: normalizeStoredText(raw.situacao),
+    processoId: normalizeStoredText(raw.processoId),
+    pcdp: normalizeStoredText(raw.pcdp),
+    cpfViajante: normalizeStoredText(raw.cpfViajante),
+    nomeViajante: normalizeStoredText(raw.nomeViajante),
+    cargo: normalizeStoredText(raw.cargo),
+    funcao: normalizeStoredText(raw.funcao),
+    destino: normalizeStoredText(raw.destino),
+    motivo: normalizeStoredText(raw.motivo),
   };
 }
 
-function toSearchParams(filter: ViagensFilterState, page: number) {
-  const params = new URLSearchParams();
-  params.set("recorte", filter.recorte);
-  params.set("anoInicio", String(filter.anoInicio));
-  params.set("anoFim", String(filter.anoFim));
-  params.set("page", String(page));
-
-  if (filter.orgaoSuperiorCodigo.trim()) {
-    params.set("orgaoSuperiorCodigo", filter.orgaoSuperiorCodigo.trim());
-  }
-  if (filter.orgaoSolicitanteCodigo.trim()) {
-    params.set("orgaoSolicitanteCodigo", filter.orgaoSolicitanteCodigo.trim());
-  }
-  if (filter.search.trim()) {
-    params.set("search", filter.search.trim());
-  }
-  if (filter.situacao.trim()) {
-    params.set("situacao", filter.situacao.trim());
-  }
-  if (filter.processoId.trim()) {
-    params.set("processoId", filter.processoId.trim());
-  }
-  if (filter.pcdp.trim()) {
-    params.set("pcdp", filter.pcdp.trim());
-  }
-  if (filter.cpfViajante.trim()) {
-    params.set("cpfViajante", filter.cpfViajante.trim());
-  }
-  if (filter.nomeViajante.trim()) {
-    params.set("nomeViajante", filter.nomeViajante.trim());
-  }
-  if (filter.cargo.trim()) {
-    params.set("cargo", filter.cargo.trim());
-  }
-  if (filter.funcao.trim()) {
-    params.set("funcao", filter.funcao.trim());
-  }
-  if (filter.destino.trim()) {
-    params.set("destino", filter.destino.trim());
-  }
-  if (filter.motivo.trim()) {
-    params.set("motivo", filter.motivo.trim());
+function readStoredViagensState(): {
+  filters: ViagensFilterState;
+  page: number;
+  pageSize: number;
+  density: PaginationDensity;
+} {
+  if (typeof window === "undefined") {
+    return { filters: DEFAULT_FILTERS, page: 1, pageSize: DEFAULT_TABLE_LIMIT, density: DEFAULT_DENSITY };
   }
 
-  return params;
+  try {
+    const raw = window.sessionStorage.getItem(VIAGENS_STORAGE_KEY);
+    if (!raw) {
+      return { filters: DEFAULT_FILTERS, page: 1, pageSize: DEFAULT_TABLE_LIMIT, density: DEFAULT_DENSITY };
+    }
+
+    const parsed = JSON.parse(raw) as {
+      filters?: unknown;
+      page?: unknown;
+      pageSize?: unknown;
+      density?: unknown;
+    };
+
+    return {
+      filters: buildFilterState(parsed.filters),
+      page: parsePage(parsed.page),
+      pageSize: parseTableLimit(parsed.pageSize),
+      density: parseDensity(parsed.density),
+    };
+  } catch {
+    return { filters: DEFAULT_FILTERS, page: 1, pageSize: DEFAULT_TABLE_LIMIT, density: DEFAULT_DENSITY };
+  }
+}
+
+function readSavedViewLabel() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(VIAGENS_SAVED_VIEW_KEY);
+    if (!raw) return undefined;
+
+    const parsed = JSON.parse(raw) as { savedAt?: string };
+    return parsed.savedAt ? "Visao salva neste navegador" : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 const ViagensPage = () => {
   const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const initialState = useMemo(() => readStoredViagensState(), []);
+  const [filters, setFilters] = useState<ViagensFilterState>(initialState.filters);
+  const [currentPage, setCurrentPage] = useState<number>(initialState.page);
+  const [tableLimit, setTableLimit] = useState<number>(initialState.pageSize);
+  const [density, setDensity] = useState<PaginationDensity>(initialState.density);
   const [sortBy, setSortBy] = useState<ViagensSortKey>(DEFAULT_SORT);
   const [selectedViagem, setSelectedViagem] = useState<Viagem | null>(null);
-
-  const filters = useMemo(() => buildFilterState(searchParams), [searchParams]);
-  const currentPage = parsePage(searchParams.get("page"));
-  const offset = (currentPage - 1) * TABLE_LIMIT;
+  const [peopleRankingsReady, setPeopleRankingsReady] = useState(false);
+  const [orgaoRankingsReady, setOrgaoRankingsReady] = useState(false);
+  const [summaryComplementReady, setSummaryComplementReady] = useState(false);
+  const [savedViewLabel, setSavedViewLabel] = useState<string | undefined>(() => readSavedViewLabel());
+  const offset = (currentPage - 1) * tableLimit;
 
   const apiFilter = useMemo<RankingViagemFiltroInput>(
-    () =>
-      applyRecorteToViagensFilter(filters.recorte, {
-        anoInicio: filters.anoInicio,
-        anoFim: filters.anoFim,
-        orgaoSuperiorCodigo: filters.orgaoSuperiorCodigo,
-        orgaoSolicitanteCodigo: filters.orgaoSolicitanteCodigo,
-        search: filters.search,
-        situacao: filters.situacao,
-        processoId: filters.processoId,
-        pcdp: filters.pcdp,
-        cpfViajante: filters.cpfViajante,
-        nomeViajante: filters.nomeViajante,
-        cargo: filters.cargo,
-        funcao: filters.funcao,
-        destino: filters.destino,
-        motivo: filters.motivo,
-      }),
+    () => ({
+      anoInicio: filters.anoInicio,
+      anoFim: filters.anoFim,
+      orgaoSuperiorCodigo: filters.orgaoSuperiorCodigo,
+      orgaoSolicitanteCodigo: filters.orgaoSolicitanteCodigo,
+      search: filters.search,
+      situacao: filters.situacao,
+      processoId: filters.processoId,
+      pcdp: filters.pcdp,
+      cpfViajante: filters.cpfViajante,
+      nomeViajante: filters.nomeViajante,
+      cargo: filters.cargo,
+      funcao: filters.funcao,
+      destino: filters.destino,
+      motivo: filters.motivo,
+      apenasParlamentares: false,
+      cargoParlamentar: undefined,
+    }),
     [filters]
   );
 
   const rankingPagination = useMemo(() => ({ limit: RANKING_LIMIT, offset: 0 }), []);
-  const tablePagination = useMemo(() => ({ limit: TABLE_LIMIT, offset }), [offset]);
+  const tablePagination = useMemo(() => ({ limit: tableLimit, offset }), [offset, tableLimit]);
   const normalizedFilter = useMemo(() => normalizeViagensFilter(apiFilter), [apiFilter]);
-  const recorteInfo = recorteMeta[filters.recorte];
 
-  const resumoQuery = useResumoViagens(apiFilter);
-  const topViajantesQuery = useTopViajantes(apiFilter, rankingPagination);
-  const topGastadoresQuery = useTopGastadoresViagens(apiFilter, rankingPagination);
-  const topOrgaosSuperioresQuery = useTopOrgaosSuperioresViagens(apiFilter, rankingPagination);
-  const topOrgaosSolicitantesQuery = useTopOrgaosSolicitantesViagens(apiFilter, rankingPagination);
-  const viagensPainelQuery = useViagensPainel(apiFilter, tablePagination);
+  const resumoCoreQuery = useResumoViagens(apiFilter, {
+    includePagamentos: false,
+    includeTrechos: false,
+  });
+  const viagensPainelQuery = useViagensPainel(apiFilter, tablePagination, {
+    includeTotal: false,
+  });
+  const topViajantesQuery = useTopViajantes(apiFilter, rankingPagination, {
+    enabled: peopleRankingsReady,
+  });
+  const topGastadoresQuery = useTopGastadoresViagens(apiFilter, rankingPagination, {
+    enabled: peopleRankingsReady,
+  });
+  const topOrgaosSuperioresQuery = useTopOrgaosSuperioresViagens(apiFilter, rankingPagination, {
+    enabled: orgaoRankingsReady,
+  });
+  const topOrgaosSolicitantesQuery = useTopOrgaosSolicitantesViagens(
+    apiFilter,
+    rankingPagination,
+    {
+      enabled: orgaoRankingsReady,
+    }
+  );
+  const resumoComplementoQuery = useResumoViagens(apiFilter, {
+    enabled: summaryComplementReady,
+    includePagamentos: true,
+    includeTrechos: true,
+  });
   const detalheQuery = useDetalheViagem(
     selectedViagem
       ? {
@@ -218,21 +231,71 @@ const ViagensPage = () => {
   );
 
   useEffect(() => {
-    const hasBaseParams =
-      Boolean(searchParams.get("recorte")) &&
-      Boolean(searchParams.get("anoInicio")) &&
-      Boolean(searchParams.get("anoFim")) &&
-      Boolean(searchParams.get("page"));
-
-    if (!hasBaseParams) {
-      setSearchParams(toSearchParams(filters, currentPage), { replace: true });
+    if (typeof window === "undefined") {
+      return;
     }
-  }, [currentPage, filters, searchParams, setSearchParams]);
+
+    window.sessionStorage.setItem(
+      VIAGENS_STORAGE_KEY,
+      JSON.stringify({
+        filters,
+        page: currentPage,
+        pageSize: tableLimit,
+        density,
+      })
+    );
+  }, [currentPage, density, filters, tableLimit]);
+
+  useEffect(() => {
+    setPeopleRankingsReady(false);
+    setOrgaoRankingsReady(false);
+    setSummaryComplementReady(false);
+  }, [
+    filters.anoInicio,
+    filters.anoFim,
+    filters.orgaoSuperiorCodigo,
+    filters.orgaoSolicitanteCodigo,
+    filters.search,
+    filters.situacao,
+    filters.processoId,
+    filters.pcdp,
+    filters.cpfViajante,
+    filters.nomeViajante,
+    filters.cargo,
+    filters.funcao,
+    filters.destino,
+    filters.motivo,
+  ]);
+
+  const baseWaveSettled = !resumoCoreQuery.isFetching && !viagensPainelQuery.isFetching;
+  const peopleWaveSettled =
+    peopleRankingsReady && !topViajantesQuery.isFetching && !topGastadoresQuery.isFetching;
+  const orgaoWaveSettled =
+    orgaoRankingsReady &&
+    !topOrgaosSuperioresQuery.isFetching &&
+    !topOrgaosSolicitantesQuery.isFetching;
+
+  useEffect(() => {
+    if (baseWaveSettled && !peopleRankingsReady) {
+      setPeopleRankingsReady(true);
+    }
+  }, [baseWaveSettled, peopleRankingsReady]);
+
+  useEffect(() => {
+    if (peopleWaveSettled && !orgaoRankingsReady) {
+      setOrgaoRankingsReady(true);
+    }
+  }, [orgaoRankingsReady, peopleWaveSettled]);
+
+  useEffect(() => {
+    if (orgaoWaveSettled && !summaryComplementReady) {
+      setSummaryComplementReady(true);
+    }
+  }, [orgaoWaveSettled, summaryComplementReady]);
 
   useEffect(() => {
     setSelectedViagem(null);
   }, [
-    filters.recorte,
     filters.anoInicio,
     filters.anoFim,
     filters.orgaoSuperiorCodigo,
@@ -248,6 +311,7 @@ const ViagensPage = () => {
     filters.destino,
     filters.motivo,
     currentPage,
+    tableLimit,
   ]);
 
   useEffect(() => {
@@ -255,20 +319,49 @@ const ViagensPage = () => {
     if (!data) return;
 
     const nextOffset = data.offset + data.limit;
-    if (nextOffset >= data.total) return;
+    const totalForPrefetch =
+      data.total > 0 ? data.total : resumoCoreQuery.data?.totalViagens ?? 0;
+    if (nextOffset >= totalForPrefetch) return;
 
     const nextPagination = normalizePagination(
       { limit: data.limit, offset: nextOffset },
-      TABLE_LIMIT
+      tableLimit
     );
 
     queryClient.prefetchQuery({
-      queryKey: ["viagens-painel", normalizedFilter, nextPagination],
+      queryKey: ["viagens-painel", normalizedFilter, nextPagination, false],
       queryFn: ({ signal }) =>
-        fetchViagensPainel(normalizedFilter, nextPagination, { signal }),
+        fetchViagensPainel(normalizedFilter, nextPagination, { signal, includeTotal: false }),
       staleTime: 60_000,
     });
-  }, [normalizedFilter, queryClient, viagensPainelQuery.data]);
+  }, [normalizedFilter, queryClient, resumoCoreQuery.data?.totalViagens, tableLimit, viagensPainelQuery.data]);
+
+  const resumoData = useMemo(
+    () =>
+      resumoComplementoQuery.data
+        ? {
+            ...resumoCoreQuery.data,
+            ...resumoComplementoQuery.data,
+          }
+        : resumoCoreQuery.data,
+    [resumoComplementoQuery.data, resumoCoreQuery.data]
+  );
+
+  const totalViagensPainel = resumoData?.totalViagens ?? viagensPainelQuery.data?.total ?? 0;
+  const viagensTableData = useMemo(() => {
+    if (!viagensPainelQuery.data) {
+      return undefined;
+    }
+
+    if (viagensPainelQuery.data.total > 0 || totalViagensPainel <= 0) {
+      return viagensPainelQuery.data;
+    }
+
+    return {
+      ...viagensPainelQuery.data,
+      total: totalViagensPainel,
+    };
+  }, [totalViagensPainel, viagensPainelQuery.data]);
 
   const updateFilters = (patch: Partial<ViagensFilterState>) => {
     const next: ViagensFilterState = {
@@ -283,179 +376,228 @@ const ViagensPage = () => {
       next.anoInicio = next.anoFim;
     }
 
-    setSearchParams(toSearchParams(next, 1), { replace: true });
+    setFilters(next);
+    setCurrentPage(1);
   };
 
   const handleReset = () => {
     setSortBy(DEFAULT_SORT);
-    setSearchParams(toSearchParams(DEFAULT_FILTERS, 1), { replace: true });
+    setFilters(DEFAULT_FILTERS);
+    setCurrentPage(1);
+    setTableLimit(DEFAULT_TABLE_LIMIT);
+    setDensity(DEFAULT_DENSITY);
   };
 
   const handlePageChange = (nextOffset: number) => {
-    const nextPage = Math.floor(nextOffset / TABLE_LIMIT) + 1;
-    setSearchParams(toSearchParams(filters, nextPage), { replace: true });
+    setCurrentPage(Math.floor(nextOffset / tableLimit) + 1);
   };
 
-  const selectedTotal =
-    viagensPainelQuery.data?.nodes.reduce((acc, item) => {
-      const bruto =
-        toBigInt(item.valorDiariasCents) +
-        toBigInt(item.valorPassagensCents) +
-        toBigInt(item.valorOutrosGastosCents) -
-        toBigInt(item.valorDevolucaoCents);
+  const handlePageSizeChange = (pageSize: number) => {
+    setTableLimit(pageSize);
+    setCurrentPage(1);
+  };
 
-      return acc + (bruto > 0n ? bruto : 0n);
-    }, 0n) || 0n;
+  const handleSaveView = () => {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(
+      VIAGENS_SAVED_VIEW_KEY,
+      JSON.stringify({
+        filters,
+        pageSize: tableLimit,
+        density,
+        savedAt: new Date().toISOString(),
+      })
+    );
+    setSavedViewLabel("Visao salva neste navegador");
+  };
+
+  const handleComparePreviousPeriod = () => {
+    if (filters.anoInicio <= 2019 || filters.anoFim <= 2019) {
+      return;
+    }
+
+    updateFilters({
+      anoInicio: filters.anoInicio - 1,
+      anoFim: filters.anoFim - 1,
+    });
+  };
+
+  const activeFilterCount = [
+    filters.orgaoSuperiorCodigo,
+    filters.orgaoSolicitanteCodigo,
+    filters.search,
+    filters.situacao,
+    filters.processoId,
+    filters.pcdp,
+    filters.cpfViajante,
+    filters.nomeViajante,
+    filters.cargo,
+    filters.funcao,
+    filters.destino,
+    filters.motivo,
+  ].filter(Boolean).length;
+  const canComparePreviousPeriod = filters.anoInicio > 2019 && filters.anoFim > 2019;
 
   return (
-    <div className="min-h-screen bg-grid-pattern">
+    <div className="overflow-x-hidden">
       <AppSidebar />
 
-      <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1320px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
-          <section className="rounded-[34px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,248,255,0.9))] p-6 shadow-elevated backdrop-blur-sm sm:p-8">
-            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="space-y-4">
-                <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                  <Plane className="h-3.5 w-3.5" />
-                  Area de Viagens
+      <main className="overflow-x-hidden lg:ml-72">
+        <div className="w-full px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
+
+          {/* ── Hero ── */}
+          <section className="rounded-3xl border border-border bg-card px-6 py-7 sm:px-8 sm:py-8">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+
+              {/* Left: title block */}
+              <div className="min-w-0 max-w-2xl">
+                <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                  <Plane className="h-3 w-3" />
+                  Painel de viagens
                 </p>
 
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      {recorteInfo.eyebrow}
-                    </p>
-                    <h1 className="mt-2 max-w-4xl text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">
-                      Painel de viagens oficiais com{" "}
-                      <span className="bg-gradient-to-r from-cyan-600 via-sky-600 to-slate-900 bg-clip-text text-transparent">
-                        blocos independentes, cache e detalhe sob demanda
-                      </span>
-                    </h1>
-                  </div>
-                  <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                    {recorteInfo.label}. {recorteInfo.description} A pagina nao faz query monolitica:
-                    KPIs, rankings, tabela e detalhe possuem loading, retry e timeout separados.
-                  </p>
-                </div>
+                <h1 className="mt-3 text-[2rem] font-extrabold leading-[1.15] tracking-tight text-foreground sm:text-[2.4rem]">
+                  Viagens oficiais{" "}
+                  <span className="text-primary">em foco</span>
+                </h1>
 
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    request_id exposto em erro
+                <p className="mt-2.5 max-w-xl text-sm leading-6 text-muted-foreground">
+                  Leitura clara dos deslocamentos oficiais por periodo, orgao e viajante.
+                </p>
+
+                {/* Meta chips */}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
+                    {filters.anoInicio === filters.anoFim
+                      ? filters.anoInicio
+                      : `${filters.anoInicio} – ${filters.anoFim}`}
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
-                    <Activity className="h-3.5 w-3.5 text-primary" />
-                    stale-while-revalidate ativo
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-foreground">
-                    <Clock3 className="h-3.5 w-3.5 text-primary" />
-                    busca antiga cancelada
-                  </span>
+
+                  {activeFilterCount > 0 ? (
+                    <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
+                      {activeFilterCount} filtro{activeFilterCount > 1 ? "s" : ""} ativo{activeFilterCount > 1 ? "s" : ""}
+                    </span>
+                  ) : null}
+
+                  {savedViewLabel ? (
+                    <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-xs font-medium text-primary">
+                      {savedViewLabel}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Periodo Ativo
-                  </p>
-                  <p className="mt-3 text-2xl font-extrabold text-foreground">
-                    {filters.anoInicio} - {filters.anoFim}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Filtro sincronizado com a URL e aplicado em todos os blocos.
-                  </p>
-                </article>
+              {/* Right: summary cards */}
+              <div className="grid gap-3 sm:grid-cols-2 xl:w-[400px] xl:shrink-0">
 
-                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Consulta
-                  </p>
-                  <p className="mt-3 text-2xl font-extrabold text-foreground">
-                    Endpoints gerais
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Rankings e KPIs usam os endpoints gerais com filtros reais do banco.
-                  </p>
-                </article>
-
-                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Tabela Atual
-                  </p>
-                  <p className="mt-3 text-2xl font-extrabold text-foreground">
-                    {(viagensPainelQuery.data?.total ?? 0).toLocaleString("pt-BR")}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Registros no recorte atual com pagina de {TABLE_LIMIT} itens.
-                  </p>
-                </article>
-
-                <article className="rounded-[28px] border border-border/70 bg-white/95 p-5 shadow-card">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Blocos Ativos
-                  </p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <BadgeCheck className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-extrabold text-foreground">6 + detalhe</p>
-                      <p className="text-sm text-muted-foreground">
-                        resumo, rankings, orgaos e tabela principal
-                      </p>
-                    </div>
+                {/* Gasto líquido — destaque principal */}
+                <article className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Gasto liquido
+                    </p>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Wallet className="h-4 w-4" />
+                    </span>
                   </div>
+                  <p className="mt-3 text-2xl font-bold tracking-tight text-primary sm:text-3xl">
+                    {formatCentsCompact(resumoData?.totalGastoLiquidoCents)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatCents(resumoData?.totalGastoLiquidoCents)}
+                  </p>
                 </article>
+
+                {/* Viagens no recorte — neutro */}
+                <article className="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Viagens no recorte
+                    </p>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                      <Plane className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                    {formatCountCompact(totalViagensPainel)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {totalViagensPainel.toLocaleString("pt-BR")} viagens encontradas
+                  </p>
+                </article>
+
               </div>
             </div>
           </section>
 
-          <div className="mt-6 space-y-6">
-            <ViagensFilters value={filters} onChange={updateFilters} onReset={handleReset} />
-
-            <ViagensKpis
-              data={resumoQuery.data}
-              isLoading={resumoQuery.isLoading}
-              error={(resumoQuery.error as Error | null) || null}
-              onRetry={() => void resumoQuery.refetch()}
+          {/* ── Content sections ── */}
+          <div className="mt-5 space-y-5">
+            <ViagensFilters
+              value={filters}
+              onChange={updateFilters}
+              onReset={handleReset}
+              onSaveView={handleSaveView}
+              onComparePreviousPeriod={handleComparePreviousPeriod}
+              canComparePreviousPeriod={canComparePreviousPeriod}
+              savedViewLabel={savedViewLabel}
             />
 
-            <section className="grid gap-4 xl:grid-cols-4">
-              <TopGastadoresCard
-                data={topGastadoresQuery.data}
-                isLoading={topGastadoresQuery.isLoading}
-                error={(topGastadoresQuery.error as Error | null) || null}
-                onRetry={() => void topGastadoresQuery.refetch()}
-              />
-              <TopViajantesCard
-                data={topViajantesQuery.data}
-                isLoading={topViajantesQuery.isLoading}
-                error={(topViajantesQuery.error as Error | null) || null}
-                onRetry={() => void topViajantesQuery.refetch()}
-              />
-              <TopOrgaosCard
-                title="Top orgaos superiores"
-                description="Quem mais concentrou viagens pelo orgao superior"
-                data={topOrgaosSuperioresQuery.data}
-                isLoading={topOrgaosSuperioresQuery.isLoading}
-                error={(topOrgaosSuperioresQuery.error as Error | null) || null}
-                onRetry={() => void topOrgaosSuperioresQuery.refetch()}
-              />
-              <TopOrgaosCard
-                title="Top orgaos solicitantes"
-                description="Orgaos solicitantes com maior gasto liquido"
-                data={topOrgaosSolicitantesQuery.data}
-                isLoading={topOrgaosSolicitantesQuery.isLoading}
-                error={(topOrgaosSolicitantesQuery.error as Error | null) || null}
-                onRetry={() => void topOrgaosSolicitantesQuery.refetch()}
-              />
-            </section>
+            <ViagensKpis
+              data={resumoData}
+              isLoading={resumoCoreQuery.isLoading}
+              isComplementLoading={!summaryComplementReady || resumoComplementoQuery.isFetching}
+              error={(resumoCoreQuery.error as Error | null) || null}
+              onRetry={() => {
+                void resumoCoreQuery.refetch();
+                if (summaryComplementReady) {
+                  void resumoComplementoQuery.refetch();
+                }
+              }}
+            />
 
-            <section className="grid gap-4 xl:grid-cols-[1fr_320px]">
+            <ViagensAnalyticsDeck
+              summary={resumoData}
+              summaryError={
+                (resumoComplementoQuery.error as Error | null) ||
+                (resumoCoreQuery.error as Error | null) ||
+                null
+              }
+              onRetrySummary={() => {
+                void resumoCoreQuery.refetch();
+                if (summaryComplementReady) {
+                  void resumoComplementoQuery.refetch();
+                }
+              }}
+              topGastadores={{
+                data: topGastadoresQuery.data,
+                isLoading: topGastadoresQuery.isLoading,
+                error: (topGastadoresQuery.error as Error | null) || null,
+                onRetry: () => void topGastadoresQuery.refetch(),
+              }}
+              topViajantes={{
+                data: topViajantesQuery.data,
+                isLoading: topViajantesQuery.isLoading,
+                error: (topViajantesQuery.error as Error | null) || null,
+                onRetry: () => void topViajantesQuery.refetch(),
+              }}
+              topOrgaosSuperiores={{
+                data: topOrgaosSuperioresQuery.data,
+                isLoading: topOrgaosSuperioresQuery.isLoading,
+                error: (topOrgaosSuperioresQuery.error as Error | null) || null,
+                onRetry: () => void topOrgaosSuperioresQuery.refetch(),
+              }}
+              topOrgaosSolicitantes={{
+                data: topOrgaosSolicitantesQuery.data,
+                isLoading: topOrgaosSolicitantesQuery.isLoading,
+                error: (topOrgaosSolicitantesQuery.error as Error | null) || null,
+                onRetry: () => void topOrgaosSolicitantesQuery.refetch(),
+              }}
+            />
+
+            <section className="min-w-0">
               <ViagensTable
-                data={viagensPainelQuery.data}
+                data={viagensTableData}
                 isLoading={viagensPainelQuery.isLoading}
                 error={(viagensPainelQuery.error as Error | null) || null}
                 onRetry={() => void viagensPainelQuery.refetch()}
@@ -464,58 +606,11 @@ const ViagensPage = () => {
                 sortBy={sortBy}
                 onSortChange={setSortBy}
                 onPageChange={handlePageChange}
+                density={density}
+                onDensityChange={setDensity}
+                pageSizeOptions={TABLE_LIMIT_OPTIONS}
+                onPageSizeChange={handlePageSizeChange}
               />
-
-              <aside className="space-y-4">
-                <section className="rounded-[28px] border border-border/75 bg-card/92 p-5 shadow-card">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">Painel rapido</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Leitura do recorte e da pagina atual
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        Recorte
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-foreground">{recorteInfo.label}</p>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        Pagina atual
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-foreground">{currentPage}</p>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        Soma da pagina
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-foreground">
-                        {formatCents(selectedTotal.toString())}
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="rounded-[28px] border border-border/75 bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-5 shadow-card">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Estrategia de carregamento
-                  </p>
-                  <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                    <p>1. KPIs e rankings carregam em paralelo.</p>
-                    <p>2. Tabela usa pagina 20 e prefetch da proxima pagina.</p>
-                    <p>3. Drawer so abre detalhe real quando o usuario pede.</p>
-                    <p>4. Todas as chamadas passam timeout, retry curto e cancelamento.</p>
-                  </div>
-                </section>
-              </aside>
             </section>
           </div>
         </div>

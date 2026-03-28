@@ -11,15 +11,17 @@ import {
 
 export function useTopGastadoresViagens(
   filtro?: RankingViagemFiltroInput,
-  pagination?: PaginationInput
+  pagination?: PaginationInput,
+  options?: { enabled?: boolean }
 ) {
   const normalizedFilter = normalizeViagensFilter(filtro);
-  const normalizedPagination = normalizePagination(pagination, 10);
+  const normalizedPagination = normalizePagination(pagination, 5);
 
   return useQuery({
     queryKey: ["top-gastadores-viagens", normalizedFilter, normalizedPagination],
     queryFn: ({ signal }) =>
       fetchTopGastadoresViagens(normalizedFilter, normalizedPagination, { signal }),
+    enabled: options?.enabled ?? true,
     ...paginatedQueryDefaults,
   });
 }

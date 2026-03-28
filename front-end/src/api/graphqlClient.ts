@@ -1,15 +1,41 @@
 import type { GraphQLResponse, GraphQLError } from "./types";
+import { ApiRequestError } from "./requestError";
 
-const RAW_RADAR_API_BASE = __RADAR_API_BASE__.replace(/\/+$/, "");
-const RADAR_API_ROOT = RAW_RADAR_API_BASE.replace(/\/graphql\/?$/, "");
-const GRAPHQL_ENDPOINT = /\/graphql\/?$/.test(RAW_RADAR_API_BASE)
-  ? RAW_RADAR_API_BASE
-  : `${RAW_RADAR_API_BASE}/graphql`;
+const RAW_RADAR_API_BASE = __RADAR_API_BASE__.trim().replace(/\/+$/, "");
+const FALLBACK_ORIGIN = "http://localhost";
+
+function getAppOrigin(): string {
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+
+  return FALLBACK_ORIGIN;
+}
+
+function resolveApiBase(rawBase: string): string {
+  const normalized = rawBase || "/graphql";
+
+  if (/^https?:\/\//i.test(normalized)) {
+    return normalized;
+  }
+
+  if (normalized.startsWith("/")) {
+    return `${getAppOrigin()}${normalized}`;
+  }
+
+  return `${getAppOrigin()}/${normalized}`;
+}
+
+const RESOLVED_RADAR_API_BASE = resolveApiBase(RAW_RADAR_API_BASE);
+const GRAPHQL_ENDPOINT = /\/graphql\/?$/.test(RESOLVED_RADAR_API_BASE)
+  ? RESOLVED_RADAR_API_BASE
+  : `${RESOLVED_RADAR_API_BASE}/graphql`;
+export const RADAR_API_ROOT = GRAPHQL_ENDPOINT.replace(/\/graphql\/?$/, "");
 const HEALTH_ENDPOINTS = [`${RADAR_API_ROOT}/api/healthz`, `${RADAR_API_ROOT}/healthz`];
 const REQUEST_TIMEOUT = 15_000;
 const DEFAULT_RETRIES = 1;
 
-export class GraphQLRequestError extends Error {
+export class GraphQLRequestError extends ApiRequestError {
   public requestId?: string;
   public graphqlErrors?: GraphQLError[];
   public statusCode?: number;
@@ -18,7 +44,7 @@ export class GraphQLRequestError extends Error {
     message: string,
     opts?: { requestId?: string; graphqlErrors?: GraphQLError[]; statusCode?: number }
   ) {
-    super(message);
+    super(message, { requestId: opts?.requestId, statusCode: opts?.statusCode });
     this.name = "GraphQLRequestError";
     this.requestId = opts?.requestId;
     this.graphqlErrors = opts?.graphqlErrors;
@@ -74,6 +100,9 @@ function mergeWithTimeoutSignal(
 }
 
 function shouldRetry(error: GraphQLRequestError): boolean {
+  if (error.message.startsWith("Timeout:")) {
+    return false;
+  }
   if (error.graphqlErrors?.length) {
     return false;
   }
@@ -97,12 +126,14 @@ export async function graphqlRequest<TData, TVars = Record<string, unknown>>(
     const { signal, cleanup, didTimeout } = mergeWithTimeoutSignal(options?.signal, timeoutMs);
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "X-Request-ID": requestId,
+      };
+
       const res = await fetch(GRAPHQL_ENDPOINT, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Request-ID": requestId,
-        },
+        headers,
         body: JSON.stringify({ query, variables }),
         signal,
       });
@@ -172,8 +203,13 @@ export async function checkApiHealth(): Promise<boolean> {
     const timer = setTimeout(() => controller.abort(), 5_000);
 
     try {
-      const res = await fetch(endpoint, { signal: controller.signal });
-      if (res.ok) return true;
+      const headers: Record<string, string> = {};
+
+      const res = await fetch(endpoint, {
+        signal: controller.signal,
+        headers,
+      });
+      if (res.ok || res.status === 503) return true;
     } catch {
       // Try the next fallback endpoint.
     } finally {

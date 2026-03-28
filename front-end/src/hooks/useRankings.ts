@@ -1,16 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { graphqlRequest } from "@/api/graphqlClient";
-import {
-  TOP_EMENDAS_POR_PAIS_ANO_QUERY,
-  TOP_GASTADORES_EMENDAS_ANO_QUERY,
-  TOP_GASTADORES_EMENDAS_QUERY,
-} from "@/api/queries";
 import type {
-  Connection,
+  EmendaRankingResumo,
+  EmendaSerieAnualNode,
+  EmendaTipoRanking,
   PaginationInput,
-  RankingConnection,
   RankingEmendaFiltroInput,
-  TopEmendaPais,
   TopGastadorEmenda,
 } from "@/api/types";
 import {
@@ -19,26 +13,15 @@ import {
   QUERY_GC_TIME,
   QUERY_STALE_TIME,
 } from "./queryShared";
+import {
+  fetchEmendasResumo,
+  fetchEmendasSerieAnual,
+  fetchTopEmendasPorPais,
+  fetchTopGastadoresEmendas,
+  fetchTopTiposEmendas,
+} from "@/services/rankingsService";
 
 const TOP30_PAGINATION = { limit: 30, offset: 0 } as const;
-const TOP_GERAL_ANO_QUERY_LOCAL = `
-  query TopGeralAno($ano: Int!, $pagination: PaginationInput) {
-    topGastadoresEmendas(
-      filtro: { anoInicio: $ano, anoFim: $ano, apenasParlamentares: false }
-      pagination: $pagination
-    ) {
-      total
-      limit
-      offset
-      nodes {
-        codigoAutorEmenda
-        nomeAutorEmenda
-        totalEmendas
-        totalPagoCents
-      }
-    }
-  }
-`;
 
 function normalizeAutorName(value?: string): string {
   return (value || "")
@@ -61,11 +44,11 @@ export function useTopGastadoresAno(ano: number) {
   return useQuery({
     queryKey: ["top-gastadores-ano", ano],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ topGastadoresEmendasAno: RankingConnection<TopGastadorEmenda> }>(
-        TOP_GASTADORES_EMENDAS_ANO_QUERY,
-        { ano, pagination: TOP30_PAGINATION },
+      fetchTopGastadoresEmendas(
+        { anoInicio: ano, anoFim: ano, apenasParlamentares: true },
+        TOP30_PAGINATION,
         { signal }
-      ).then((d) => d.topGastadoresEmendasAno),
+      ),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
   });
@@ -75,19 +58,16 @@ export function useTopDeputadosAno(ano: number) {
   return useQuery({
     queryKey: ["top-deputados-ano", ano],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
-        TOP_GASTADORES_EMENDAS_QUERY,
+      fetchTopGastadoresEmendas(
         {
-          filtro: {
-            anoInicio: ano,
-            anoFim: ano,
-            apenasParlamentares: true,
-            cargoParlamentar: "DEPUTADO",
-          },
-          pagination: TOP30_PAGINATION,
+          anoInicio: ano,
+          anoFim: ano,
+          apenasParlamentares: true,
+          cargoParlamentar: "DEPUTADO",
         },
+        TOP30_PAGINATION,
         { signal }
-      ).then((d) => d.topGastadoresEmendas),
+      ),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
   });
@@ -97,19 +77,16 @@ export function useTopSenadoresAno(ano: number) {
   return useQuery({
     queryKey: ["top-senadores-ano", ano],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
-        TOP_GASTADORES_EMENDAS_QUERY,
+      fetchTopGastadoresEmendas(
         {
-          filtro: {
-            anoInicio: ano,
-            anoFim: ano,
-            apenasParlamentares: true,
-            cargoParlamentar: "SENADOR",
-          },
-          pagination: TOP30_PAGINATION,
+          anoInicio: ano,
+          anoFim: ano,
+          apenasParlamentares: true,
+          cargoParlamentar: "SENADOR",
         },
+        TOP30_PAGINATION,
         { signal }
-      ).then((d) => d.topGastadoresEmendas),
+      ),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
   });
@@ -119,11 +96,11 @@ export function useTopGeralAno(ano: number) {
   return useQuery({
     queryKey: ["top-geral-ano", ano],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
-        TOP_GERAL_ANO_QUERY_LOCAL,
-        { ano, pagination: TOP30_PAGINATION },
+      fetchTopGastadoresEmendas(
+        { anoInicio: ano, anoFim: ano, apenasParlamentares: false },
+        TOP30_PAGINATION,
         { signal }
-      ).then((d) => d.topGastadoresEmendas),
+      ),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
   });
@@ -135,12 +112,30 @@ export function useTopEmendasPorPaisAno(ano: number, pagination?: PaginationInpu
   return useQuery({
     queryKey: ["top-emendas-pais-ano", ano, normalizedPagination],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ topEmendasPorPaisAno: Connection<TopEmendaPais> }>(
-        TOP_EMENDAS_POR_PAIS_ANO_QUERY,
-        { ano, pagination: normalizedPagination },
+      fetchTopEmendasPorPais(
+        { anoInicio: ano, anoFim: ano, apenasParlamentares: true },
+        normalizedPagination,
         { signal }
-      ).then((d) => d.topEmendasPorPaisAno),
+      ),
     ...paginatedQueryDefaults,
+  });
+}
+
+export function useEmendaRankingResumo(filtro?: RankingEmendaFiltroInput) {
+  return useQuery<EmendaRankingResumo>({
+    queryKey: ["emenda-ranking-resumo", filtro],
+    queryFn: ({ signal }) => fetchEmendasResumo(filtro, { signal }),
+    staleTime: QUERY_STALE_TIME,
+    gcTime: QUERY_GC_TIME,
+  });
+}
+
+export function useEmendaSerieAnual(filtro?: RankingEmendaFiltroInput) {
+  return useQuery<{ total: number; limit?: number; offset?: number; nodes: EmendaSerieAnualNode[] }>({
+    queryKey: ["emenda-serie-anual", filtro],
+    queryFn: ({ signal }) => fetchEmendasSerieAnual(filtro, { signal }),
+    staleTime: QUERY_STALE_TIME,
+    gcTime: QUERY_GC_TIME,
   });
 }
 
@@ -153,11 +148,39 @@ export function useTopGastadoresCustom(
   return useQuery({
     queryKey: ["top-gastadores-custom", filtro, normalizedPagination],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ topGastadoresEmendas: RankingConnection<TopGastadorEmenda> }>(
-        TOP_GASTADORES_EMENDAS_QUERY,
-        { filtro, pagination: normalizedPagination },
-        { signal }
-      ).then((d) => d.topGastadoresEmendas),
+      fetchTopGastadoresEmendas(filtro, normalizedPagination, { signal }),
+    ...paginatedQueryDefaults,
+  });
+}
+
+export function useTopEmendasPorPaisCustom(
+  filtro?: RankingEmendaFiltroInput,
+  pagination?: PaginationInput
+) {
+  const normalizedPagination = normalizePagination(pagination, 10);
+
+  return useQuery({
+    queryKey: ["top-emendas-pais-custom", filtro, normalizedPagination],
+    queryFn: ({ signal }) =>
+      fetchTopEmendasPorPais(filtro, normalizedPagination, { signal }),
+    ...paginatedQueryDefaults,
+  });
+}
+
+export function useTopTiposCustom(
+  filtro?: RankingEmendaFiltroInput,
+  pagination?: PaginationInput
+) {
+  const normalizedPagination = normalizePagination(pagination, 8);
+
+  return useQuery<{
+    total: number;
+    limit: number;
+    offset: number;
+    nodes: EmendaTipoRanking[];
+  }>({
+    queryKey: ["top-tipos-custom", filtro, normalizedPagination],
+    queryFn: ({ signal }) => fetchTopTiposEmendas(filtro, normalizedPagination, { signal }),
     ...paginatedQueryDefaults,
   });
 }

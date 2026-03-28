@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,21 +8,22 @@ import AppShellLayout from "@/components/AppShellLayout";
 import ScrollToTop from "@/components/ScrollToTop";
 import MemberRouteGate from "@/components/members/MemberRouteGate";
 import { MemberSessionProvider } from "@/contexts/MemberSessionContext";
-import Index from "./pages/Index";
-import PoliticoDetalhe from "./pages/PoliticoDetalhe";
-import BuscaPage from "./pages/BuscaPage";
-import ViagensPage from "./pages/ViagensPage";
-import RankingsPage from "./pages/RankingsPage";
-import MembrosPage from "./pages/MembrosPage";
-import MembrosLoginPage from "./pages/MembrosLoginPage";
-import MembrosDashboardPage from "./pages/MembrosDashboardPage";
-import MembrosCheckoutPage from "./pages/MembrosCheckoutPage";
-import MembrosDocsPage from "./pages/MembrosDocsPage";
-import TermosPage from "./pages/TermosPage";
-import MetodologiaPage from "./pages/MetodologiaPage";
-import DiretrizesPage from "./pages/DiretrizesPage";
-import ContatoPage from "./pages/ContatoPage";
-import NotFound from "./pages/NotFound";
+
+const Index = lazy(() => import("./pages/Index"));
+const PoliticoDetalhe = lazy(() => import("./pages/PoliticoDetalhe"));
+const BuscaPage = lazy(() => import("./pages/BuscaPage"));
+const ViagensPage = lazy(() => import("./pages/ViagensPage"));
+const RankingsPage = lazy(() => import("./pages/RankingsPage"));
+const MembrosPage = lazy(() => import("./pages/MembrosPage"));
+const MembrosLoginPage = lazy(() => import("./pages/MembrosLoginPage"));
+const MembrosDashboardPage = lazy(() => import("./pages/MembrosDashboardPage"));
+const MembrosCheckoutPage = lazy(() => import("./pages/MembrosCheckoutPage"));
+const MembrosDocsPage = lazy(() => import("./pages/MembrosDocsPage"));
+const TermosPage = lazy(() => import("./pages/TermosPage"));
+const MetodologiaPage = lazy(() => import("./pages/MetodologiaPage"));
+const DiretrizesPage = lazy(() => import("./pages/DiretrizesPage"));
+const ContatoPage = lazy(() => import("./pages/ContatoPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,46 +44,54 @@ const App = () => (
       <MemberSessionProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <Routes>
-            <Route element={<AppShellLayout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/politico/:id" element={<PoliticoDetalhe />} />
-              <Route path="/busca" element={<BuscaPage />} />
-              <Route path="/viagens" element={<ViagensPage />} />
-              <Route path="/rankings" element={<RankingsPage />} />
-              <Route path="/membros" element={<MembrosPage />} />
-              <Route path="/membros/login" element={<MembrosLoginPage />} />
-              <Route
-                path="/membros/dashboard"
-                element={
-                  <MemberRouteGate>
-                    <MembrosDashboardPage />
-                  </MemberRouteGate>
-                }
-              />
-              <Route
-                path="/membros/checkout"
-                element={
-                  <MemberRouteGate>
-                    <MembrosCheckoutPage />
-                  </MemberRouteGate>
-                }
-              />
-              <Route
-                path="/membros/docs"
-                element={
-                  <MemberRouteGate>
-                    <MembrosDocsPage />
-                  </MemberRouteGate>
-                }
-              />
-              <Route path="/termos" element={<TermosPage />} />
-              <Route path="/metodologia" element={<MetodologiaPage />} />
-              <Route path="/diretrizes-editoriais" element={<DiretrizesPage />} />
-              <Route path="/contato" element={<ContatoPage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense
+            fallback={
+              <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 text-sm text-muted-foreground">
+                Carregando pagina...
+              </div>
+            }
+          >
+            <Routes>
+              <Route element={<AppShellLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/politico/:id" element={<PoliticoDetalhe />} />
+                <Route path="/busca" element={<BuscaPage />} />
+                <Route path="/viagens" element={<ViagensPage />} />
+                <Route path="/rankings" element={<RankingsPage />} />
+                <Route path="/membros" element={<MembrosPage />} />
+                <Route path="/membros/login" element={<MembrosLoginPage />} />
+                <Route
+                  path="/membros/dashboard"
+                  element={
+                    <MemberRouteGate>
+                      <MembrosDashboardPage />
+                    </MemberRouteGate>
+                  }
+                />
+                <Route
+                  path="/membros/checkout"
+                  element={
+                    <MemberRouteGate>
+                      <MembrosCheckoutPage />
+                    </MemberRouteGate>
+                  }
+                />
+                <Route
+                  path="/membros/docs"
+                  element={
+                    <MemberRouteGate>
+                      <MembrosDocsPage />
+                    </MemberRouteGate>
+                  }
+                />
+                <Route path="/termos" element={<TermosPage />} />
+                <Route path="/metodologia" element={<MetodologiaPage />} />
+                <Route path="/diretrizes-editoriais" element={<DiretrizesPage />} />
+                <Route path="/contato" element={<ContatoPage />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </MemberSessionProvider>
     </TooltipProvider>

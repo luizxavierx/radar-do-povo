@@ -286,6 +286,46 @@ export interface TopEmendaPais {
   totalLiquidadoCents?: string;
 }
 
+export interface EmendaRankingResumo {
+  totalEmendas?: number;
+  totalAutores?: number;
+  totalPaises?: number;
+  totalTipos?: number;
+  totalEmpenhadoCents?: string;
+  totalLiquidadoCents?: string;
+  totalPagoCents?: string;
+  totalRpInscritosCents?: string;
+  totalRpCanceladosCents?: string;
+  totalRpPagosCents?: string;
+  ticketMedioPagoCents?: string;
+  periodo?: { anoInicio?: number; anoFim?: number };
+}
+
+export interface EmendaSerieAnualNode {
+  ano: number;
+  totalEmendas?: number;
+  totalAutores?: number;
+  totalPaises?: number;
+  totalTipos?: number;
+  totalEmpenhadoCents?: string;
+  totalLiquidadoCents?: string;
+  totalPagoCents?: string;
+  totalRpInscritosCents?: string;
+  totalRpCanceladosCents?: string;
+  totalRpPagosCents?: string;
+}
+
+export interface EmendaTipoRanking {
+  tipoEmenda: string;
+  totalEmendas?: number;
+  totalPagoCents: string;
+  totalEmpenhadoCents?: string;
+  totalLiquidadoCents?: string;
+  totalRpInscritosCents?: string;
+  totalRpCanceladosCents?: string;
+  totalRpPagosCents?: string;
+}
+
 export interface RankingEmendaFiltroInput {
   anoInicio?: number;
   anoFim?: number;
@@ -294,17 +334,150 @@ export interface RankingEmendaFiltroInput {
   pais?: string;
   apenasParlamentares?: boolean;
   cargoParlamentar?: CargoParlamentar;
+  apenasBancadas?: boolean;
 }
 
 // ─── Perfil Externo ───
 export interface PerfilExternoCamara {
   id?: string;
   nome?: string;
+  nomeCivil?: string;
+  nomeCanonico?: string;
+  nomeEleitoral?: string;
   siglaPartido?: string;
   siglaUf?: string;
+  idLegislatura?: number;
   urlFoto?: string;
   email?: string;
   uri?: string;
+  dataStatus?: string;
+  situacao?: string;
+  condicaoEleitoral?: string;
+  descricaoStatus?: string;
+  gabinete?: {
+    nome?: string;
+    predio?: string;
+    sala?: string;
+    andar?: string;
+    telefone?: string;
+    email?: string;
+  };
+  sexo?: string;
+  urlWebsite?: string;
+  redesSociais?: string[];
+  dataNascimento?: string;
+  dataFalecimento?: string;
+  ufNascimento?: string;
+  municipioNascimento?: string;
+  escolaridade?: string;
+  despesasRecentesResumo?: {
+    totalItens?: number;
+    totalDocumentoCents?: string;
+    totalLiquidoCents?: string;
+    totalGlosaCents?: string;
+  };
+  despesasRecentes?: {
+    ano?: number;
+    mes?: number;
+    dataDocumento?: string;
+    tipoDespesa?: string;
+    tipoDocumento?: string;
+    nomeFornecedor?: string;
+    cnpjCpfFornecedor?: string;
+    urlDocumento?: string;
+    valorDocumentoCents?: string;
+    valorGlosaCents?: string;
+    valorLiquidoCents?: string;
+  }[];
+  discursosRecentes?: {
+    dataHoraInicio?: string;
+    dataHoraFim?: string;
+    tipoDiscurso?: string;
+    sumario?: string;
+    keywords?: string;
+    faseTitulo?: string;
+    urlAudio?: string;
+    urlTexto?: string;
+    urlVideo?: string;
+    uriEvento?: string;
+  }[];
+  eventosRecentes?: {
+    id?: string;
+    descricao?: string;
+    descricaoTipo?: string;
+    situacao?: string;
+    dataHoraInicio?: string;
+    dataHoraFim?: string;
+    localExterno?: string;
+    urlRegistro?: string;
+    uri?: string;
+    localCamara?: {
+      nome?: string;
+      predio?: string;
+      sala?: string;
+      andar?: string;
+    };
+    orgaos?: {
+      id?: string;
+      sigla?: string;
+      nome?: string;
+      tipoOrgao?: string;
+      uri?: string;
+    }[];
+  }[];
+  frentes?: {
+    id?: string;
+    titulo?: string;
+    idLegislatura?: number;
+    uri?: string;
+  }[];
+  historico?: {
+    dataHora?: string;
+    nome?: string;
+    nomeEleitoral?: string;
+    siglaPartido?: string;
+    siglaUf?: string;
+    situacao?: string;
+    condicaoEleitoral?: string;
+    descricaoStatus?: string;
+    email?: string;
+    urlFoto?: string;
+    idLegislatura?: number;
+    uri?: string;
+  }[];
+  mandatosExternos?: {
+    cargo?: string;
+    siglaUf?: string;
+    municipio?: string;
+    anoInicio?: string;
+    anoFim?: string;
+    siglaPartidoEleicao?: string;
+    uriPartidoEleicao?: string;
+  }[];
+  orgaos?: {
+    idOrgao?: string;
+    uriOrgao?: string;
+    siglaOrgao?: string;
+    nomeOrgao?: string;
+    nomePublicacao?: string;
+    titulo?: string;
+    codTitulo?: string;
+    dataInicio?: string;
+    dataFim?: string;
+  }[];
+  profissoes?: {
+    dataHora?: string;
+    codTipoProfissao?: number;
+    titulo?: string;
+  }[];
+  ocupacoes?: {
+    titulo?: string;
+    entidade?: string;
+    entidadeUf?: string;
+    entidadePais?: string;
+    anoInicio?: string;
+    anoFim?: string;
+  }[];
   fonte?: string;
 }
 
@@ -332,6 +505,8 @@ export interface PerfilExternoTSE {
 
 export interface PerfilExternoLexML {
   total?: number;
+  limit?: number;
+  offset?: number;
   documentos?: {
     titulo?: string;
     identificador?: string;
@@ -381,8 +556,25 @@ export interface PoliticoDetalhe extends PoliticoResumo {
 export interface PoliticoDossieCompleto extends PoliticoResumo {
   perfilExterno?: PerfilExterno;
   gastos?: GastosAgregados;
+  emendasResumo?: EmendasResumo;
   viagens?: Connection<Viagem>;
   emendas?: Connection<Emenda>;
+}
+
+export interface NewsItem {
+  title: string;
+  link: string;
+  summary?: string;
+  publishedAt?: string;
+  sourceName: string;
+  sourceKey: string;
+}
+
+export interface PoliticoNewsResponse {
+  politico: string;
+  total: number;
+  fetchedAt?: string;
+  items: NewsItem[];
 }
 
 export interface PoliticoFinanceiroResumo {

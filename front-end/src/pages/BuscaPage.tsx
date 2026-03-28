@@ -8,7 +8,8 @@ import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { usePoliticos } from "@/hooks/usePoliticos";
 import { graphqlRequest } from "@/api/graphqlClient";
-import { POLITICOS_LIST_QUERY } from "@/api/queries";
+import { POLITICO_BASICO_QUERY, POLITICOS_LIST_QUERY } from "@/api/queries";
+import { buildPoliticoPath } from "@/lib/politicos";
 import type { Connection, PoliticoResumo } from "@/api/types";
 
 const PAGE_SIZE = 24;
@@ -73,18 +74,65 @@ const BuscaPage = () => {
     setOffset(0);
   };
 
+  const handleOpenPolitico = async (politico: PoliticoResumo) => {
+    const baseLookup =
+      politico.nomeCompleto?.trim() ||
+      politico.nomeCanonico?.replace(/-/g, " ").trim() ||
+      "";
+
+    if (politico.nomeCompleto?.trim()) {
+      navigate(
+        buildPoliticoPath({
+          nomeCompleto: politico.nomeCompleto,
+          nomeCanonico: politico.nomeCanonico,
+          id: politico.id,
+        })
+      );
+      return;
+    }
+
+    try {
+      const detalhe = await queryClient.fetchQuery({
+        queryKey: ["politico-route-resolver", politico.id, politico.nomeCanonico],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ politico: Pick<PoliticoResumo, "id" | "nomeCanonico" | "nomeCompleto"> | null }>(
+            POLITICO_BASICO_QUERY,
+            { id: politico.id, nomeCanonico: politico.nomeCanonico },
+            { signal, timeoutMs: 10_000 }
+          ).then((data) => data.politico),
+        staleTime: 30 * 60_000,
+      });
+
+      navigate(
+        buildPoliticoPath({
+          nomeCompleto: detalhe?.nomeCompleto || baseLookup,
+          nomeCanonico: detalhe?.nomeCanonico || politico.nomeCanonico,
+          id: detalhe?.id || politico.id,
+        })
+      );
+    } catch {
+      navigate(
+        buildPoliticoPath({
+          nomeCompleto: baseLookup,
+          nomeCanonico: politico.nomeCanonico,
+          id: politico.id,
+        })
+      );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-grid-pattern">
+    <div>
       <AppSidebar />
 
-      <main className="min-h-screen lg:ml-72">
+      <main className="lg:ml-72">
         <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
           <section className="animate-fade-up rounded-3xl border border-white/60 bg-card/85 p-7 shadow-elevated backdrop-blur-sm sm:p-8">
             <h1 className="text-3xl font-extrabold leading-tight">
               Busca inteligente de <span className="text-gradient-primary">politicos</span>
             </h1>
             <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-              Consulte por nome e refine por partido, UF e cargo para cruzar rapidamente os perfis retornados pela API.
+              Encontre perfis por nome, partido, UF ou cargo.
             </p>
 
             <div className="mt-5">
@@ -158,14 +206,13 @@ const BuscaPage = () => {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-3 text-xs">
-              <span className="rounded-full border border-border bg-background px-3 py-1 text-muted-foreground">
-                Filtros ativos: {hasFilter ? "sim" : "nao"}
-              </span>
-              <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-primary">
-                Resultado total: {total}
-              </span>
-            </div>
+            {hasFilter ? (
+              <div className="mt-5 text-xs">
+                <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-primary">
+                  {total} resultado(s)
+                </span>
+              </div>
+            ) : null}
           </section>
 
           <section className="mt-8 space-y-3">
@@ -179,9 +226,9 @@ const BuscaPage = () => {
             {data?.nodes.map((politico) => (
               <button
                 key={politico.id}
-                onClick={() =>
-                  navigate(`/politico/${encodeURIComponent(politico.nomeCanonico || politico.id)}`)
-                }
+                onClick={() => {
+                  void handleOpenPolitico(politico);
+                }}
                 className="w-full text-left"
               >
                 <PoliticianResultCard politico={politico} />
@@ -245,11 +292,6 @@ const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
           ) : null}
           {politico.cargoAtual ? (
             <span className="rounded-full bg-accent/10 px-2 py-0.5 font-semibold text-accent">{politico.cargoAtual}</span>
-          ) : null}
-          {politico.dataNascimento ? (
-            <span className="rounded-full bg-background px-2 py-0.5 font-semibold text-muted-foreground">
-              nascimento informado
-            </span>
           ) : null}
         </div>
       </div>

@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
+  ArrowUpRight,
   BarChart3,
   Banknote,
-  Building2,
   Crown,
   Globe,
   Landmark,
   Medal,
-  Plane,
+  PieChart as PieChartIcon,
   Search,
   ShieldCheck,
   Sparkles,
@@ -17,17 +17,16 @@ import {
   Users,
 } from "lucide-react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
 import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
+import PaginationControls from "@/components/PaginationControls";
 import SearchBar from "@/components/SearchBar";
 import StatsCard from "@/components/StatsCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
@@ -37,21 +36,34 @@ import {
   usePoliticos,
 } from "@/hooks/usePoliticos";
 import {
-  useTopDeputadosAno,
-  useTopEmendasPorPaisAno,
-  useTopGeralAno,
-  useTopGastadoresAno,
-  useTopSenadoresAno,
+  isBancadaNome,
+  useEmendaRankingResumo,
+  useTopEmendasPorPaisCustom,
+  useTopGastadoresCustom,
+  useTopTiposCustom,
 } from "@/hooks/useRankings";
 import { graphqlRequest } from "@/api/graphqlClient";
 import { POLITICOS_LIST_QUERY } from "@/api/queries";
-import { centsToNumber, formatCents, toBigInt } from "@/lib/formatters";
-import type { Connection, PoliticoResumo, TopGastadorEmenda } from "@/api/types";
+import {
+  centsToNumber,
+  formatCents,
+  formatCentsCompact,
+  formatCountCompact,
+} from "@/lib/formatters";
+import { buildPoliticoPath } from "@/lib/politicos";
+import type {
+  Connection,
+  PoliticoResumo,
+  RankingEmendaFiltroInput,
+  TopGastadorEmenda,
+} from "@/api/types";
 
 const PAGE_SIZE = 20;
 const rankIcons = [Crown, Trophy, Medal];
-
-const years = Array.from({ length: 8 }, (_, i) => 2026 - i);
+const CURRENT_YEAR = new Date().getFullYear();
+const DEFAULT_HOME_YEAR = Math.max(2019, CURRENT_YEAR - 1);
+const years = Array.from({ length: Math.max(CURRENT_YEAR - 2018, 1) }, (_, i) => CURRENT_YEAR - i);
+const typeChartColors = ["#0f766e", "#2563eb", "#14b8a6", "#f59e0b"];
 
 type TabId = "parlamentares" | "deputados" | "senadores" | "geral";
 
@@ -62,47 +74,65 @@ const tabs: { id: TabId; label: string; icon: typeof Users }[] = [
   { id: "geral", label: "Geral (todos os autores)", icon: Globe },
 ];
 
-const tabTitles: Record<TabId, string> = {
-  parlamentares: "Top 30 parlamentares",
-  deputados: "Top deputados",
-  senadores: "Top senadores",
-  geral: "Top geral (inclui bancadas/comissoes/partidos)",
+const tabTitles: Record<TabId, { title: string; helper: string }> = {
+  parlamentares: {
+    title: "Parlamentares em destaque",
+    helper: "Recorte parlamentar principal, sem bancadas e blocos.",
+  },
+  deputados: {
+    title: "Deputados com maior volume",
+    helper: "Foco nos autores com cargo atual de deputado.",
+  },
+  senadores: {
+    title: "Senadores com maior volume",
+    helper: "Foco nos autores com cargo atual de senador.",
+  },
+  geral: {
+    title: "Autores em destaque no geral",
+    helper: "Inclui politicos, bancadas, blocos, comissoes e outros autores.",
+  },
 };
 
 const featuredFallback = [
   {
     key: "lula",
     search: "lula",
+    nomeCanonico: "lula",
     nome: "Luiz Inacio Lula da Silva",
-    foto: "https://upload.wikimedia.org/wikipedia/commons/8/86/Lula_-_foto_oficial_2023-01-09.jpg",
+    foto: "https://commons.wikimedia.org/wiki/Special:FilePath/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28m%C3%A3o_pitoca%29.jpg",
   },
   {
     key: "bolsonaro",
     search: "bolsonaro",
+    nomeCanonico: "bolsonaro",
     nome: "Jair Messias Bolsonaro",
-    foto: "https://upload.wikimedia.org/wikipedia/commons/9/93/Jair_Bolsonaro_2019_Portrait.jpg",
+    foto: "https://commons.wikimedia.org/wiki/Special:FilePath/Jair%20Bolsonaro%202019%20Portrait%20(3x4%20cropped%20center).jpg",
   },
   {
     key: "arthurLira",
     search: "arthur lira",
+    nomeCanonico: "arthur-lira",
     nome: "Arthur Lira",
-    foto: "https://www.camara.leg.br/internet/deputado/bandep/160594.jpg",
+    foto: "https://www.camara.leg.br/internet/deputado/bandep/160541.jpg",
   },
   {
     key: "daviAlcolumbre",
     search: "davi alcolumbre",
+    nomeCanonico: "davi-alcolumbre",
     nome: "Davi Alcolumbre",
-    foto: "https://www.senado.leg.br/senadores/img/fotos-oficiais/senador5765.jpg",
+    foto: "https://www12.senado.leg.br/institucional/presidencia/img/davi_alcolumbre_presidente.jpg",
   },
   {
     key: "flavioDino",
     search: "flavio dino",
+    nomeCanonico: "flavio-dino",
     nome: "Flavio Dino",
     foto: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Flavio_Dino_%28cropped%29.jpg",
   },
   {
     key: "simoneTebet",
     search: "simone tebet",
+    nomeCanonico: "simone-tebet",
     nome: "Simone Tebet",
     foto: "https://upload.wikimedia.org/wikipedia/commons/8/89/Simone_Tebet_%28cropped%29.jpg",
   },
@@ -111,28 +141,41 @@ const featuredFallback = [
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabId>("parlamentares");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedYear, setSelectedYear] = useState(2025);
+  const [selectedYear, setSelectedYear] = useState(DEFAULT_HOME_YEAR);
   const [offset, setOffset] = useState(0);
+  const [openingProfile, setOpeningProfile] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const apiHealthQuery = useApiHealth();
   const featuredQuery = useFeaturedPoliticos();
 
-  const parlamentaresQuery = useTopGastadoresAno(selectedYear);
-  const deputadosQuery = useTopDeputadosAno(selectedYear);
-  const senadoresQuery = useTopSenadoresAno(selectedYear);
-  const geralQuery = useTopGeralAno(selectedYear);
-  const paisesQuery = useTopEmendasPorPaisAno(selectedYear, { limit: 10, offset: 0 });
+  const rankingFilter = useMemo<RankingEmendaFiltroInput>(() => {
+    const base: RankingEmendaFiltroInput = {
+      anoInicio: selectedYear,
+      anoFim: selectedYear,
+    };
 
-  const activeQueryMap = {
-    parlamentares: parlamentaresQuery,
-    deputados: deputadosQuery,
-    senadores: senadoresQuery,
-    geral: geralQuery,
-  };
+    if (activeTab === "parlamentares") {
+      return { ...base, apenasParlamentares: true };
+    }
 
-  const activeQuery = activeQueryMap[activeTab];
+    if (activeTab === "deputados") {
+      return { ...base, apenasParlamentares: true, cargoParlamentar: "DEPUTADO" };
+    }
+
+    if (activeTab === "senadores") {
+      return { ...base, apenasParlamentares: true, cargoParlamentar: "SENADOR" };
+    }
+
+    return { ...base, apenasParlamentares: false };
+  }, [activeTab, selectedYear]);
+
+  const resumoQuery = useEmendaRankingResumo(rankingFilter);
+  const activeQuery = useTopGastadoresCustom(rankingFilter, { limit: PAGE_SIZE, offset });
+  const leadersQuery = useTopGastadoresCustom(rankingFilter, { limit: 3, offset: 0 });
+  const tiposQuery = useTopTiposCustom(rankingFilter, { limit: 4, offset: 0 });
+  const paisesQuery = useTopEmendasPorPaisCustom(rankingFilter, { limit: 5, offset: 0 });
 
   const searchQuery = usePoliticos(
     searchTerm ? { search: searchTerm } : undefined,
@@ -140,33 +183,42 @@ const Index = () => {
   );
 
   const isSearching = Boolean(searchTerm);
-  const rawRankingNodes = (activeQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
-  const rankingNodes = useMemo(() => {
-    return rawRankingNodes.slice(offset, offset + PAGE_SIZE);
-  }, [offset, rawRankingNodes]);
-
-  const totalPagoCents = useMemo(
-    () => rankingNodes.reduce((acc, node) => acc + toBigInt(node.totalPagoCents), 0n),
-    [rankingNodes]
+  const resumo = resumoQuery.data;
+  const rankingNodes = (activeQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
+  const leaderNodes = (leadersQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
+  const displayRankingNodes = useMemo(
+    () => (offset === 0 ? rankingNodes.slice(1) : rankingNodes),
+    [offset, rankingNodes]
   );
+  const typeChartData = useMemo(() => {
+    const nodes = tiposQuery.data?.nodes ?? [];
+    const totalValue = nodes.reduce((acc, item) => acc + centsToNumber(item.totalPagoCents), 0);
 
-  const totalPago = formatCents(totalPagoCents.toString());
-  const totalEmendas = rankingNodes.reduce((acc, node) => acc + (node.totalEmendas || 0), 0);
-  const mediaPagoPorEmenda =
-    totalEmendas > 0 ? formatCents((totalPagoCents / BigInt(totalEmendas)).toString()) : "R$ 0,00";
-
-  const graficoTop = useMemo(
-    () =>
-      rankingNodes.slice(0, 6).map((node) => ({
-        nome: shortName(node.nomeAutorEmenda),
-        valor: centsToNumber(node.totalPagoCents),
-      })),
-    [rankingNodes]
-  );
-
+    return nodes.map((item, index) => {
+      const value = centsToNumber(item.totalPagoCents);
+      return {
+        nome: item.tipoEmenda || "Nao informado",
+        value,
+        color: typeChartColors[index % typeChartColors.length],
+        totalEmendas: item.totalEmendas ?? 0,
+        share: totalValue > 0 ? (value / totalValue) * 100 : 0,
+      };
+    });
+  }, [tiposQuery.data?.nodes]);
+  const leader = leaderNodes[0];
+  const topTipo = typeChartData[0];
+  const leaderToTicketRatio =
+    leader && centsToNumber(resumo?.ticketMedioPagoCents) > 0
+      ? centsToNumber(leader.totalPagoCents) / centsToNumber(resumo?.ticketMedioPagoCents)
+      : 0;
+  const leaderRunnersUp = leaderNodes.slice(1, 3);
   const topPais = paisesQuery.data?.nodes?.[0];
   const featuredPhotoMap = useMemo<Record<string, string>>(
     () => Object.fromEntries(featuredFallback.map((item) => [item.key, item.foto])),
+    []
+  );
+  const featuredFallbackMap = useMemo(
+    () => Object.fromEntries(featuredFallback.map((item) => [item.key, item])),
     []
   );
   const featuredPoliticos: { key: string; search: string; politico?: PoliticoResumo }[] =
@@ -177,20 +229,35 @@ const Index = () => {
           search: item.search,
           politico: undefined,
         }));
+  const featuredShelf = useMemo(
+    () =>
+      featuredPoliticos.slice(0, 4).map((perfil) => {
+        const politico = perfil.politico;
+        const fallbackPerfil = featuredFallbackMap[perfil.key];
+        const nome =
+          politico?.nomeCompleto || politico?.nomeCanonico || fallbackPerfil?.nome || perfil.search;
+        const profilePath = buildPoliticoPath({
+          nomeCompleto: politico?.nomeCompleto || fallbackPerfil?.nome || perfil.search,
+          nomeCanonico: politico?.nomeCanonico || fallbackPerfil?.nomeCanonico,
+          id: politico?.id,
+        });
 
-  const deputadosESenadoresIguais = useMemo(() => {
-    const dep = (deputadosQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
-    const sen = (senadoresQuery.data?.nodes as TopGastadorEmenda[] | undefined) ?? [];
-    if (!dep.length || !sen.length) return false;
-
-    const signature = (nodes: TopGastadorEmenda[]) =>
-      nodes
-        .slice(0, 10)
-        .map((node) => `${node.nomeAutorEmenda}|${node.totalPagoCents}`)
-        .join(";");
-
-    return signature(dep) === signature(sen);
-  }, [deputadosQuery.data?.nodes, senadoresQuery.data?.nodes]);
+        return {
+          key: perfil.key,
+          nome,
+          profilePath,
+          search: perfil.search,
+          imageCandidates: buildImageCandidates(
+            featuredPhotoMap[perfil.key],
+            politico?.fotoUrl,
+            buildAvatarUrl(nome)
+          ),
+        };
+      }),
+    [featuredFallbackMap, featuredPhotoMap, featuredPoliticos]
+  );
+  const featuredPrimary = featuredShelf[0];
+  const featuredSecondary = featuredShelf.slice(1);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -202,11 +269,47 @@ const Index = () => {
     setOffset(0);
   };
 
+  const handleOpenPoliticoProfile = async (node: TopGastadorEmenda) => {
+    const authorName = node.nomeAutorEmenda?.trim();
+    if (!authorName || !canOpenPoliticoProfile(node)) {
+      return;
+    }
+
+    setOpeningProfile(authorName);
+
+    try {
+      const connection = await queryClient.fetchQuery({
+        queryKey: ["home-ranking-politico", authorName],
+        queryFn: ({ signal }) =>
+          graphqlRequest<{ politicos: Connection<PoliticoResumo> }>(
+            POLITICOS_LIST_QUERY,
+            {
+              filter: { search: authorName },
+              pagination: { limit: 6, offset: 0 },
+            },
+            { signal, timeoutMs: 10_000 }
+          ).then((data) => data.politicos),
+        staleTime: 15 * 60_000,
+      });
+
+      const match = selectPoliticoMatch(connection.nodes, authorName);
+      if (match?.nomeCanonico || match?.id || match?.nomeCompleto) {
+        navigate(
+          buildPoliticoPath({
+            nomeCompleto: match?.nomeCompleto || authorName,
+            nomeCanonico: match?.nomeCanonico,
+            id: match?.id,
+          })
+        );
+      }
+    } finally {
+      setOpeningProfile((current) => (current === authorName ? null : current));
+    }
+  };
+
   const total = isSearching
     ? searchQuery.data?.total ?? 0
-    : rawRankingNodes.length;
-  const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
-  const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
+    : activeQuery.data?.total ?? 0;
 
   useEffect(() => {
     if (isSearching) {
@@ -236,36 +339,36 @@ const Index = () => {
   ]);
 
   return (
-    <div className="min-h-screen bg-grid-pattern">
+    <div>
       <AppSidebar />
 
-      <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
-          <section className="animate-fade-up relative overflow-hidden rounded-3xl border border-white/60 bg-card/85 p-7 shadow-elevated backdrop-blur-sm sm:p-8">
-            <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-cyan-300/25 blur-3xl" />
-            <div className="absolute -bottom-20 left-20 h-56 w-56 rounded-full bg-blue-300/20 blur-3xl" />
+      <main className="lg:ml-72">
+        <div className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
 
-            <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          {/* ── Hero ── */}
+          <section className="animate-fade-up relative overflow-hidden rounded-3xl border border-border bg-card px-7 py-8 sm:px-10 sm:py-10">
+            <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                  <Sparkles className="h-3.5 w-3.5" />
+                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                  <Sparkles className="h-3 w-3" />
                   Painel de transparencia
                 </p>
-                <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">
-                  Radar do Povo <span className="text-gradient-primary">moderno e orientado por dados</span>
+                <h1 className="text-[2rem] font-extrabold leading-[1.15] tracking-tight text-foreground sm:text-[2.5rem]">
+                  Radar do Povo{" "}
+                  <span className="text-primary">orientado por dados</span>
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-                  Visao consolidada de emendas parlamentares, trilha de gastos publicos e sinais de concentracao por parlamentar e por pais.
+                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+                  Emendas, gastos publicos e perfis politicos em uma leitura mais clara e direta.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <StatusBadge
                   status={apiHealthQuery.data?.status}
                   loading={apiHealthQuery.isLoading}
                 />
 
-                <label className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-card">
+                <label className="inline-flex items-center gap-2 rounded-2xl border border-border bg-muted/50 px-3 py-2 text-xs font-semibold text-foreground">
                   <Activity className="h-3.5 w-3.5 text-primary" />
                   Ano
                   <select
@@ -287,121 +390,77 @@ const Index = () => {
             </div>
           </section>
 
-          <section className="mt-8 animate-fade-up" style={{ animationDelay: "120ms" }}>
+          {/* ── Search ── */}
+          <section className="mt-6 animate-fade-up" style={{ animationDelay: "80ms" }}>
             <SearchBar
               onSearch={handleSearch}
               isLoading={isSearching && searchQuery.isLoading}
-              placeholder="Digite nome, partido ou parte do nome canonico"
+              placeholder="Digite nome ou partido"
               submitLabel="Consultar"
               autoSearch
               debounceMs={300}
             />
           </section>
 
+          {/* ── Featured shelf ── */}
           {!isSearching ? (
-            <section className="mt-9 rounded-3xl border border-border/75 bg-card/85 p-6 shadow-card sm:p-7">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-base font-bold sm:text-lg">Perfis em destaque</h2>
-                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                    Atalhos para os nomes mais buscados no momento.
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigate("/busca")}
-                  className="inline-flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
-                >
-                  <Search className="h-3.5 w-3.5" />
-                  Ver busca completa
-                </button>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                {featuredPoliticos.map((perfil) => {
-                  const politico = perfil.politico;
-                  const nome = politico?.nomeCompleto || politico?.nomeCanonico || perfil.search;
-                  const partido = politico?.partido;
-                  const uf = politico?.uf;
-                  const imageUrl =
-                    politico?.fotoUrl || featuredPhotoMap[perfil.key] || buildAvatarUrl(nome);
-
-                  return (
-                    <button
-                      key={perfil.key}
-                      onClick={() =>
-                        politico?.nomeCanonico
-                          ? navigate(`/politico/${encodeURIComponent(politico.nomeCanonico)}`)
-                          : handleSearch(perfil.search)
-                      }
-                      className="rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={imageUrl}
-                          alt={nome}
-                          className="h-9 w-9 flex-shrink-0 rounded-full border border-border object-cover"
-                        />
-
-                        <div className="min-w-0">
-                          <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
-                            {nome}
-                          </p>
-                          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                            {[partido, uf].filter(Boolean).join(" - ") || "Perfil principal"}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
-          {!isSearching ? (
-            <section className="mt-8 rounded-3xl border border-border/75 bg-card/85 p-6 shadow-card sm:p-7">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-base font-bold sm:text-lg">Area de viagens oficiais</h2>
-                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                    Abra a area dedicada de viagens para ver resumo, lista paginada e detalhes sob demanda.
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigate("/viagens")}
-                  className="inline-flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
-                >
-                  <Plane className="h-3.5 w-3.5" />
-                  Abrir area de viagens
-                </button>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                {featuredFallback.slice(0, 4).map((item) => (
+            <section className="mt-6 overflow-hidden rounded-3xl border border-border bg-card">
+              <div className="border-b border-border px-6 py-5 sm:px-7">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-foreground">Top buscas</h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Perfis acessados com mais frequencia.
+                    </p>
+                  </div>
                   <button
-                    key={item.key}
-                    onClick={() => navigate(`/viagens?search=${encodeURIComponent(item.search)}`)}
-                    className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/90 px-3 py-3 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
+                    onClick={() => navigate("/busca")}
+                    className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
                   >
-                    <img
-                      src={item.foto}
-                      alt={item.nome}
-                      className="h-9 w-9 flex-shrink-0 rounded-full border border-border object-cover"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-[11px] font-bold uppercase tracking-wide text-foreground">
-                        {item.nome}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Investigar gastos de viagens</p>
-                    </div>
+                    <Search className="h-3.5 w-3.5" />
+                    Busca completa
                   </button>
-                ))}
+                </div>
+              </div>
+
+              <div className="p-5 sm:p-6">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+                  {featuredPrimary ? (
+                    <FeaturedPoliticoLeadCard
+                      nome={featuredPrimary.nome}
+                      imageCandidates={featuredPrimary.imageCandidates}
+                      onClick={() =>
+                        featuredPrimary.profilePath
+                          ? navigate(featuredPrimary.profilePath)
+                          : handleSearch(featuredPrimary.search)
+                      }
+                    />
+                  ) : null}
+
+                  <div className="overflow-x-auto overscroll-x-contain lg:overflow-visible">
+                    <div className="flex min-w-max snap-x snap-mandatory gap-3 pb-1 lg:min-w-0 lg:flex-col">
+                      {featuredSecondary.map((perfil) => (
+                        <FeaturedPoliticoCard
+                          key={perfil.key}
+                          nome={perfil.nome}
+                          imageCandidates={perfil.imageCandidates}
+                          onClick={() =>
+                            perfil.profilePath
+                              ? navigate(perfil.profilePath)
+                              : handleSearch(perfil.search)
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
           ) : null}
 
+          {/* ── Search results ── */}
           {isSearching ? (
-            <section className="mt-8 space-y-4 animate-fade-up" style={{ animationDelay: "180ms" }}>
+            <section className="mt-6 space-y-3 animate-fade-up" style={{ animationDelay: "120ms" }}>
               {searchQuery.isLoading ? <LoadingState message="Buscando politicos na API..." /> : null}
               {searchQuery.error ? <ErrorState error={searchQuery.error as Error} /> : null}
               {!searchQuery.isLoading && !searchQuery.error && searchQuery.data?.nodes.length === 0 ? (
@@ -411,9 +470,7 @@ const Index = () => {
               {searchQuery.data?.nodes.map((politico) => (
                 <button
                   key={politico.id}
-                  onClick={() =>
-                    navigate(`/politico/${encodeURIComponent(politico.nomeCanonico || politico.id)}`)
-                  }
+                  onClick={() => navigate(buildPoliticoPath(politico))}
                   className="w-full text-left"
                 >
                   <PoliticianSearchCard politico={politico} />
@@ -422,132 +479,411 @@ const Index = () => {
             </section>
           ) : (
             <>
-              <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {/* ── Ranking header ── */}
+              <section className="mt-6 rounded-3xl border border-border bg-card p-6 sm:p-7">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                  <div className="max-w-2xl">
+                    <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                      <Sparkles className="h-3 w-3" />
+                      Leitura anual de emendas
+                    </p>
+                    <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-[1.75rem]">
+                      {tabTitles[activeTab].title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {tabTitles[activeTab].helper} Destaque para autores, tipos de emenda e
+                      localidade de aplicacao no ano selecionado.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-2.5 sm:grid-cols-3">
+                    <HomeBriefCard
+                      label="Ano em foco"
+                      value={String(selectedYear)}
+                      helper="Recorte principal da home"
+                    />
+                    <HomeBriefCard
+                      label="Escopo"
+                      value={tabs.find((tab) => tab.id === activeTab)?.label.replace("Top 30 ", "") || "-"}
+                      helper={tabTitles[activeTab].helper}
+                    />
+                    <HomeBriefCard
+                      label="Lider do ano"
+                      value={shortName(leader?.nomeAutorEmenda)}
+                      helper={
+                        leader
+                          ? `${formatCentsCompact(leader.totalPagoCents)} pagos`
+                          : "Sem lideranca consolidada"
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 overflow-x-auto overscroll-x-contain">
+                  <div className="flex min-w-max gap-2 pb-1">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleTabChange(tab.id)}
+                        className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
+                          tab.id === activeTab
+                            ? "border-primary bg-primary text-white"
+                            : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                        }`}
+                      >
+                        <tab.icon className="h-3.5 w-3.5" />
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Stats row ── */}
+              <section className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <div className="col-span-2 xl:col-span-1">
+                  <StatsCard
+                    label="Total pago"
+                    value={formatCentsCompact(resumo?.totalPagoCents)}
+                    helper={formatCents(resumo?.totalPagoCents)}
+                    description={`${selectedYear} · ${tabs.find((tab) => tab.id === activeTab)?.label ?? ""}`}
+                    icon={Banknote}
+                    variant="green"
+                  />
+                </div>
                 <StatsCard
-                  label="Total pago top"
-                  value={totalPago}
-                  description={`${tabTitles[activeTab]} ${selectedYear}`}
-                  icon={Banknote}
-                  variant="green"
-                />
-                <StatsCard
-                  label="Registros no ranking"
-                  value={String(total)}
-                  description="Top retornado pela API"
+                  label="Autores distintos"
+                  value={formatCountCompact(resumo?.totalAutores ?? 0)}
+                  helper={(resumo?.totalAutores ?? 0).toLocaleString("pt-BR")}
+                  description="Autores ou grupos encontrados no recorte"
                   icon={Users}
                   variant="blue"
                 />
                 <StatsCard
                   label="Total emendas"
-                  value={totalEmendas.toLocaleString("pt-BR")}
-                  description="Soma de emendas do recorte"
+                  value={formatCountCompact(resumo?.totalEmendas ?? 0)}
+                  helper={(resumo?.totalEmendas ?? 0).toLocaleString("pt-BR")}
+                  description="Registros consolidados para o ano"
                   icon={BarChart3}
                   variant="yellow"
                 />
-                <StatsCard
-                  label="Ticket por emenda"
-                  value={mediaPagoPorEmenda}
-                  description="Total pago dividido por emendas"
-                  icon={ShieldCheck}
-                  variant="blue"
-                />
-              </section>
-
-              <section className="mt-7 flex flex-wrap gap-2">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabChange(tab.id)}
-                    className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold transition-all ${
-                      tab.id === activeTab
-                        ? "border-primary/30 bg-gradient-hero text-primary-foreground shadow-glow"
-                        : "border-border bg-card text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <tab.icon className="h-3.5 w-3.5" />
-                    {tab.label}
-                  </button>
-                ))}
-              </section>
-
-              {deputadosESenadoresIguais &&
-              (activeTab === "deputados" || activeTab === "senadores") ? (
-                <section className="mt-4 rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-                  A API retornou dados identicos para deputados e senadores neste ano. O front esta separado corretamente por endpoint, mas os dados de origem vieram iguais.
-                </section>
-              ) : null}
-
-              <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-                <div className="space-y-4">
-                  {activeQuery.isLoading ? (
-                    <LoadingState message="Carregando ranking da API..." />
-                  ) : null}
-                  {activeQuery.error ? <ErrorState error={activeQuery.error as Error} /> : null}
-                  {!activeQuery.isLoading &&
-                  !activeQuery.error &&
-                  rankingNodes.length === 0 ? (
-                    <EmptyState message="A API nao retornou ranking para este ano." />
-                  ) : null}
-
-                  {rankingNodes.map((node, index) => (
-                    <RankingRow
-                      key={`${node.nomeAutorEmenda}-${offset + index}`}
-                      node={node}
-                      rank={offset + index + 1}
-                    />
-                  ))}
+                <div className="col-span-2 xl:col-span-1">
+                  <StatsCard
+                    label="Ticket por emenda"
+                    value={formatCentsCompact(resumo?.ticketMedioPagoCents)}
+                    helper={formatCents(resumo?.ticketMedioPagoCents)}
+                    description={`${formatCountCompact(resumo?.totalTipos ?? 0)} tipos · ${formatCountCompact(resumo?.totalPaises ?? 0)} paises`}
+                    icon={ShieldCheck}
+                    variant="blue"
+                  />
                 </div>
+              </section>
 
+              {/* ── Main content ── */}
+              <section className="mt-4 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_340px]">
                 <div className="space-y-4">
-                  <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h2 className="text-sm font-bold">Comparativo dos 6 primeiros</h2>
-                      <span className="text-[11px] text-muted-foreground">{selectedYear}</span>
+
+                  {/* Leader card */}
+                  {leader ? (
+                    <section className="overflow-hidden rounded-3xl border border-border bg-card">
+                      <div className="border-b border-border px-5 py-5 sm:px-6">
+                        <p className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
+                          <Crown className="h-3 w-3" />
+                          Maior volume pago no ano
+                        </p>
+
+                        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            {canOpenPoliticoProfile(leader) ? (
+                              <button
+                                type="button"
+                                onClick={() => void handleOpenPoliticoProfile(leader)}
+                                className="inline-flex max-w-full items-center gap-2 text-left text-xl font-bold tracking-tight text-foreground transition-colors hover:text-primary"
+                              >
+                                <span className="truncate">{leader.nomeAutorEmenda}</span>
+                                <ArrowUpRight className="h-4 w-4 shrink-0 text-primary" />
+                              </button>
+                            ) : (
+                              <h3 className="text-xl font-bold tracking-tight text-foreground">
+                                {leader.nomeAutorEmenda}
+                              </h3>
+                            )}
+                            <p className="mt-1.5 text-sm text-muted-foreground">
+                              {canOpenPoliticoProfile(leader)
+                                ? "Perfil individual disponivel para abrir o dossie completo."
+                                : "Autoria coletiva ou sem perfil individual publico resolvido."}
+                            </p>
+                          </div>
+
+                          <div className="shrink-0 text-right">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                              Valor pago
+                            </p>
+                            <p className="mt-1 text-2xl font-bold tracking-tight text-primary sm:text-3xl">
+                              {formatCentsCompact(leader.totalPagoCents)}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {formatCents(leader.totalPagoCents)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-0 sm:grid-cols-[1fr_1px_300px]">
+                        <div className="p-5 sm:p-6">
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                Emendas
+                              </p>
+                              <p className="mt-1.5 text-lg font-bold text-foreground">
+                                {formatCountCompact(leader.totalEmendas ?? 0)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {(leader.totalEmendas ?? 0).toLocaleString("pt-BR")} registros
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                vs. ticket medio
+                              </p>
+                              <p className="mt-1.5 text-lg font-bold text-foreground">
+                                {leaderToTicketRatio > 0
+                                  ? `${leaderToTicketRatio.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}x`
+                                  : "—"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Ticket medio: {formatCentsCompact(resumo?.ticketMedioPagoCents)}
+                              </p>
+                            </div>
+                          </div>
+
+                          {leaderRunnersUp.length ? (
+                            <div className="mt-5 border-t border-border pt-4">
+                              <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                Proximos no ranking
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {leaderRunnersUp.map((node, index) => (
+                                  <div
+                                    key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${index}`}
+                                    className="inline-flex min-w-[180px] items-center justify-between gap-3 rounded-2xl border border-border bg-muted/40 px-3 py-2.5 text-xs"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate font-semibold text-foreground">
+                                        #{index + 2} {shortName(node.nomeAutorEmenda)}
+                                      </p>
+                                      <p className="text-[11px] text-muted-foreground">
+                                        {formatCountCompact(node.totalEmendas ?? 0)} emendas
+                                      </p>
+                                    </div>
+                                    <p className="font-bold text-primary">
+                                      {formatCentsCompact(node.totalPagoCents)}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="hidden sm:block bg-border/50" />
+
+                        <div className="border-t border-border p-5 sm:border-t-0 sm:p-6">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                            Leitura do recorte
+                          </p>
+                          <p className="mt-2 text-sm font-semibold text-foreground">
+                            {canOpenPoliticoProfile(leader)
+                              ? "Perfil individual disponivel"
+                              : "Autoria coletiva ou nao identificada"}
+                          </p>
+                          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                            {leader.totalEmendas === 1
+                              ? "Um unico registro concentra esse destaque no ano."
+                              : `Esse autor concentra ${formatCountCompact(leader.totalEmendas ?? 0)} emendas no recorte analisado.`}
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+                  ) : null}
+
+                  {/* Ranking list */}
+                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                    <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h2 className="text-base font-bold text-foreground">Principais autores do ano</h2>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          Clique no nome quando houver perfil individual identificado.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                        {formatCountCompact(total)} autores no ranking
+                      </div>
                     </div>
 
-                    {graficoTop.length ? (
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={graficoTop} margin={{ top: 8, right: 0, left: 0, bottom: 12 }}>
-                            <defs>
-                              <linearGradient id="topBarGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="hsl(182 89% 30%)" />
-                                <stop offset="100%" stopColor="hsl(212 93% 47%)" />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(206 26% 82%)" />
-                            <XAxis dataKey="nome" tickLine={false} axisLine={false} fontSize={11} />
-                            <YAxis
-                              tickLine={false}
-                              axisLine={false}
-                              width={72}
-                              fontSize={11}
-                              tickFormatter={(value) => `R$ ${(value / 1_000_000).toFixed(1)}M`}
-                            />
-                            <RechartsTooltip
-                              cursor={{ fill: "hsl(200 36% 96%)" }}
-                              formatter={(value: number) =>
-                                value.toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                  maximumFractionDigits: 0,
-                                })
-                              }
-                            />
-                            <Bar dataKey="valor" fill="url(#topBarGradient)" radius={[8, 8, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
+                    <div className="space-y-2.5">
+                      {activeQuery.isLoading ? <LoadingState message="Carregando ranking da API..." /> : null}
+                      {activeQuery.error ? <ErrorState error={activeQuery.error as Error} /> : null}
+                      {!activeQuery.isLoading && !activeQuery.error && rankingNodes.length === 0 ? (
+                        <EmptyState message="A API nao retornou ranking para este ano." />
+                      ) : null}
+
+                      {displayRankingNodes.map((node, index) => {
+                        const rank = offset === 0 ? index + 2 : offset + index + 1;
+                        return (
+                          <RankingRow
+                            key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${rank}`}
+                            node={node}
+                            rank={rank}
+                            canOpenProfile={canOpenPoliticoProfile(node)}
+                            openingProfile={openingProfile === node.nomeAutorEmenda}
+                            onOpenProfile={() => void handleOpenPoliticoProfile(node)}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    {total > 0 ? (
+                      <PaginationControls
+                        total={total}
+                        limit={PAGE_SIZE}
+                        offset={offset}
+                        onPageChange={setOffset}
+                        itemLabel="autores"
+                      />
+                    ) : null}
+                  </section>
+                </div>
+
+                {/* ── Sidebar ── */}
+                <div className="space-y-4">
+
+                  {/* Tipo chart */}
+                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                    <div className="mb-5 flex items-center gap-2">
+                      <PieChartIcon className="h-4 w-4 text-primary" />
+                      <div>
+                        <h2 className="text-base font-bold text-foreground">Composicao por tipo</h2>
+                        <p className="text-xs text-muted-foreground">
+                          Distribuicao do valor pago no recorte.
+                        </p>
                       </div>
-                    ) : (
-                      <EmptyState message="Sem dados suficientes para grafico." />
-                    )}
+                    </div>
+
+                    {tiposQuery.isLoading ? <LoadingState message="Carregando tipos..." /> : null}
+                    {tiposQuery.error ? <ErrorState error={tiposQuery.error as Error} /> : null}
+                    {!tiposQuery.isLoading && !tiposQuery.error && !typeChartData.length ? (
+                      <EmptyState message="Sem tipos suficientes para montar a leitura." />
+                    ) : null}
+
+                    {typeChartData.length ? (
+                      <div className="space-y-4">
+                        <div className="relative mx-auto h-[176px] w-[176px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={typeChartData}
+                                dataKey="value"
+                                nameKey="nome"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={54}
+                                outerRadius={80}
+                                paddingAngle={3}
+                                stroke="transparent"
+                              >
+                                {typeChartData.map((item) => (
+                                  <Cell key={item.nome} fill={item.color} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip
+                                formatter={(value: number) =>
+                                  value.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                    maximumFractionDigits: 0,
+                                  })
+                                }
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <p className="text-2xl font-bold tracking-tight text-foreground">
+                              {topTipo ? `${topTipo.share.toFixed(0)}%` : "—"}
+                            </p>
+                            <p className="mt-0.5 max-w-[96px] text-center text-[10px] font-medium leading-4 text-muted-foreground">
+                              {compactTipoLabel(topTipo?.nome)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Bar summary */}
+                        <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                          <div className="mb-2 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+                            <span>Distribuicao por valor pago</span>
+                            <span>100%</span>
+                          </div>
+                          <div className="flex h-2 overflow-hidden rounded-full">
+                            {typeChartData.map((item) => (
+                              <div
+                                key={`${item.nome}-seg`}
+                                className="h-full first:rounded-l-full last:rounded-r-full"
+                                style={{
+                                  width: `${Math.max(item.share, 4)}%`,
+                                  backgroundColor: item.color,
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          {typeChartData.map((item, index) => (
+                            <div
+                              key={item.nome}
+                              className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3"
+                            >
+                              <div className="flex min-w-0 items-center gap-2.5">
+                                <span
+                                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                  style={{ backgroundColor: item.color }}
+                                />
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs font-semibold text-foreground">
+                                    {compactTipoLabel(item.nome)}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {formatCountCompact(item.totalEmendas)} emendas
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <p className="text-sm font-bold text-primary">
+                                  {formatCentsCompact(String(Math.round(item.value * 100)))}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {item.share.toFixed(1)}%
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </section>
 
-                  <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
-                    <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
-                      <Globe className="h-4 w-4 text-accent" />
-                      Top paises beneficiados
-                    </h2>
+                  {/* Paises */}
+                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                    <div className="mb-5 flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-primary" />
+                      <div>
+                        <h2 className="text-base font-bold text-foreground">Paises e localidade</h2>
+                        <p className="text-xs text-muted-foreground">
+                          Concentracao geografica do recorte.
+                        </p>
+                      </div>
+                    </div>
 
                     {paisesQuery.isLoading ? <LoadingState message="Carregando recorte por pais..." /> : null}
                     {paisesQuery.error ? <ErrorState error={paisesQuery.error as Error} /> : null}
@@ -559,85 +895,48 @@ const Index = () => {
                       {paisesQuery.data?.nodes.slice(0, 5).map((pais, index) => (
                         <div
                           key={`${pais.pais}-${index}`}
-                          className="flex items-center justify-between rounded-xl border border-border/70 bg-background/80 px-3 py-2"
+                          className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3"
                         >
-                          <div>
-                            <p className="text-xs font-semibold text-foreground">
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-semibold text-foreground">
                               {index + 1}. {pais.pais}
                             </p>
                             <p className="text-[11px] text-muted-foreground">
-                              {pais.totalEmendas ?? 0} emendas registradas
+                              {formatCountCompact(pais.totalEmendas ?? 0)} emendas
                             </p>
                           </div>
-                          <span className="text-xs font-bold text-primary">{formatCents(pais.totalPagoCents)}</span>
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-bold text-primary">
+                              {formatCentsCompact(pais.totalPagoCents)}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {formatCents(pais.totalPagoCents)}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
 
                     {topPais ? (
-                      <div className="mt-3 rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
-                        Maior volume no ano: <strong>{topPais.pais}</strong> com {formatCents(topPais.totalPagoCents)}.
+                      <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/8 px-4 py-3 text-xs text-foreground">
+                        <span className="text-muted-foreground">Lider:</span>{" "}
+                        <strong className="text-foreground">{topPais.pais}</strong>{" "}
+                        <span className="text-muted-foreground">·</span>{" "}
+                        <strong className="text-primary">{formatCentsCompact(topPais.totalPagoCents)}</strong>
                       </div>
                     ) : null}
-                  </section>
-
-                  <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card">
-                    <h2 className="mb-3 text-sm font-bold">Atalhos de exploracao</h2>
-                    <div className="grid grid-cols-1 gap-2">
-                      <button
-                        onClick={() => navigate("/viagens")}
-                        className="flex items-center justify-between rounded-xl border border-border/80 bg-background/80 px-3 py-2 text-left text-xs font-medium hover:bg-muted/70"
-                      >
-                        Abrir area completa de viagens
-                        <Plane className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                      <button
-                        onClick={() => navigate("/rankings")}
-                        className="flex items-center justify-between rounded-xl border border-border/80 bg-background/80 px-3 py-2 text-left text-xs font-medium hover:bg-muted/70"
-                      >
-                        Abrir ranking com filtros avancados
-                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                      <button
-                        onClick={() => navigate("/busca")}
-                        className="flex items-center justify-between rounded-xl border border-border/80 bg-background/80 px-3 py-2 text-left text-xs font-medium hover:bg-muted/70"
-                      >
-                        Ir para busca detalhada de politicos
-                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                    </div>
                   </section>
                 </div>
               </section>
             </>
           )}
-
-          {total > PAGE_SIZE ? (
-            <section className="mt-8 flex items-center justify-center gap-3">
-              <button
-                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-                disabled={offset === 0}
-                className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <span className="rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-                Pagina {currentPage} de {totalPages}
-              </span>
-              <button
-                onClick={() => setOffset(offset + PAGE_SIZE)}
-                disabled={offset + PAGE_SIZE >= total}
-                className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Proxima
-              </button>
-            </section>
-          ) : null}
         </div>
       </main>
     </div>
   );
 };
+
+/* ────────────────────────────────────────────────────── sub-components ── */
 
 const StatusBadge = ({
   status,
@@ -659,39 +958,127 @@ const StatusBadge = ({
 
   const tone =
     normalized === "ok"
-      ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
       : normalized === "degraded"
-      ? "border-amber-300 bg-amber-100 text-amber-700"
-      : "border-red-300 bg-red-100 text-red-700";
+      ? "border-amber-200 bg-amber-50 text-amber-700"
+      : "border-red-200 bg-red-50 text-red-700";
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-semibold ${tone}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-[11px] font-semibold ${tone}`}
+    >
       <ShieldCheck className="h-3.5 w-3.5" />
       {loading ? "Validando API..." : label}
     </span>
   );
 };
 
-const RankingRow = ({ node, rank }: { node: TopGastadorEmenda; rank: number }) => {
+const HomeBriefCard = ({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+}) => (
+  <div className="rounded-2xl border border-border bg-muted/30 p-4">
+    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+      {label}
+    </p>
+    <p className="mt-2 text-sm font-bold text-foreground">{value}</p>
+    <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">{helper}</p>
+  </div>
+);
+
+const RankingRow = ({
+  node,
+  rank,
+  canOpenProfile,
+  openingProfile,
+  onOpenProfile,
+}: {
+  node: TopGastadorEmenda;
+  rank: number;
+  canOpenProfile: boolean;
+  openingProfile?: boolean;
+  onOpenProfile: () => void;
+}) => {
   const Icon = rank <= 3 ? rankIcons[rank - 1] : null;
 
   return (
-    <article className="group rounded-2xl border border-border/80 bg-card/80 p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-soft text-primary">
-          {Icon ? <Icon className="h-4.5 w-4.5" /> : <span className="text-xs font-bold">#{rank}</span>}
+    <article className="rounded-2xl border border-border bg-background px-4 py-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+          {Icon ? <Icon className="h-4 w-4 text-primary" /> : (
+            <span className="text-[11px] font-bold">#{rank}</span>
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold uppercase tracking-wide text-foreground">
-            {node.nomeAutorEmenda}
-          </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{node.totalEmendas ?? 0} emendas registradas</p>
+          {canOpenProfile ? (
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              disabled={openingProfile}
+              className="inline-flex max-w-full items-center gap-1.5 text-left text-sm font-bold text-foreground transition-colors hover:text-primary disabled:cursor-wait disabled:opacity-60"
+            >
+              <span className="truncate">{node.nomeAutorEmenda}</span>
+              <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-primary" />
+            </button>
+          ) : (
+            <p className="truncate text-sm font-bold text-foreground">
+              {node.nomeAutorEmenda}
+            </p>
+          )}
+
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+              {formatCountCompact(node.totalEmendas ?? 0)} emendas
+            </span>
+            {canOpenProfile ? (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                {openingProfile ? "Abrindo..." : "Perfil disponivel"}
+              </span>
+            ) : (
+              <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+                Sem perfil
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="text-right">
-          <p className="text-sm font-extrabold text-primary">{formatCents(node.totalPagoCents)}</p>
-          <p className="text-[10px] text-muted-foreground">total pago</p>
+        {/* Pago — destaque principal, direita */}
+        <div className="shrink-0 text-right">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Pago
+          </p>
+          <p className="mt-0.5 text-lg font-bold leading-none tracking-tight text-primary">
+            {formatCentsCompact(node.totalPagoCents)}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {formatCents(node.totalPagoCents)}
+          </p>
+        </div>
+      </div>
+
+      {/* Empenhado / Liquidado — secundários, discretos */}
+      <div className="mt-3 flex flex-wrap gap-4 border-t border-border/60 pt-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Empenhado
+          </p>
+          <p className="mt-0.5 text-xs font-semibold text-foreground/70">
+            {formatCentsCompact(node.totalEmpenhadoCents)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Liquidado
+          </p>
+          <p className="mt-0.5 text-xs font-semibold text-foreground/70">
+            {formatCentsCompact(node.totalLiquidadoCents)}
+          </p>
         </div>
       </div>
     </article>
@@ -699,23 +1086,27 @@ const RankingRow = ({ node, rank }: { node: TopGastadorEmenda; rank: number }) =
 };
 
 const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
-  <article className="group rounded-2xl border border-border/70 bg-card/80 p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
+  <article className="group rounded-2xl border border-border bg-card p-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20">
     <div className="flex items-center gap-3">
       {politico.fotoUrl ? (
-        <img src={politico.fotoUrl} alt={politico.nomeCanonico} className="h-12 w-12 rounded-xl object-cover" />
+        <img
+          src={politico.fotoUrl}
+          alt={politico.nomeCanonico}
+          className="h-11 w-11 rounded-xl object-cover"
+        />
       ) : (
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted">
           <Users className="h-5 w-5 text-muted-foreground" />
         </div>
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold uppercase tracking-wide text-foreground group-hover:text-primary">
+        <p className="truncate text-sm font-bold text-foreground transition-colors group-hover:text-primary">
           {politico.nomeCompleto || politico.nomeCanonico}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
           {politico.partido ? (
-            <span className="rounded-full bg-primary/15 px-2 py-0.5 font-semibold text-primary">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">
               {politico.partido}
             </span>
           ) : null}
@@ -725,7 +1116,7 @@ const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
             </span>
           ) : null}
           {politico.cargoAtual ? (
-            <span className="rounded-full bg-accent/10 px-2 py-0.5 font-semibold text-accent">
+            <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
               {politico.cargoAtual}
             </span>
           ) : null}
@@ -735,13 +1126,158 @@ const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
   </article>
 );
 
+const FeaturedPoliticoImage = ({
+  nome,
+  imageCandidates,
+  className,
+}: {
+  nome: string;
+  imageCandidates: string[];
+  className: string;
+}) => {
+  const [imageIndex, setImageIndex] = useState(0);
+  const safeIndex = Math.min(imageIndex, Math.max(imageCandidates.length - 1, 0));
+  const imageUrl = imageCandidates[safeIndex] || buildAvatarUrl(nome);
+
+  return (
+    <img
+      src={imageUrl}
+      alt={nome}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() =>
+        setImageIndex((current) =>
+          current < imageCandidates.length - 1 ? current + 1 : current
+        )
+      }
+      className={className}
+    />
+  );
+};
+
+const FeaturedPoliticoLeadCard = ({
+  nome,
+  imageCandidates,
+  onClick,
+}: {
+  nome: string;
+  imageCandidates: string[];
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className="group relative flex min-h-[172px] flex-col justify-between overflow-hidden rounded-2xl border border-border bg-background px-5 py-5 text-left transition-all duration-150 hover:border-primary/30 hover:bg-muted/20 sm:px-6 sm:py-6"
+  >
+    <div className="relative flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <p className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <Crown className="h-3 w-3 text-primary" />
+          Perfil mais acessado
+        </p>
+        <h3 className="mt-4 max-w-[18ch] text-xl font-bold leading-tight text-foreground">
+          {nome}
+        </h3>
+        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+          Abra o perfil completo para acompanhar viagens, emendas e o dossie consolidado.
+        </p>
+      </div>
+
+      <FeaturedPoliticoImage
+        nome={nome}
+        imageCandidates={imageCandidates}
+        className="h-20 w-20 flex-shrink-0 rounded-2xl border border-border object-cover sm:h-24 sm:w-24"
+      />
+    </div>
+
+    <div className="relative mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
+      <p className="text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground">Top buscas</span> da home neste momento
+      </p>
+      <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold text-primary">
+        Abrir perfil
+        <ArrowUpRight className="h-3 w-3" />
+      </span>
+    </div>
+  </button>
+);
+
+const FeaturedPoliticoCard = ({
+  nome,
+  imageCandidates,
+  onClick,
+}: {
+  nome: string;
+  imageCandidates: string[];
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className="group flex min-w-[220px] snap-start items-center gap-3 rounded-2xl border border-border bg-background px-3.5 py-3 text-left transition-all duration-150 hover:border-primary/30 hover:bg-muted/20 sm:min-w-[240px] lg:min-w-0"
+  >
+    <FeaturedPoliticoImage
+      nome={nome}
+      imageCandidates={imageCandidates}
+      className="h-12 w-12 flex-shrink-0 rounded-xl border border-border object-cover"
+    />
+    <div className="min-w-0 flex-1">
+      <p className="truncate text-xs font-bold text-foreground">{nome}</p>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">Abrir perfil</p>
+    </div>
+    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+      <ArrowUpRight className="h-3.5 w-3.5" />
+    </div>
+  </button>
+);
+
+/* ─────────────────────────────────────────────────────── pure helpers ── */
+
 function shortName(value?: string): string {
   if (!value) return "-";
-  return value
-    .split(" ")
-    .slice(0, 2)
-    .join(" ")
-    .slice(0, 18);
+  return value.split(" ").slice(0, 2).join(" ").slice(0, 18);
+}
+
+function compactTipoLabel(value?: string): string {
+  if (!value) return "Nao informado";
+  return value.replace(/\bEmenda\b/gi, "").replace(/\s+/g, " ").trim().slice(0, 34) || value;
+}
+
+function normalizeComparableName(value?: string): string {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function slugifyComparable(value?: string): string {
+  return normalizeComparableName(value).replace(/\s+/g, "-");
+}
+
+function canOpenPoliticoProfile(node?: TopGastadorEmenda): boolean {
+  const name = node?.nomeAutorEmenda?.trim();
+  return Boolean(name && !isBancadaNome(name) && normalizeComparableName(name).length >= 5);
+}
+
+function selectPoliticoMatch(nodes: PoliticoResumo[], authorName: string): PoliticoResumo | undefined {
+  const normalizedAuthor = normalizeComparableName(authorName);
+  const authorSlug = slugifyComparable(authorName);
+
+  const exactMatch = nodes.find((node) => {
+    const normalizedFullName = normalizeComparableName(node.nomeCompleto);
+    const normalizedCanonico = normalizeComparableName((node.nomeCanonico || "").replace(/-/g, " "));
+    const slug = slugifyComparable(node.nomeCanonico || node.nomeCompleto || node.id);
+
+    return (
+      normalizedFullName === normalizedAuthor ||
+      normalizedCanonico === normalizedAuthor ||
+      slug === authorSlug
+    );
+  });
+
+  if (exactMatch) return exactMatch;
+  if (nodes.length === 1) return nodes[0];
+  return undefined;
 }
 
 function buildAvatarUrl(value: string): string {
@@ -750,5 +1286,10 @@ function buildAvatarUrl(value: string): string {
   )}&background=e6f7f7&color=0f766e&size=128&format=png`;
 }
 
-export default Index;
+function buildImageCandidates(...values: Array<string | undefined>) {
+  return values.filter(
+    (value, index, array): value is string => Boolean(value) && array.indexOf(value) === index
+  );
+}
 
+export default Index;

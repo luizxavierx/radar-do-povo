@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { graphqlRequest, checkApiHealth } from "@/api/graphqlClient";
+import { restRequest } from "@/api/restClient";
+import { fetchPoliticoNews } from "@/services/newsService";
 import {
   FEATURED_POLITICOS_QUERY,
   HEALTH_QUERY,
   POLITICO_BASICO_QUERY,
-  POLITICO_DOSSIE_COMPLETO_QUERY,
   POLITICO_PERFIL_EXTERNO_QUERY,
   POLITICOS_LIST_QUERY,
 } from "@/api/queries";
@@ -128,21 +129,55 @@ export function usePoliticoDetalhe(idOrNome?: { id?: string; nomeCanonico?: stri
   });
 }
 
+export interface PoliticoDossieQueryOptions {
+  anoInicio?: number;
+  anoFim?: number;
+  viagensLimit?: number;
+  viagensOffset?: number;
+  emendasLimit?: number;
+  emendasOffset?: number;
+  lexmlLimit?: number;
+  lexmlOffset?: number;
+  passagensLimit?: number;
+  pagamentosLimit?: number;
+  trechosLimit?: number;
+  conveniosLimit?: number;
+  favorecidosLimit?: number;
+}
+
 export function usePoliticoDossieCompleto(
   nome?: string,
-  anoInicio = 2019,
-  anoFim = 2026
+  options: PoliticoDossieQueryOptions = {}
 ) {
   const search = (nome || "").trim();
+  const normalized = {
+    anoInicio: options.anoInicio ?? 2019,
+    anoFim: options.anoFim ?? new Date().getFullYear(),
+    viagensLimit: options.viagensLimit ?? 20,
+    viagensOffset: options.viagensOffset ?? 0,
+    emendasLimit: options.emendasLimit ?? 20,
+    emendasOffset: options.emendasOffset ?? 0,
+    lexmlLimit: options.lexmlLimit ?? 10,
+    lexmlOffset: options.lexmlOffset ?? 0,
+    passagensLimit: options.passagensLimit ?? 12,
+    pagamentosLimit: options.pagamentosLimit ?? 12,
+    trechosLimit: options.trechosLimit ?? 12,
+    conveniosLimit: options.conveniosLimit ?? 12,
+    favorecidosLimit: options.favorecidosLimit ?? 12,
+  };
 
   return useQuery({
-    queryKey: ["politico-dossie-completo", search, anoInicio, anoFim],
+    queryKey: ["politico-dossie-completo", search, normalized],
     queryFn: ({ signal }) =>
-      graphqlRequest<{ politicos: Connection<PoliticoDossieCompleto> }>(
-        POLITICO_DOSSIE_COMPLETO_QUERY,
-        { nome: search, anoInicio, anoFim },
-        { signal, timeoutMs: 20_000 }
-      ).then((d) => d.politicos.nodes[0]),
+      restRequest<PoliticoDossieCompleto>(
+        `/api/politicos/${encodeURIComponent(search)}/dossie`,
+        {
+          params: normalized,
+          signal,
+          timeoutMs: 20_000,
+          retries: 0,
+        }
+      ),
     enabled: Boolean(search),
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
@@ -193,6 +228,18 @@ export function useFeaturedPoliticos() {
         }))
       ),
     staleTime: 15 * 60_000,
+    gcTime: QUERY_GC_TIME,
+  });
+}
+
+export function usePoliticoNoticias(nome?: string, limit = 6) {
+  const search = (nome || "").trim();
+
+  return useQuery({
+    queryKey: ["politico-noticias", search, limit],
+    queryFn: ({ signal }) => fetchPoliticoNews(search, signal, limit),
+    enabled: Boolean(search),
+    staleTime: 10 * 60_000,
     gcTime: QUERY_GC_TIME,
   });
 }
