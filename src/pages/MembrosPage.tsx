@@ -14,18 +14,18 @@ import { Link } from "react-router-dom";
 
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
-import { MEMBER_PLAN, PUSHINPAY_NOTICE } from "@/lib/members";
+import { MEMBER_PIX_EXPIRATION_MINUTES, MEMBER_PLAN, PUSHINPAY_NOTICE } from "@/lib/members";
 
 const heroHighlights = [
   {
     icon: LockKeyhole,
     title: "Login e conta",
-    description: "Acesso com Google e sessao centralizada no portal de membros.",
+    description: "Acesso com Google, callback server-side e sessao centralizada no portal.",
   },
   {
     icon: CreditCard,
     title: "Assinatura mensal",
-    description: "Checkout PIX com confirmacao refletida direto no painel.",
+    description: `Checkout PIX com ${MEMBER_PIX_EXPIRATION_MINUTES} minutos de validade e confirmacao refletida no painel.`,
   },
   {
     icon: KeyRound,
@@ -64,7 +64,7 @@ const journeySteps = [
   {
     step: "02",
     title: "Ativar via PIX",
-    description: "O checkout mensal e gerado no painel com QR Code e codigo copia e cola.",
+    description: `O checkout mensal e gerado no painel com QR Code, copia e cola e validade de ${MEMBER_PIX_EXPIRATION_MINUTES} minutos.`,
   },
   {
     step: "03",
@@ -77,7 +77,7 @@ const planIncludes = [
   "Ate 5.000 requisicoes por mes por conta.",
   "Limite tecnico inicial de 1 requisicao por segundo.",
   "Acesso aos endpoints de noticias, dossie, viagens e rankings.",
-  "Portal para checkout, renovacao, documentacao e emissao da chave.",
+  `Portal para checkout, renovacao, documentacao e emissao da chave, com PIX de ${MEMBER_PIX_EXPIRATION_MINUTES} minutos.`,
 ];
 
 const saasSignals = [

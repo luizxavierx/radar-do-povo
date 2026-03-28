@@ -1,6 +1,5 @@
 import {
   MEMBER_PORTAL_BASE_URL,
-  MEMBER_STORAGE_KEYS,
   type MemberPixCharge,
   type MemberPortalAccount,
   type MemberPortalRotateKeyResponse,
@@ -12,42 +11,6 @@ type ErrorPayload = {
 };
 
 const NORMALIZED_MEMBER_PORTAL_BASE_URL = MEMBER_PORTAL_BASE_URL.replace(/\/+$/, "");
-
-function readFromStorage(key: string): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    return window.sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeToStorage(key: string, value: string) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.sessionStorage.setItem(key, value);
-}
-
-export function getStoredPortalToken() {
-  return readFromStorage(MEMBER_STORAGE_KEYS.portalToken);
-}
-
-export function storePortalToken(token: string) {
-  writeToStorage(MEMBER_STORAGE_KEYS.portalToken, token);
-}
-
-export function clearStoredPortalToken() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.sessionStorage.removeItem(MEMBER_STORAGE_KEYS.portalToken);
-}
 
 export function buildGoogleAuthRedirectUrl(returnTo = "/membros/dashboard"): string {
   const normalizedReturnTo =
@@ -66,20 +29,12 @@ async function parseJson<T>(response: Response): Promise<T | null> {
   }
 }
 
-async function memberPortalRequest<T>(
-  path: string,
-  init: RequestInit = {},
-  token = getStoredPortalToken()
-): Promise<T> {
+async function memberPortalRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
 
   if (init.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
-  }
-
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
   }
 
   let response: Response;
@@ -108,13 +63,7 @@ export async function fetchMemberAccount(): Promise<MemberPortalAccount> {
 }
 
 export async function logoutMember(): Promise<void> {
-  const token = getStoredPortalToken();
-
-  try {
-    await memberPortalRequest<{ ok: boolean }>("/auth/logout", { method: "POST" }, token);
-  } finally {
-    clearStoredPortalToken();
-  }
+  await memberPortalRequest<{ ok: boolean }>("/auth/logout", { method: "POST" });
 }
 
 export async function createPixCharge(): Promise<MemberPixCharge> {

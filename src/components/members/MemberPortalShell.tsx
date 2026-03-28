@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import {
+  ArrowRight,
   BookKey,
   CreditCard,
   LayoutDashboard,
@@ -39,6 +40,7 @@ const MemberPortalShell = ({
   const location = useLocation();
   const { account, loading, signOut, refreshAccount } = useMemberSession();
   const statusMeta = account ? getMemberStatusMeta(account.membership.status) : null;
+  const journey = account?.journey;
   const periodLabel =
     account?.membership.currentPeriodEndsAt
       ? new Date(account.membership.currentPeriodEndsAt).toLocaleDateString("pt-BR")
@@ -138,22 +140,65 @@ const MemberPortalShell = ({
                         </div>
                       ) : null}
 
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-[20px] border border-white/10 bg-white/5 px-4 py-3">
+                      {journey ? (
+                        <div className="mt-4 rounded-[22px] border border-white/10 bg-white/5 p-4">
                           <p className="text-[11px] uppercase tracking-[0.16em] text-slate-300">
-                            Ciclo atual
+                            Etapa atual
                           </p>
-                          <p className="mt-2 text-sm font-semibold">{periodLabel}</p>
+                          <p className="mt-2 text-sm font-semibold text-white">{journey.title}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-300">
+                            {journey.description}
+                          </p>
+
+                          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                            <div className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-3">
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-300">
+                                Ciclo atual
+                              </p>
+                              <p className="mt-2 text-sm font-semibold">{periodLabel}</p>
+                            </div>
+                            <div className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-3">
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-300">
+                                Conta
+                              </p>
+                              <p className="mt-2 text-sm font-semibold capitalize">
+                                {account.user.status}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {journey.steps.map((step, index) => (
+                              <span
+                                key={step.key}
+                                className={cn(
+                                  "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold",
+                                  step.complete
+                                    ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+                                    : step.current
+                                      ? "border-amber-400/30 bg-amber-400/10 text-amber-200"
+                                      : "border-white/10 bg-white/5 text-slate-300"
+                                )}
+                              >
+                                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[10px]">
+                                  {index + 1}
+                                </span>
+                                {step.label}
+                              </span>
+                            ))}
+                          </div>
+
+                          <Button
+                            asChild
+                            className="mt-4 h-11 w-full rounded-2xl bg-white text-slate-950 hover:bg-slate-100"
+                          >
+                            <Link to={journey.primaryAction.href}>
+                              {journey.primaryAction.label}
+                              <ArrowRight className="h-4 w-4" />
+                            </Link>
+                          </Button>
                         </div>
-                        <div className="rounded-[20px] border border-white/10 bg-white/5 px-4 py-3">
-                          <p className="text-[11px] uppercase tracking-[0.16em] text-slate-300">
-                            Conta
-                          </p>
-                          <p className="mt-2 text-sm font-semibold capitalize">
-                            {account.user.status}
-                          </p>
-                        </div>
-                      </div>
+                      ) : null}
 
                       <div className="mt-4 grid gap-2 sm:grid-cols-2">
                         <Button

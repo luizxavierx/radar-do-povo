@@ -14,7 +14,6 @@ import type {
 } from "@/lib/members";
 import {
   buildGoogleAuthRedirectUrl,
-  clearStoredPortalToken,
   createPixCharge,
   fetchMemberAccount,
   logoutMember,
@@ -49,7 +48,6 @@ export const MemberSessionProvider = ({ children }: { children: ReactNode }) => 
         setAccount(response);
       })
       .catch(() => {
-        clearStoredPortalToken();
         setAccount(null);
       })
       .finally(() => {
@@ -65,7 +63,6 @@ export const MemberSessionProvider = ({ children }: { children: ReactNode }) => 
       lastIssuedApiKey,
       startGoogleSignIn: (returnTo = "/membros/dashboard") => {
         setLoading(true);
-        clearStoredPortalToken();
         window.location.assign(buildGoogleAuthRedirectUrl(returnTo));
       },
       signOut: async () => {
@@ -85,7 +82,6 @@ export const MemberSessionProvider = ({ children }: { children: ReactNode }) => 
           setAccount(response);
           return response;
         } catch (error) {
-          clearStoredPortalToken();
           setAccount(null);
           throw error;
         } finally {

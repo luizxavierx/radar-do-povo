@@ -4,13 +4,14 @@ import MemberPortalShell from "@/components/members/MemberPortalShell";
 import {
   DEFAULT_MEMBER_PLAN,
   MEMBER_API_BASE_URL,
+  MEMBER_PIX_EXPIRATION_MINUTES,
   MEMBER_PORTAL_BASE_URL,
   PUSHINPAY_NOTICE,
 } from "@/lib/members";
 
 const quickstartSteps = [
   "Entre no portal com sua conta Google.",
-  "Ative a assinatura mensal pelo checkout PIX.",
+  "Ative a assinatura mensal pelo checkout PIX emitido no portal.",
   "Gere a chave da API no dashboard e use o header X-Api-Key.",
 ];
 
@@ -52,6 +53,7 @@ const portalEndpoints = [
   "GET /auth/google/redirect",
   "GET /auth/google/callback",
   "GET /me",
+  "POST /auth/logout",
   "POST /billing/pix",
   "GET /billing/pix/current",
   "POST /api-key/rotate",
@@ -72,6 +74,9 @@ const pixResponseFields = [
   "status: estado atual da transacao, como created, paid ou expired.",
   "value: valor da cobranca em centavos.",
   "qrCodeBase64: imagem do QR Code pronta para exibicao.",
+  "expiresAt: data limite da cobranca emitida no portal.",
+  "expiresInSeconds: contador estimado restante para expiracao.",
+  "isExpired: leitura consolidada para o frontend tratar expiracao.",
   "webhookUrl: URL configurada para receber atualizacoes da cobranca.",
 ];
 
@@ -80,7 +85,7 @@ const MembrosDocsPage = () => {
     <MemberPortalShell
       eyebrow="Docs oficiais"
       title="Documentacao da API para membros pagos"
-      intro="Aqui fica o contrato operacional da area de membros: acesso ao portal, ativacao por PIX, geracao da chave e leitura dos endpoints liberados."
+      intro="Aqui fica o contrato operacional da area de membros: acesso ao portal, checkout PIX com expiracao curta, geracao da chave e leitura dos endpoints liberados."
     >
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <article className="rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
@@ -148,7 +153,8 @@ const MembrosDocsPage = () => {
               <p className="font-semibold text-foreground">Leitura operacional</p>
               <p className="mt-2">
                 A camada de membros reutiliza os services do backend principal e expoe um contrato
-                mais enxuto para clientes pagantes, sem alterar a API interna do site.
+                mais enxuto para clientes pagantes, sem alterar a API interna do site e sem expor
+                segredos de billing ao navegador.
               </p>
             </div>
           </div>
@@ -199,9 +205,19 @@ const MembrosDocsPage = () => {
           <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
             <p className="text-sm font-semibold text-foreground">Fluxo de ativacao</p>
             <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-              <li>O portal cria o checkout PIX pelo backend.</li>
+              <li>O portal cria o checkout PIX pelo backend e abre uma janela curta de pagamento.</li>
+              <li>O PIX emitido tem validade operacional de {MEMBER_PIX_EXPIRATION_MINUTES} minutos.</li>
               <li>O pagamento confirmado atualiza a cobranca e libera o plano.</li>
               <li>Com a conta ativa, o membro pode gerar a chave unica da API.</li>
+            </ul>
+          </div>
+
+          <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
+            <p className="text-sm font-semibold text-foreground">Seguranca do portal</p>
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+              <li>O login usa callback server-side e sessao por cookie seguro.</li>
+              <li>O frontend nao recebe token secreto da PushinPay.</li>
+              <li>Webhook e rotas sensiveis passam por protecao adicional no backend.</li>
             </ul>
           </div>
 

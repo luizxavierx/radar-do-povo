@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   Copy,
@@ -13,22 +13,29 @@ import { toast } from "sonner";
 import MemberPortalShell from "@/components/members/MemberPortalShell";
 import { Button } from "@/components/ui/button";
 import { useMemberSession } from "@/contexts/MemberSessionContext";
-import { getMemberChargeStatusMeta, PUSHINPAY_NOTICE } from "@/lib/members";
-
-const checkoutSteps = [
-  "Gere ou atualize o PIX pelo portal.",
-  "Pague pelo QR Code ou copia e cola no app do banco.",
-  "Aguarde a confirmacao para liberar ou renovar o acesso.",
-];
+import {
+  formatMemberDateTime,
+  formatPixCountdown,
+  getMemberChargeStatusMeta,
+  MEMBER_PIX_EXPIRATION_MINUTES,
+  PUSHINPAY_NOTICE,
+} from "@/lib/members";
 
 const MembrosCheckoutPage = () => {
   const { account, createCheckoutPix, refreshAccount, loading } = useMemberSession();
   const latestCharge = account?.latestCharge ?? null;
   const membership = account?.membership ?? null;
-  const chargeMeta = getMemberChargeStatusMeta(latestCharge?.status);
+  const journey = account?.journey ?? null;
+  const effectiveChargeStatus = latestCharge?.isExpired ? "expired" : latestCharge?.status;
+  const chargeMeta = getMemberChargeStatusMeta(effectiveChargeStatus);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(latestCharge?.expiresInSeconds ?? null);
 
   useEffect(() => {
-    if (latestCharge?.status !== "created") {
+    setSecondsLeft(latestCharge?.expiresInSeconds ?? null);
+  }, [latestCharge?.expiresInSeconds, latestCharge?.id]);
+
+  useEffect(() => {
+    if (effectiveChargeStatus !== "created") {
       return;
     }
 
@@ -37,20 +44,46 @@ const MembrosCheckoutPage = () => {
     }, 15000);
 
     return () => window.clearInterval(interval);
-  }, [latestCharge?.status, refreshAccount]);
+  }, [effectiveChargeStatus, refreshAccount]);
+
+  useEffect(() => {
+    if (effectiveChargeStatus !== "created" || !secondsLeft || secondsLeft <= 0) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setSecondsLeft((current) => (current && current > 0 ? current - 1 : 0));
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [effectiveChargeStatus, latestCharge?.id, secondsLeft]);
+
+  useEffect(() => {
+    if (effectiveChargeStatus === "created" && secondsLeft === 0) {
+      void refreshAccount().catch(() => undefined);
+    }
+  }, [effectiveChargeStatus, refreshAccount, secondsLeft]);
 
   const checkoutLabel = useMemo(() => {
+    if (effectiveChargeStatus === "created") {
+      return "Atualizar estado do PIX";
+    }
+
+    if (effectiveChargeStatus === "expired") {
+      return "Gerar novo PIX";
+    }
+
     if (membership?.status === "active") {
-      return "Gerar novo PIX mensal";
+      return "Emitir PIX de renovacao";
     }
 
     return `Gerar PIX de ${membership?.priceLabel ?? "R$ 15/mensal"}`;
-  }, [membership?.priceLabel, membership?.status]);
+  }, [effectiveChargeStatus, membership?.priceLabel, membership?.status]);
 
   const handleGeneratePix = async () => {
     try {
       const charge = await createCheckoutPix();
-      toast.success(`PIX ${charge.status === "created" ? "gerado" : "atualizado"} com sucesso.`);
+      toast.success(`PIX ${charge.status === "created" ? "disponivel" : "atualizado"} com sucesso.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel gerar o PIX.");
     }
@@ -69,7 +102,7 @@ const MembrosCheckoutPage = () => {
     }
   };
 
-  if (!account || !membership) {
+  if (!account || !membership || !journey) {
     return null;
   }
 
@@ -77,7 +110,7 @@ const MembrosCheckoutPage = () => {
     <MemberPortalShell
       eyebrow="Checkout PIX"
       title="Ative ou renove sua assinatura mensal"
-      intro="O checkout foi reorganizado para mostrar apenas o que o membro precisa acompanhar: valor do plano, estado da cobranca e o proximo passo para liberar a conta."
+      intro="O checkout agora segue uma leitura de SaaS: estado da cobranca, validade do PIX, referencia do pagamento e o proximo passo da conta no mesmo painel."
     >
       <section className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
         <article className="rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
@@ -90,39 +123,56 @@ const MembrosCheckoutPage = () => {
           </p>
           <h2 className="mt-3 text-3xl font-extrabold text-foreground">{membership.priceLabel}</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Use esta tela para emitir o PIX do plano e acompanhar a confirmacao do pagamento sem
-            sair do portal.
+            O PIX e emitido no backend e refletido aqui com validade curta, para que o membro
+            acompanhe um checkout limpo e previsivel.
           </p>
 
           <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
-            <p className="text-sm font-semibold text-foreground">Status do checkout</p>
-            <div
-              className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${chargeMeta.badgeClassName}`}
-            >
-              {chargeMeta.label}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Status do checkout</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{chargeMeta.description}</p>
+              </div>
+
+              <div
+                className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${chargeMeta.badgeClassName}`}
+              >
+                {chargeMeta.label}
+              </div>
             </div>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">{chargeMeta.description}</p>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="rounded-[20px] border border-border/70 bg-white px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Validade padrao
+                </p>
+                <p className="mt-2 text-sm font-semibold text-foreground">
+                  {MEMBER_PIX_EXPIRATION_MINUTES} minutos por cobranca
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-border/70 bg-white px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Etapa atual
+                </p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{journey.title}</p>
+              </div>
+            </div>
           </div>
 
           <div className="mt-5 rounded-[24px] border border-slate-900/10 bg-slate-950 p-4 text-slate-50">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
-              Billing do membro
+              Como esse fluxo opera
             </p>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
-              O portal centraliza a emissao do PIX e a leitura do status para que a ativacao do
-              plano aconteca no mesmo fluxo da conta.
-            </p>
-          </div>
-
-          <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
-            <p className="text-sm font-semibold text-foreground">Passo a passo</p>
-            <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
-              {checkoutSteps.map((step, index) => (
-                <li key={step} className="flex items-start gap-3">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+            <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
+              {journey.steps.map((step, index) => (
+                <li key={step.key} className="flex items-start gap-3">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
                     {index + 1}
                   </span>
-                  <span>{step}</span>
+                  <div>
+                    <p className="font-semibold text-white">{step.label}</p>
+                    <p>{step.description}</p>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -135,11 +185,11 @@ const MembrosCheckoutPage = () => {
               <p className="mt-1 text-xs">{membership.priceCents} centavos.</p>
             </div>
             <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-              <p className="font-semibold text-foreground">Ciclo da conta</p>
+              <p className="font-semibold text-foreground">Ciclo atual</p>
               <p className="mt-2">
                 {membership.currentPeriodEndsAt
-                  ? new Date(membership.currentPeriodEndsAt).toLocaleString("pt-BR")
-                  : "Aguardando confirmacao do primeiro pagamento."}
+                  ? formatMemberDateTime(membership.currentPeriodEndsAt)
+                  : "Aguardando confirmacao do pagamento."}
               </p>
             </div>
           </div>
@@ -202,6 +252,26 @@ const MembrosCheckoutPage = () => {
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {chargeMeta.label}
                 </div>
+
+                <div className="mt-4 rounded-[20px] border border-border/70 bg-background/85 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Janela do PIX
+                  </p>
+                  <p className="mt-2 text-lg font-bold text-foreground">
+                    {effectiveChargeStatus === "created"
+                      ? formatPixCountdown(secondsLeft)
+                      : effectiveChargeStatus === "paid"
+                        ? "Confirmado"
+                        : "Encerrado"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {effectiveChargeStatus === "created"
+                      ? "Tempo restante estimado para pagamento."
+                      : latestCharge.expiresAt
+                        ? `Referencia: ${formatMemberDateTime(latestCharge.expiresAt)}`
+                        : "Sem cronometro ativo."}
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -238,23 +308,36 @@ const MembrosCheckoutPage = () => {
 
                   <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
                     <p className="font-semibold text-foreground">Ultima atualizacao</p>
+                    <p className="mt-2">{formatMemberDateTime(latestCharge.updatedAt)}</p>
+                    <p className="mt-1 text-xs">Estado mais recente salvo pelo portal.</p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+                    <p className="font-semibold text-foreground">Emitido em</p>
+                    <p className="mt-2">{formatMemberDateTime(latestCharge.createdAt)}</p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
+                    <p className="font-semibold text-foreground">Expira em</p>
                     <p className="mt-2">
-                      {latestCharge.updatedAt
-                        ? new Date(latestCharge.updatedAt).toLocaleString("pt-BR")
-                        : "Sem atualizacao registrada."}
+                      {latestCharge.expiresAt
+                        ? formatMemberDateTime(latestCharge.expiresAt)
+                        : "Sem prazo registrado"}
                     </p>
-                    <p className="mt-1 text-xs">O portal consulta o estado salvo mais recente.</p>
                   </div>
                 </div>
 
-                {latestCharge.status === "paid" ? (
+                {effectiveChargeStatus === "paid" ? (
                   <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-                    Pagamento confirmado. O proximo passo e voltar ao dashboard para gerar ou
-                    renovar sua chave da API.
+                    Pagamento confirmado. Volte ao dashboard para emitir ou renovar a chave da API.
+                  </div>
+                ) : effectiveChargeStatus === "expired" ? (
+                  <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900">
+                    Essa cobranca encerrou a janela de pagamento. Gere um novo PIX para continuar.
                   </div>
                 ) : (
                   <div className="rounded-[24px] border border-border/70 bg-background/85 p-4 text-sm leading-6 text-muted-foreground">
-                    Enquanto a cobranca estiver em <strong>{latestCharge.status}</strong>, o portal
+                    Enquanto o status seguir como <strong>{effectiveChargeStatus}</strong>, o portal
                     continua aguardando a confirmacao do pagamento para liberar o acesso.
                   </div>
                 )}
@@ -265,7 +348,7 @@ const MembrosCheckoutPage = () => {
               <QrCode className="mx-auto h-10 w-10 text-primary" />
               <h2 className="mt-4 text-xl font-bold text-foreground">Nenhum PIX gerado ainda</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Gere a primeira cobranca para exibir QR Code, codigo copia e cola e estado do
+                Gere a primeira cobranca para exibir QR Code, copia e cola, validade e estado do
                 checkout mensal.
               </p>
             </div>

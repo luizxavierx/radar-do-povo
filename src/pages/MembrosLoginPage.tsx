@@ -7,11 +7,11 @@ import AppSidebar from "@/components/AppSidebar";
 import GoogleSignInButton from "@/components/members/GoogleSignInButton";
 import { Button } from "@/components/ui/button";
 import { useMemberSession } from "@/contexts/MemberSessionContext";
-import { DEFAULT_MEMBER_PLAN } from "@/lib/members";
+import { DEFAULT_MEMBER_PLAN, MEMBER_PIX_EXPIRATION_MINUTES } from "@/lib/members";
 
 const accessSteps = [
   "Entrar com a conta Google que vai administrar o acesso.",
-  "Gerar o checkout PIX do plano mensal dentro do portal.",
+  `Gerar o checkout PIX do plano mensal dentro do portal, com validade de ${MEMBER_PIX_EXPIRATION_MINUTES} minutos.`,
   "Ativar a conta e emitir sua chave individual da API.",
 ];
 
@@ -24,7 +24,7 @@ const loginBenefits = [
   {
     icon: CreditCard,
     title: "Billing no mesmo fluxo",
-    description: "Checkout, pagamento e liberacao do plano ficam no painel.",
+    description: "Checkout, pagamento e liberacao do plano ficam no painel, com PIX de curta validade.",
   },
   {
     icon: KeyRound,
@@ -114,6 +114,9 @@ const MembrosLoginPage = () => {
                 <div className="rounded-full border border-border/70 bg-background/85 px-4 py-2 text-sm font-medium text-foreground">
                   Ate {DEFAULT_MEMBER_PLAN.monthlyRequestLimit.toLocaleString("pt-BR")} requests por mes
                 </div>
+                <div className="rounded-full border border-border/70 bg-background/85 px-4 py-2 text-sm font-medium text-foreground">
+                  PIX valido por {MEMBER_PIX_EXPIRATION_MINUTES} minutos
+                </div>
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -186,7 +189,8 @@ const MembrosLoginPage = () => {
                     </div>
                     <p className="mt-3 text-sm font-semibold">Checkout no painel</p>
                     <p className="mt-2 text-sm leading-6 text-slate-300">
-                      Assim que entrar, voce acompanha assinatura, PIX e liberacao da chave.
+                      Assim que entrar, voce acompanha assinatura, PIX, validade da cobranca e
+                      liberacao da chave.
                     </p>
                   </div>
                 </div>

@@ -34,6 +34,28 @@ export type MemberPortalUsage = {
   remaining: number;
 };
 
+export type MemberPortalJourneyAction = {
+  label: string;
+  href: string;
+  kind: "checkout" | "payment" | "api_key" | "docs";
+};
+
+export type MemberPortalJourneyStep = {
+  key: "identity" | "checkout" | "payment" | "api_key";
+  label: string;
+  description: string;
+  complete: boolean;
+  current: boolean;
+};
+
+export type MemberPortalJourney = {
+  currentStep: "checkout" | "payment" | "api_key" | "ready";
+  title: string;
+  description: string;
+  primaryAction: MemberPortalJourneyAction;
+  steps: MemberPortalJourneyStep[];
+};
+
 export type MemberPortalApiKey = {
   exists: boolean;
   prefix?: string | null;
@@ -54,6 +76,9 @@ export type MemberPixCharge = {
   payerEmail?: string | null;
   payerNationalRegistration?: string | null;
   paidAt?: string | null;
+  expiresAt?: string | null;
+  expiresInSeconds?: number | null;
+  isExpired?: boolean;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -62,14 +87,9 @@ export type MemberPortalAccount = {
   user: MemberPortalUser;
   membership: MemberPortalMembership;
   usage: MemberPortalUsage;
+  journey: MemberPortalJourney;
   apiKey: MemberPortalApiKey;
   latestCharge: MemberPixCharge | null;
-};
-
-export type MemberPortalAuthResponse = {
-  token: string;
-  tokenType: string;
-  account: MemberPortalAccount;
 };
 
 export type MemberPortalRotateKeyResponse = {
@@ -81,10 +101,6 @@ export type MemberPortalRotateKeyResponse = {
   account: MemberPortalAccount;
 };
 
-export const MEMBER_STORAGE_KEYS = {
-  portalToken: "radar:membros:portal-token",
-} as const;
-
 export const MEMBER_API_BASE_URL =
   import.meta.env.VITE_MEMBER_API_BASE_URL?.trim() || "https://abertos.radardopovo.com/v1";
 
@@ -95,11 +111,13 @@ export const MEMBER_PORTAL_BASE_URL =
 export const MEMBER_PORTAL_DEMO =
   (import.meta.env.VITE_MEMBER_PORTAL_DEMO ?? "false").toLowerCase() === "true";
 
+export const MEMBER_PIX_EXPIRATION_MINUTES = 15;
+
 export const MEMBER_PLAN = {
   slug: "membros-radar-mensal",
   name: "Radar do Povo Membros",
   description:
-    "Acesso mensal a camada publica da API com portal proprio, checkout PIX e chave individual por conta.",
+    "Acesso mensal a camada publica da API com portal proprio, PIX com janela curta e chave individual por conta.",
   priceCents: 1500,
   priceLabel: "R$ 15/mensal",
   monthlyRequestLimit: 5000,
@@ -123,7 +141,8 @@ export function getMemberStatusMeta(status: MemberStatus) {
   if (status === "awaiting_payment") {
     return {
       label: "Aguardando pagamento",
-      description: "O checkout ja foi emitido. Assim que o pagamento for confirmado, a conta e ativada.",
+      description:
+        "O checkout ja foi emitido. O portal acompanha a cobranca e libera a conta logo apos a confirmacao.",
       badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
     };
   }
@@ -147,7 +166,8 @@ export function getMemberChargeStatusMeta(status?: MemberPixCharge["status"] | n
   if (status === "created") {
     return {
       label: "PIX aguardando pagamento",
-      description: "O QR Code esta pronto e o portal segue monitorando a confirmacao do pagamento.",
+      description:
+        "O QR Code esta pronto. O portal monitora o pagamento e trata a cobranca como valida por 15 minutos.",
       badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
     };
   }
@@ -173,4 +193,26 @@ export function getMemberChargeStatusMeta(status?: MemberPixCharge["status"] | n
     description: "Ainda nao existe uma cobranca em aberto para esta conta.",
     badgeClassName: "border-sky-200 bg-sky-50 text-sky-700",
   };
+}
+
+export function formatMemberDateTime(value?: string | null) {
+  if (!value) {
+    return "Sem registro";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+export function formatPixCountdown(totalSeconds?: number | null) {
+  if (!totalSeconds || totalSeconds <= 0) {
+    return "Expirado";
+  }
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }

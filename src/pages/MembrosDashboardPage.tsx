@@ -4,7 +4,6 @@ import {
   BookKey,
   CheckCircle2,
   Copy,
-  CreditCard,
   Gauge,
   KeyRound,
   ShieldCheck,
@@ -17,6 +16,7 @@ import MemberPortalShell from "@/components/members/MemberPortalShell";
 import { Button } from "@/components/ui/button";
 import { useMemberSession } from "@/contexts/MemberSessionContext";
 import {
+  formatMemberDateTime,
   getMemberChargeStatusMeta,
   getMemberStatusMeta,
   MEMBER_API_BASE_URL,
@@ -28,8 +28,11 @@ const MembrosDashboardPage = () => {
   const membership = account?.membership;
   const usage = account?.usage;
   const latestCharge = account?.latestCharge;
+  const journey = account?.journey;
   const statusMeta = getMemberStatusMeta(membership?.status ?? "pending_checkout");
-  const chargeMeta = getMemberChargeStatusMeta(latestCharge?.status);
+  const chargeMeta = getMemberChargeStatusMeta(
+    latestCharge?.isExpired ? "expired" : latestCharge?.status
+  );
 
   const usagePercent = useMemo(() => {
     if (!usage || usage.limit <= 0) {
@@ -38,51 +41,6 @@ const MembrosDashboardPage = () => {
 
     return Math.min(100, Math.round((usage.used / usage.limit) * 100));
   }, [usage]);
-
-  const nextAction = useMemo(() => {
-    if (membership?.status === "active") {
-      return {
-        title: "Conta pronta para integracao",
-        description:
-          "Sua assinatura esta ativa. Gere ou rotacione a chave da API sempre que precisar atualizar a integracao.",
-        ctaLabel: "Gerenciar chave da API",
-      };
-    }
-
-    if (latestCharge?.status === "created") {
-      return {
-        title: "Finalize o pagamento do PIX",
-        description:
-          "O checkout ja esta pronto. Assim que o pagamento for confirmado, a chave da API e liberada automaticamente.",
-        ctaLabel: "Voltar ao checkout",
-      };
-    }
-
-    return {
-      title: "Ative sua assinatura",
-      description:
-        "O proximo passo e emitir o checkout PIX para iniciar a ativacao do plano mensal.",
-      ctaLabel: "Gerar checkout",
-    };
-  }, [latestCharge?.status, membership?.status]);
-
-  const checklist = useMemo(
-    () => [
-      {
-        label: "Conta autenticada com Google",
-        complete: Boolean(account?.user.googleSub),
-      },
-      {
-        label: "Checkout emitido",
-        complete: latestCharge?.status === "created" || latestCharge?.status === "paid",
-      },
-      {
-        label: "Plano ativo para gerar chave",
-        complete: membership?.status === "active",
-      },
-    ],
-    [account?.user.googleSub, latestCharge?.status, membership?.status]
-  );
 
   const handleRotateApiKey = async () => {
     try {
@@ -106,7 +64,7 @@ const MembrosDashboardPage = () => {
     }
   };
 
-  if (!account || !membership || !usage) {
+  if (!account || !membership || !usage || !journey) {
     return null;
   }
 
@@ -114,7 +72,7 @@ const MembrosDashboardPage = () => {
     <MemberPortalShell
       eyebrow="Painel do membro"
       title={`Bem-vindo, ${account.user.name.split(" ")[0] ?? "membro"}.`}
-      intro="Seu painel agora concentra o que realmente importa para operar a assinatura: status do plano, consumo mensal, checkout atual e a chave individual da API."
+      intro="Este painel foi reorganizado como um workspace de conta: assinatura, checkout, cota mensal e chave da API seguem a mesma jornada."
     >
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-[28px] border border-border/70 bg-card/92 p-5 shadow-card">
@@ -168,18 +126,18 @@ const MembrosDashboardPage = () => {
           <p className="mt-2 text-sm text-muted-foreground">
             {account.apiKey.exists
               ? "Existe uma chave ativa vinculada a esta conta."
-              : "A chave fica disponivel assim que a conta estiver ativa."}
+              : "A chave fica disponivel assim que a jornada chegar na etapa final."}
           </p>
         </article>
       </section>
 
-      <section className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <section className="mt-6 grid gap-6 xl:grid-cols-[1.06fr_0.94fr]">
         <article className="rounded-[30px] border border-border/70 bg-card/95 p-6 shadow-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-            Visao geral da conta
+            Jornada da conta
           </p>
-          <h2 className="mt-3 text-2xl font-bold text-foreground">{nextAction.title}</h2>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">{nextAction.description}</p>
+          <h2 className="mt-3 text-2xl font-bold text-foreground">{journey.title}</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">{journey.description}</p>
 
           <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
             <div className="flex items-center justify-between gap-3">
@@ -222,7 +180,7 @@ const MembrosDashboardPage = () => {
               <p className="font-semibold text-foreground">Ciclo ativo</p>
               <p className="mt-2">
                 {membership.currentPeriodEndsAt
-                  ? new Date(membership.currentPeriodEndsAt).toLocaleString("pt-BR")
+                  ? formatMemberDateTime(membership.currentPeriodEndsAt)
                   : "Ainda sem pagamento confirmado."}
               </p>
             </div>
@@ -231,36 +189,65 @@ const MembrosDashboardPage = () => {
               <p className="font-semibold text-foreground">Checkout atual</p>
               <p className="mt-2">{chargeMeta.label}</p>
               <p className="mt-2 text-xs">{chargeMeta.description}</p>
+              <p className="mt-3 text-xs text-slate-700">
+                {latestCharge?.status === "paid"
+                  ? `Pago em ${formatMemberDateTime(latestCharge.paidAt)}`
+                  : latestCharge?.expiresAt
+                    ? `Valido ate ${formatMemberDateTime(latestCharge.expiresAt)}`
+                    : "Sem checkout ativo no momento."}
+              </p>
             </div>
           </div>
 
           <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
-            <p className="text-sm font-semibold text-foreground">Checklist do onboarding</p>
+            <p className="text-sm font-semibold text-foreground">Etapas operacionais</p>
             <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
-              {checklist.map((item) => (
-                <li key={item.label} className="flex items-start gap-3">
+              {journey.steps.map((step, index) => (
+                <li key={step.key} className="flex items-start gap-3">
                   <span
                     className={`mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full ${
-                      item.complete
+                      step.complete
                         ? "bg-emerald-100 text-emerald-700"
-                        : "bg-muted text-muted-foreground"
+                        : step.current
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {step.complete ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <span className="text-[10px] font-bold">{index + 1}</span>
+                    )}
                   </span>
-                  <span>{item.label}</span>
+                  <div>
+                    <p className="font-medium text-foreground">{step.label}</p>
+                    <p>{step.description}</p>
+                  </div>
                 </li>
               ))}
             </ul>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg" className="h-12 rounded-full px-6">
-              <Link to="/membros/checkout">
-                {nextAction.ctaLabel}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            {journey.primaryAction.kind === "api_key" && membership.status === "active" ? (
+              <Button
+                type="button"
+                size="lg"
+                className="h-12 rounded-full px-6"
+                onClick={() => void handleRotateApiKey()}
+                disabled={loading}
+              >
+                <KeyRound className="h-4 w-4" />
+                {account.apiKey.exists ? "Gerar nova chave" : "Gerar primeira chave"}
+              </Button>
+            ) : (
+              <Button asChild size="lg" className="h-12 rounded-full px-6">
+                <Link to={journey.primaryAction.href}>
+                  {journey.primaryAction.label}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
 
             <Button asChild variant="outline" size="lg" className="h-12 rounded-full px-6">
               <Link to="/membros/docs">
@@ -277,8 +264,8 @@ const MembrosDashboardPage = () => {
           </p>
           <h2 className="mt-3 text-2xl font-bold text-foreground">Gerencie sua chave da API</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            A chave individual fica atrelada a esta conta. Quando uma nova for emitida, a anterior
-            e invalidada automaticamente.
+            A chave individual fica presa a esta conta. Quando uma nova e emitida, a anterior sai
+            de circulacao automaticamente.
           </p>
 
           <div className="mt-5 rounded-[24px] border border-border/70 bg-background/85 p-4">
@@ -290,10 +277,7 @@ const MembrosDashboardPage = () => {
                   <span className="font-semibold text-foreground">{account.apiKey.prefix}</span>
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Ultimo uso:{" "}
-                  {account.apiKey.lastUsedAt
-                    ? new Date(account.apiKey.lastUsedAt).toLocaleString("pt-BR")
-                    : "Ainda sem uso registrado."}
+                  Ultimo uso: {formatMemberDateTime(account.apiKey.lastUsedAt)}
                 </p>
               </>
             ) : (
@@ -311,11 +295,11 @@ const MembrosDashboardPage = () => {
 
           <div className="mt-4 rounded-[24px] border border-slate-900/10 bg-slate-950 p-4 text-slate-50">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
-              Workspace do membro
+              Leitura operacional
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              O portal foi pensado para reduzir contexto espalhado: assinatura, checkout, docs e
-              provisionamento da chave convivem na mesma conta.
+              A conta segue uma ordem previsivel: autenticar, pagar, liberar e integrar. Isso
+              reduz suporte manual e deixa o estado da assinatura visivel no proprio portal.
             </p>
           </div>
 
@@ -331,8 +315,8 @@ const MembrosDashboardPage = () => {
             </Button>
           ) : (
             <div className="mt-4 rounded-[24px] border border-dashed border-border/80 bg-muted/20 p-4 text-sm leading-6 text-muted-foreground">
-              Assim que o pagamento do plano for confirmado, o botao de emissao da chave fica
-              disponivel aqui.
+              A emissao da chave so aparece quando o plano estiver ativo e o checkout ja tiver sido
+              confirmado.
             </div>
           )}
 
@@ -352,7 +336,8 @@ const MembrosDashboardPage = () => {
                 </Button>
               </div>
               <p className="mt-3 text-xs leading-5 text-emerald-800">
-                Essa chave aparece apenas no momento da geracao. Guarde-a no seu integrador.
+                Essa chave aparece apenas no momento da geracao. Guarde-a no integrador ou no cofre
+                de segredos da sua operacao.
               </p>
             </div>
           ) : null}
