@@ -211,7 +211,7 @@ export function usePoliticoDossieCompleto(
         }
       ),
     enabled: Boolean(search),
-    staleTime: QUERY_STALE_TIME,
+    staleTime: 10 * 60_000,
     gcTime: QUERY_GC_TIME,
   });
 }
@@ -239,7 +239,7 @@ export function usePoliticoPerfilExterno(
         { signal, timeoutMs: 12_000 }
       ).then((d) => d.politico?.perfilExterno),
     enabled: Boolean(politicoId),
-    staleTime: QUERY_STALE_TIME,
+    staleTime: 15 * 60_000,
     gcTime: QUERY_GC_TIME,
   });
 }

@@ -5,8 +5,8 @@ const MIN_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 30;
 const DEFAULT_PAGE_SIZE = 20;
 
-export const QUERY_STALE_TIME = 60_000;
-export const QUERY_GC_TIME = 30 * 60_000;
+export const QUERY_STALE_TIME = 5 * 60_000;
+export const QUERY_GC_TIME = 60 * 60_000;
 
 export const paginatedQueryDefaults = {
   staleTime: QUERY_STALE_TIME,
