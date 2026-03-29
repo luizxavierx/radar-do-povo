@@ -259,6 +259,8 @@ export function usePoliticoNoticias(nome?: string, limit = 6) {
     queryKey: ["politico-noticias", search, limit],
     queryFn: ({ signal }) => fetchPoliticoNews(search, signal, limit),
     enabled: Boolean(search),
+    retry: 1,
+    placeholderData: (previousData) => previousData,
     staleTime: 10 * 60_000,
     gcTime: QUERY_GC_TIME,
   });

@@ -22,6 +22,11 @@ export function PoliticoNewsSection({
   error = null,
   onRetry,
 }: PoliticoNewsSectionProps) {
+  const hasItems = items.length > 0;
+  const friendlyError = error
+    ? new Error("Nao foi possivel atualizar as noticias agora. Tente novamente em instantes.")
+    : null;
+
   return (
     <section className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -44,52 +49,59 @@ export function PoliticoNewsSection({
 
       <div className="mt-4">
         {isLoading ? <PoliticoNewsSkeleton /> : null}
-        {!isLoading && error ? (
+        {!isLoading && !hasItems && friendlyError ? (
           <ErrorStateWithRetry
-            error={error}
+            error={friendlyError}
             onRetry={() => onRetry?.()}
             retryLabel="Recarregar noticias"
           />
         ) : null}
-        {!isLoading && !error && items.length === 0 ? (
+        {!isLoading && !friendlyError && !hasItems ? (
           <EmptyState message="Nenhuma noticia recente encontrada nos feeds configurados para este politico." />
         ) : null}
-        {!isLoading && !error && items.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            {items.map((item, index) => (
-              <article
-                key={`${item.link}-${index}`}
-                className="rounded-[22px] border border-border/70 bg-background/85 p-4 transition-colors hover:bg-muted/30"
-              >
-                <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                  <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-                    {item.sourceName}
-                  </span>
-                  {item.publishedAt ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
-                      <Clock3 className="h-3 w-3" />
-                      {formatDate(item.publishedAt)}
-                    </span>
-                  ) : null}
-                </div>
-
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-start gap-2 text-sm font-semibold leading-6 text-foreground hover:text-primary"
+        {!isLoading && hasItems ? (
+          <div className="space-y-3">
+            {friendlyError ? (
+              <div className="rounded-2xl border border-amber-200/70 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                Exibindo a ultima coleta disponivel. Algumas fontes de noticias podem estar indisponiveis agora.
+              </div>
+            ) : null}
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {items.map((item, index) => (
+                <article
+                  key={`${item.link}-${index}`}
+                  className="rounded-[22px] border border-border/70 bg-background/85 p-4 transition-colors hover:bg-muted/30"
                 >
-                  <span className="line-clamp-2">{item.title}</span>
-                  <ExternalLink className="mt-0.5 h-4 w-4 shrink-0" />
-                </a>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
+                      {item.sourceName}
+                    </span>
+                    {item.publishedAt ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
+                        <Clock3 className="h-3 w-3" />
+                        {formatDate(item.publishedAt)}
+                      </span>
+                    ) : null}
+                  </div>
 
-                {item.summary ? (
-                  <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
-                    {item.summary}
-                  </p>
-                ) : null}
-              </article>
-            ))}
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-start gap-2 text-sm font-semibold leading-6 text-foreground hover:text-primary"
+                  >
+                    <span className="line-clamp-2">{item.title}</span>
+                    <ExternalLink className="mt-0.5 h-4 w-4 shrink-0" />
+                  </a>
+
+                  {item.summary ? (
+                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
+                      {item.summary}
+                    </p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
