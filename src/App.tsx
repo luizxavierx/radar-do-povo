@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppShellLayout from "@/components/AppShellLayout";
 import ScrollToTop from "@/components/ScrollToTop";
+import logo from "@/assets/logo.png";
 
 const Index = lazy(() => import("./pages/Index"));
 const PoliticoDetalhe = lazy(() => import("./pages/PoliticoDetalhe"));
@@ -38,8 +39,12 @@ const App = () => (
         <ScrollToTop />
         <Suspense
           fallback={
-            <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 text-sm text-muted-foreground">
-              Carregando pagina...
+            <div className="flex min-h-screen items-center justify-center px-6">
+              <img
+                src={logo}
+                alt="Radar do Povo"
+                className="h-12 w-auto opacity-90 sm:h-14"
+              />
             </div>
           }
         >
