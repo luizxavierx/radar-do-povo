@@ -1,6 +1,22 @@
 import { Loader2, AlertTriangle, Inbox } from "lucide-react";
 import { ApiRequestError } from "@/api/requestError";
 
+function getErrorMessage(error: Error | null): string {
+  if (!error) {
+    return "Falha desconhecida durante a consulta.";
+  }
+
+  if (error.message.startsWith("Timeout:")) {
+    return "A consulta demorou mais do que o esperado. Tente novamente em instantes.";
+  }
+
+  if (error instanceof ApiRequestError && error.statusCode === 429) {
+    return "Muitas tentativas em sequência. Aguarde um pouco e tente novamente.";
+  }
+
+  return error.message || "Falha desconhecida durante a consulta.";
+}
+
 export const LoadingState = ({ message = "Carregando dados..." }: { message?: string }) => (
   <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-card/70 py-14 text-center shadow-card">
     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-soft">
@@ -21,11 +37,11 @@ export const ErrorState = ({ error }: { error: Error | null }) => {
       </div>
       <p className="text-sm font-semibold text-foreground">Erro ao carregar dados da API</p>
       <p className="max-w-md text-xs text-muted-foreground">
-        {error?.message || "Falha desconhecida durante a consulta."}
+        {getErrorMessage(error)}
       </p>
       {requestId ? (
         <p className="rounded-md bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
-          request_id: {requestId}
+          referencia: {requestId}
         </p>
       ) : null}
     </div>
@@ -50,11 +66,11 @@ export const ErrorStateWithRetry = ({
       </div>
       <p className="text-sm font-semibold text-foreground">Erro ao carregar dados da API</p>
       <p className="max-w-md text-xs text-muted-foreground">
-        {error?.message || "Falha desconhecida durante a consulta."}
+        {getErrorMessage(error)}
       </p>
       {requestId ? (
         <p className="rounded-md bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
-          request_id: {requestId}
+          referencia: {requestId}
         </p>
       ) : null}
       <button

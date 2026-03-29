@@ -23,6 +23,10 @@ import {
 
 const TOP30_PAGINATION = { limit: 30, offset: 0 } as const;
 
+interface RankingQueryOptions {
+  enabled?: boolean;
+}
+
 function normalizeAutorName(value?: string): string {
   return (value || "")
     .normalize("NFD")
@@ -121,27 +125,38 @@ export function useTopEmendasPorPaisAno(ano: number, pagination?: PaginationInpu
   });
 }
 
-export function useEmendaRankingResumo(filtro?: RankingEmendaFiltroInput) {
+export function useEmendaRankingResumo(
+  filtro?: RankingEmendaFiltroInput,
+  options?: RankingQueryOptions
+) {
   return useQuery<EmendaRankingResumo>({
     queryKey: ["emenda-ranking-resumo", filtro],
     queryFn: ({ signal }) => fetchEmendasResumo(filtro, { signal }),
+    enabled: options?.enabled,
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
+    placeholderData: (previousData) => previousData,
   });
 }
 
-export function useEmendaSerieAnual(filtro?: RankingEmendaFiltroInput) {
+export function useEmendaSerieAnual(
+  filtro?: RankingEmendaFiltroInput,
+  options?: RankingQueryOptions
+) {
   return useQuery<{ total: number; limit?: number; offset?: number; nodes: EmendaSerieAnualNode[] }>({
     queryKey: ["emenda-serie-anual", filtro],
     queryFn: ({ signal }) => fetchEmendasSerieAnual(filtro, { signal }),
+    enabled: options?.enabled,
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
+    placeholderData: (previousData) => previousData,
   });
 }
 
 export function useTopGastadoresCustom(
   filtro?: RankingEmendaFiltroInput,
-  pagination?: PaginationInput
+  pagination?: PaginationInput,
+  options?: RankingQueryOptions
 ) {
   const normalizedPagination = normalizePagination(pagination, 20);
 
@@ -149,13 +164,15 @@ export function useTopGastadoresCustom(
     queryKey: ["top-gastadores-custom", filtro, normalizedPagination],
     queryFn: ({ signal }) =>
       fetchTopGastadoresEmendas(filtro, normalizedPagination, { signal }),
+    enabled: options?.enabled,
     ...paginatedQueryDefaults,
   });
 }
 
 export function useTopEmendasPorPaisCustom(
   filtro?: RankingEmendaFiltroInput,
-  pagination?: PaginationInput
+  pagination?: PaginationInput,
+  options?: RankingQueryOptions
 ) {
   const normalizedPagination = normalizePagination(pagination, 10);
 
@@ -163,13 +180,15 @@ export function useTopEmendasPorPaisCustom(
     queryKey: ["top-emendas-pais-custom", filtro, normalizedPagination],
     queryFn: ({ signal }) =>
       fetchTopEmendasPorPais(filtro, normalizedPagination, { signal }),
+    enabled: options?.enabled,
     ...paginatedQueryDefaults,
   });
 }
 
 export function useTopTiposCustom(
   filtro?: RankingEmendaFiltroInput,
-  pagination?: PaginationInput
+  pagination?: PaginationInput,
+  options?: RankingQueryOptions
 ) {
   const normalizedPagination = normalizePagination(pagination, 8);
 
@@ -181,6 +200,7 @@ export function useTopTiposCustom(
   }>({
     queryKey: ["top-tipos-custom", filtro, normalizedPagination],
     queryFn: ({ signal }) => fetchTopTiposEmendas(filtro, normalizedPagination, { signal }),
+    enabled: options?.enabled,
     ...paginatedQueryDefaults,
   });
 }

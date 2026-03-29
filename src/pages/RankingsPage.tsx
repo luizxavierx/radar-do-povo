@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Area,
@@ -80,6 +80,9 @@ const RankingsPage = () => {
   const [tipoEmenda, setTipoEmenda] = useState("");
   const [limit, setLimit] = useState(10);
   const [offset, setOffset] = useState(0);
+  const [serieReady, setSerieReady] = useState(false);
+  const [tiposReady, setTiposReady] = useState(false);
+  const [paisesReady, setPaisesReady] = useState(false);
 
   const filtro = useMemo<RankingEmendaFiltroInput>(() => {
     const base: RankingEmendaFiltroInput = {
@@ -97,10 +100,42 @@ const RankingsPage = () => {
   }, [anoFim, anoInicio, scope, tipoEmenda, uf]);
 
   const resumoQuery   = useEmendaRankingResumo(filtro);
-  const serieQuery    = useEmendaSerieAnual(filtro);
   const rankingQuery  = useTopGastadoresCustom(filtro, { limit, offset });
-  const tiposQuery    = useTopTiposCustom(filtro, { limit: 6, offset: 0 });
-  const paisesQuery   = useTopEmendasPorPaisCustom(filtro, { limit: 6, offset: 0 });
+  const serieQuery    = useEmendaSerieAnual(filtro, { enabled: serieReady });
+  const tiposQuery    = useTopTiposCustom(filtro, { limit: 6, offset: 0 }, { enabled: tiposReady });
+  const paisesQuery   = useTopEmendasPorPaisCustom(
+    filtro,
+    { limit: 6, offset: 0 },
+    { enabled: paisesReady }
+  );
+
+  useEffect(() => {
+    setSerieReady(false);
+    setTiposReady(false);
+    setPaisesReady(false);
+  }, [anoInicio, anoFim, scope, tipoEmenda, uf]);
+
+  const coreWaveSettled = !resumoQuery.isFetching && !rankingQuery.isFetching;
+  const seriesWaveSettled = serieReady && !serieQuery.isFetching;
+  const typesWaveSettled = tiposReady && !tiposQuery.isFetching;
+
+  useEffect(() => {
+    if (coreWaveSettled && !serieReady) {
+      setSerieReady(true);
+    }
+  }, [coreWaveSettled, serieReady]);
+
+  useEffect(() => {
+    if (seriesWaveSettled && !tiposReady) {
+      setTiposReady(true);
+    }
+  }, [seriesWaveSettled, tiposReady]);
+
+  useEffect(() => {
+    if (typesWaveSettled && !paisesReady) {
+      setPaisesReady(true);
+    }
+  }, [paisesReady, typesWaveSettled]);
 
   const resumo       = resumoQuery.data;
   const rankingNodes = rankingQuery.data?.nodes ?? [];
@@ -406,9 +441,9 @@ const RankingsPage = () => {
                 </div>
               </div>
 
-              {serieQuery.isLoading ? <LoadingState message="Carregando serie anual..." /> : null}
+              {!serieReady || serieQuery.isLoading ? <LoadingState message="Carregando serie anual..." /> : null}
               {serieQuery.error ? <ErrorState error={serieQuery.error as Error} /> : null}
-              {!serieQuery.isLoading && !serieQuery.error && !serieChartData.length ? (
+              {serieReady && !serieQuery.isLoading && !serieQuery.error && !serieChartData.length ? (
                 <EmptyState message="Nenhuma serie anual encontrada para este recorte." />
               ) : null}
 
@@ -537,9 +572,9 @@ const RankingsPage = () => {
                   </p>
                 </div>
 
-                {tiposQuery.isLoading ? <LoadingState message="Carregando tipos..." /> : null}
+                {!tiposReady || tiposQuery.isLoading ? <LoadingState message="Carregando tipos..." /> : null}
                 {tiposQuery.error ? <ErrorState error={tiposQuery.error as Error} /> : null}
-                {!tiposQuery.isLoading && !tiposQuery.error && !tipoChartData.length ? (
+                {tiposReady && !tiposQuery.isLoading && !tiposQuery.error && !tipoChartData.length ? (
                   <EmptyState message="Sem tipos suficientes para montar o grafico." />
                 ) : null}
 
@@ -622,9 +657,9 @@ const RankingsPage = () => {
                   </p>
                 </div>
 
-                {paisesQuery.isLoading ? <LoadingState message="Carregando paises..." /> : null}
+                {!paisesReady || paisesQuery.isLoading ? <LoadingState message="Carregando paises..." /> : null}
                 {paisesQuery.error ? <ErrorState error={paisesQuery.error as Error} /> : null}
-                {!paisesQuery.isLoading && !paisesQuery.error && !paisNodes.length ? (
+                {paisesReady && !paisesQuery.isLoading && !paisesQuery.error && !paisNodes.length ? (
                   <EmptyState message="Nenhum pais encontrado para este recorte." />
                 ) : null}
 

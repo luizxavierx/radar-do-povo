@@ -10,7 +10,7 @@ import type {
   TopGastadorEmenda,
 } from "@/api/types";
 
-const RANKINGS_TIMEOUT_MS = 30_000;
+const RANKINGS_TIMEOUT_MS = 45_000;
 
 function trimOrUndefined(value?: string): string | undefined {
   const normalized = (value || "").trim();
