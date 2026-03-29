@@ -153,6 +153,12 @@ export interface PoliticoDossieQueryOptions {
   includeTrechos?: boolean;
   includeConvenios?: boolean;
   includeFavorecidos?: boolean;
+  includeCamara?: boolean;
+  includeSenado?: boolean;
+  includeLexml?: boolean;
+  includeBrasilIo?: boolean;
+  includeWikipedia?: boolean;
+  includeTse?: boolean;
 }
 
 export function usePoliticoDossieCompleto(
@@ -184,6 +190,12 @@ export function usePoliticoDossieCompleto(
     includeTrechos: options.includeTrechos ?? true,
     includeConvenios: options.includeConvenios ?? true,
     includeFavorecidos: options.includeFavorecidos ?? true,
+    includeCamara: options.includeCamara ?? true,
+    includeSenado: options.includeSenado ?? true,
+    includeLexml: options.includeLexml ?? true,
+    includeBrasilIo: options.includeBrasilIo ?? true,
+    includeWikipedia: options.includeWikipedia ?? true,
+    includeTse: options.includeTse ?? false,
   };
 
   return useQuery({

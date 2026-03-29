@@ -14,7 +14,7 @@ type PoliticoRouteTarget =
 
 export function buildPoliticoPath(target: PoliticoRouteTarget): string {
   const lookup = getPoliticoLookupValue(target);
-  return `/politico/${encodeURIComponent(lookup)}`;
+  return `/politico/${encodeURIComponent(toPoliticoRouteSegment(lookup))}`;
 }
 
 export function getPoliticoLookupValue(target: PoliticoRouteTarget): string {
@@ -49,4 +49,8 @@ function normalizePoliticoLookup(value: string): string {
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function toPoliticoRouteSegment(value: string): string {
+  return normalizePoliticoLookup(value).replace(/\s+/g, "-");
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Banknote,
@@ -41,6 +41,7 @@ import {
   formatDate,
   toBigInt,
 } from "@/lib/formatters";
+import { buildPoliticoPath, getPoliticoLookupValue } from "@/lib/politicos";
 import type { Emenda, PerfilExterno, Viagem } from "@/api/types";
 
 const PAGE_SIZE = 10;
@@ -52,6 +53,7 @@ const pieColors = ["#0f766e", "#2563eb", "#f59e0b", "#ef4444"];
 
 const PoliticoDetalhe = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [anoInicio, setAnoInicio] = useState(2019);
@@ -60,7 +62,8 @@ const PoliticoDetalhe = () => {
   const [emendasOffset, setEmendasOffset] = useState(0);
   const [lexmlOffset, setLexmlOffset] = useState(0);
 
-  const nomeBusca = decodeURIComponent(id || "").trim();
+  const routeLookup = decodeURIComponent(id || "").trim();
+  const nomeBusca = getPoliticoLookupValue(routeLookup);
   const { data: politico, isLoading, error } = usePoliticoDossieCompleto(nomeBusca, {
     anoInicio,
     anoFim,
@@ -97,6 +100,7 @@ const PoliticoDetalhe = () => {
       includeTrechos: false,
       includeConvenios: false,
       includeFavorecidos: false,
+      includeTse: false,
     }
   );
   const nomePoliticoNoticias = politico
@@ -112,6 +116,17 @@ const PoliticoDetalhe = () => {
   useEffect(() => {
     setLexmlOffset(0);
   }, [nomeBusca]);
+
+  useEffect(() => {
+    if (!routeLookup) {
+      return;
+    }
+
+    const canonicalPath = buildPoliticoPath(routeLookup);
+    if (canonicalPath !== location.pathname) {
+      navigate(canonicalPath, { replace: true });
+    }
+  }, [location.pathname, navigate, routeLookup]);
 
   const gastos = politico?.gastos;
   const totalDiariasCents = toBigInt(gastos?.totalDiariasCents);
