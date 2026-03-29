@@ -197,6 +197,11 @@ const RankingsPage = () => {
     [paisNodes, totalPagoNumber]
   );
 
+  const hasSerieData = serieChartData.length > 0;
+  const hasTipoData = tipoChartData.length > 0;
+  const hasPaisData = paisChartData.length > 0;
+  const hasRankingData = rankingNodes.length > 0;
+
   const paisCoverage = useMemo(
     () => paisChartData.reduce((acc, item) => acc + item.share, 0),
     [paisChartData]
@@ -442,8 +447,8 @@ const RankingsPage = () => {
               </div>
 
               {!serieReady || serieQuery.isLoading ? <LoadingState message="Carregando serie anual..." /> : null}
-              {serieQuery.error ? <ErrorState error={serieQuery.error as Error} /> : null}
-              {serieReady && !serieQuery.isLoading && !serieQuery.error && !serieChartData.length ? (
+              {serieQuery.error && !hasSerieData ? <ErrorState error={serieQuery.error as Error} /> : null}
+              {serieReady && !serieQuery.isLoading && !serieQuery.error && !hasSerieData ? (
                 <EmptyState message="Nenhuma serie anual encontrada para este recorte." />
               ) : null}
 
@@ -573,8 +578,8 @@ const RankingsPage = () => {
                 </div>
 
                 {!tiposReady || tiposQuery.isLoading ? <LoadingState message="Carregando tipos..." /> : null}
-                {tiposQuery.error ? <ErrorState error={tiposQuery.error as Error} /> : null}
-                {tiposReady && !tiposQuery.isLoading && !tiposQuery.error && !tipoChartData.length ? (
+                {tiposQuery.error && !hasTipoData ? <ErrorState error={tiposQuery.error as Error} /> : null}
+                {tiposReady && !tiposQuery.isLoading && !tiposQuery.error && !hasTipoData ? (
                   <EmptyState message="Sem tipos suficientes para montar o grafico." />
                 ) : null}
 
@@ -658,8 +663,8 @@ const RankingsPage = () => {
                 </div>
 
                 {!paisesReady || paisesQuery.isLoading ? <LoadingState message="Carregando paises..." /> : null}
-                {paisesQuery.error ? <ErrorState error={paisesQuery.error as Error} /> : null}
-                {paisesReady && !paisesQuery.isLoading && !paisesQuery.error && !paisNodes.length ? (
+                {paisesQuery.error && !hasPaisData ? <ErrorState error={paisesQuery.error as Error} /> : null}
+                {paisesReady && !paisesQuery.isLoading && !paisesQuery.error && !hasPaisData ? (
                   <EmptyState message="Nenhum pais encontrado para este recorte." />
                 ) : null}
 
@@ -713,8 +718,8 @@ const RankingsPage = () => {
             </div>
 
             {rankingQuery.isLoading ? <LoadingState message="Carregando ranking de autores..." /> : null}
-            {rankingQuery.error ? <ErrorState error={rankingQuery.error as Error} /> : null}
-            {!rankingQuery.isLoading && !rankingQuery.error && !rankingNodes.length ? (
+            {rankingQuery.error && !hasRankingData ? <ErrorState error={rankingQuery.error as Error} /> : null}
+            {!rankingQuery.isLoading && !rankingQuery.error && !hasRankingData ? (
               <EmptyState message="Nenhum autor encontrado com esse filtro." />
             ) : null}
 

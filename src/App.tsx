@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ApiRequestError } from "@/api/requestError";
 import AppShellLayout from "@/components/AppShellLayout";
 import ScrollToTop from "@/components/ScrollToTop";
 import logo from "@/assets/logo.png";
@@ -19,10 +20,28 @@ const DiretrizesPage = lazy(() => import("./pages/DiretrizesPage"));
 const ContatoPage = lazy(() => import("./pages/ContatoPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 1) {
+    return false;
+  }
+
+  if (error instanceof ApiRequestError) {
+    if (error.statusCode === 429) {
+      return true;
+    }
+
+    if (typeof error.statusCode === "number" && error.statusCode >= 500) {
+      return true;
+    }
+  }
+
+  return error instanceof Error && error.message.startsWith("Timeout:");
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false,
+      retry: shouldRetryQuery,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       staleTime: 5 * 60_000,

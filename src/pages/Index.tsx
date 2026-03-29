@@ -738,7 +738,7 @@ const Index = () => {
 
                     <div className="space-y-2.5">
                       {activeQuery.isLoading ? <LoadingState message="Carregando ranking da API..." /> : null}
-                      {activeQuery.error ? <ErrorState error={activeQuery.error as Error} /> : null}
+                      {activeQuery.error && rankingNodes.length === 0 ? <ErrorState error={activeQuery.error as Error} /> : null}
                       {!activeQuery.isLoading && !activeQuery.error && rankingNodes.length === 0 ? (
                         <EmptyState message="A API nao retornou ranking para este ano." />
                       ) : null}
@@ -786,7 +786,7 @@ const Index = () => {
                     </div>
 
                     {tiposQuery.isLoading ? <LoadingState message="Carregando tipos..." /> : null}
-                    {tiposQuery.error ? <ErrorState error={tiposQuery.error as Error} /> : null}
+                    {tiposQuery.error && !typeChartData.length ? <ErrorState error={tiposQuery.error as Error} /> : null}
                     {!tiposQuery.isLoading && !tiposQuery.error && !typeChartData.length ? (
                       <EmptyState message="Sem tipos suficientes para montar a leitura." />
                     ) : null}
@@ -900,7 +900,7 @@ const Index = () => {
                     </div>
 
                     {paisesQuery.isLoading ? <LoadingState message="Carregando recorte por pais..." /> : null}
-                    {paisesQuery.error ? <ErrorState error={paisesQuery.error as Error} /> : null}
+                    {paisesQuery.error && !(paisesQuery.data?.nodes?.length) ? <ErrorState error={paisesQuery.error as Error} /> : null}
                     {!paisesQuery.isLoading && !paisesQuery.error && !paisesQuery.data?.nodes.length ? (
                       <EmptyState message="Sem dados por pais no ano selecionado." />
                     ) : null}
