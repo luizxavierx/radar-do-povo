@@ -100,7 +100,7 @@ const PoliticoDetalhe = () => {
       includeTrechos: false,
       includeConvenios: false,
       includeFavorecidos: false,
-      includeTse: false,
+      includeTse: true,
     }
   );
   const nomePoliticoNoticias = politico
@@ -1247,6 +1247,64 @@ const PerfilExternoSection = ({
               Acessar fonte <ExternalLink className="h-3 w-3" />
             </a>
           ) : null}
+        </>
+      ),
+    },
+    {
+      key: "tse",
+      icon: FileText,
+      label: "TSE",
+      visible: Boolean(
+        perfil.tse?.datasetCandidatosUrl ||
+          perfil.tse?.datasetResultadosUrl ||
+          perfil.tse?.divulgaCandContasUrl
+      ),
+      content: (
+        <>
+          <p className="font-semibold text-foreground">
+            Referencias oficiais do TSE para consulta eleitoral
+          </p>
+          {perfil.tse?.termoBusca ? (
+            <p className="text-[11px] text-muted-foreground">
+              Baseado na busca por <strong className="text-foreground">{perfil.tse.termoBusca}</strong>
+            </p>
+          ) : null}
+
+          <div className="space-y-2">
+            {perfil.tse?.divulgaCandContasUrl ? (
+              <a
+                href={perfil.tse.divulgaCandContasUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card/70 px-3 py-2 text-sm transition-colors hover:border-primary/20 hover:bg-primary/5"
+              >
+                <span className="font-medium text-foreground">DivulgaCandContas</span>
+                <ExternalLink className="h-3.5 w-3.5 text-primary" />
+              </a>
+            ) : null}
+            {perfil.tse?.datasetCandidatosUrl ? (
+              <a
+                href={perfil.tse.datasetCandidatosUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card/70 px-3 py-2 text-sm transition-colors hover:border-primary/20 hover:bg-primary/5"
+              >
+                <span className="font-medium text-foreground">Dataset de candidatos</span>
+                <ExternalLink className="h-3.5 w-3.5 text-primary" />
+              </a>
+            ) : null}
+            {perfil.tse?.datasetResultadosUrl ? (
+              <a
+                href={perfil.tse.datasetResultadosUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card/70 px-3 py-2 text-sm transition-colors hover:border-primary/20 hover:bg-primary/5"
+              >
+                <span className="font-medium text-foreground">Dataset de resultados</span>
+                <ExternalLink className="h-3.5 w-3.5 text-primary" />
+              </a>
+            ) : null}
+          </div>
         </>
       ),
     },
