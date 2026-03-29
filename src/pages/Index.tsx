@@ -27,6 +27,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
+import ShareActions from "@/components/ShareActions";
 import SearchBar from "@/components/SearchBar";
 import StatsCard from "@/components/StatsCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
@@ -413,13 +414,26 @@ const Index = () => {
                       Perfis acessados com mais frequencia.
                     </p>
                   </div>
-                  <button
-                    onClick={() => navigate("/busca")}
-                    className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
-                  >
-                    <Search className="h-3.5 w-3.5" />
-                    Busca completa
-                  </button>
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    <button
+                      onClick={() => navigate("/busca")}
+                      className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                    >
+                      <Search className="h-3.5 w-3.5" />
+                      Busca completa
+                    </button>
+
+                    {featuredPrimary ? (
+                      <ShareActions
+                        label="Compartilhar destaque"
+                        title={`${featuredPrimary.nome} | Radar do Povo`}
+                        text={`Veja o perfil completo de ${featuredPrimary.nome} no Radar do Povo.`}
+                        url={buildPublicUrl(featuredPrimary.profilePath)}
+                        align="right"
+                        compact
+                      />
+                    ) : null}
+                  </div>
                 </div>
               </div>
 
@@ -1284,6 +1298,22 @@ function buildAvatarUrl(value: string): string {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     value
   )}&background=e6f7f7&color=0f766e&size=128&format=png`;
+}
+
+function buildPublicUrl(path: string): string {
+  if (!path) {
+    return typeof window !== "undefined" ? window.location.href : "";
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  if (typeof window === "undefined") {
+    return path;
+  }
+
+  return new URL(path, window.location.origin).toString();
 }
 
 function buildImageCandidates(...values: Array<string | undefined>) {

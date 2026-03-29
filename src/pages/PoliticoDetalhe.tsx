@@ -25,6 +25,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } 
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
+import ShareActions from "@/components/ShareActions";
 import { EmptyState, ErrorState } from "@/components/StateViews";
 import { PoliticoNewsSection } from "@/components/politicos/PoliticoNewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -143,6 +144,12 @@ const PoliticoDetalhe = () => {
     politico?.fotoUrl ||
     perfilExterno?.camara?.urlFoto ||
     perfilExterno?.senado?.urlFoto;
+  const politicoDisplayName =
+    politico?.nomeCompleto ||
+    politico?.nomeCanonico ||
+    nomeBusca.replace(/-/g, " ");
+  const politicoShareUrl =
+    typeof window !== "undefined" ? window.location.href : "";
 
   const pieData = useMemo(() => {
     if (!gastos) return [];
@@ -246,6 +253,14 @@ const PoliticoDetalhe = () => {
                           {anoInicio} a {anoFim}
                         </strong>.
                       </p>
+
+                      <ShareActions
+                        label="Compartilhar perfil"
+                        title={`${politicoDisplayName} | Radar do Povo`}
+                        text={`Veja o perfil completo de ${politicoDisplayName} no Radar do Povo, com viagens e emendas no recorte de ${anoInicio} a ${anoFim}.`}
+                        url={politicoShareUrl}
+                        className="mt-4"
+                      />
 
                       <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
                         {politico.dataNascimento ? (
