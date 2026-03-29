@@ -4,12 +4,14 @@ import { Filter, MapPin, Search, Users } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
+import SeoHead from "@/components/SeoHead";
 import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { usePoliticos } from "@/hooks/usePoliticos";
 import { graphqlRequest } from "@/api/graphqlClient";
 import { POLITICO_BASICO_QUERY, POLITICOS_LIST_QUERY } from "@/api/queries";
 import { buildPoliticoPath } from "@/lib/politicos";
+import { buildBreadcrumbStructuredData } from "@/lib/seo";
 import type { Connection, PoliticoResumo } from "@/api/types";
 
 const PAGE_SIZE = 24;
@@ -47,6 +49,8 @@ const BuscaPage = () => {
   const total = data?.total ?? 0;
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
+  const seoDescription =
+    "Busque politicos por nome, partido, UF ou cargo atual e acesse perfis consolidados com filtros institucionais.";
 
   useEffect(() => {
     if (!filter || !data) return;
@@ -123,6 +127,37 @@ const BuscaPage = () => {
 
   return (
     <div>
+      <SeoHead
+        title="Busca de politicos | Radar do Povo"
+        description={seoDescription}
+        path="/busca"
+        keywords={[
+          "buscar politicos",
+          "perfil politico",
+          "politicos por partido",
+          "politicos por uf",
+          "radar do povo busca",
+        ]}
+        structuredData={[
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: "Busca de politicos",
+            description: seoDescription,
+            url: "https://radardopovo.com/busca",
+            inLanguage: "pt-BR",
+            isPartOf: {
+              "@type": "WebSite",
+              name: "Radar do Povo",
+              url: "https://radardopovo.com",
+            },
+          },
+          buildBreadcrumbStructuredData([
+            { name: "Home", path: "/" },
+            { name: "Busca", path: "/busca" },
+          ]),
+        ]}
+      />
       <AppSidebar />
 
       <main className="lg:ml-72">

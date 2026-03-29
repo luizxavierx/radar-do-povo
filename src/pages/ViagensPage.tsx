@@ -4,6 +4,7 @@ import { Plane, Wallet } from "lucide-react";
 
 import type { RankingViagemFiltroInput, Viagem } from "@/api/types";
 import AppSidebar from "@/components/AppSidebar";
+import SeoHead from "@/components/SeoHead";
 import ViagemDetailDrawer from "@/components/viagens/ViagemDetailDrawer";
 import ViagensAnalyticsDeck from "@/components/viagens/ViagensAnalyticsDeck";
 import ViagensFilters, { type ViagensFilterState } from "@/components/viagens/ViagensFilters";
@@ -19,6 +20,7 @@ import { useTopOrgaosSuperioresViagens } from "@/hooks/useTopOrgaosSuperioresVia
 import { useTopViajantes } from "@/hooks/useTopViajantes";
 import { useViagensPainel } from "@/hooks/useViagensPainel";
 import { formatCents, formatCentsCompact, formatCountCompact } from "@/lib/formatters";
+import { buildBreadcrumbStructuredData } from "@/lib/seo";
 import { fetchViagensPainel, normalizeViagensFilter } from "@/services/viagensService";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -438,9 +440,47 @@ const ViagensPage = () => {
     filters.motivo,
   ].filter(Boolean).length;
   const canComparePreviousPeriod = filters.anoInicio > 2019 && filters.anoFim > 2019;
+  const seoDescription =
+    "Explore o painel de viagens oficiais com filtros por periodo, orgao, viajante e destino, alem de rankings e detalhes consolidados.";
 
   return (
     <div className="overflow-x-hidden">
+      <SeoHead
+        title="Viagens oficiais | Radar do Povo"
+        description={seoDescription}
+        path="/viagens"
+        keywords={[
+          "viagens oficiais",
+          "gastos com viagens",
+          "painel de viagens",
+          "viagens publicas",
+          "radar do povo viagens",
+        ]}
+        structuredData={[
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: "Painel de viagens oficiais",
+            description: seoDescription,
+            url: "https://radardopovo.com/viagens",
+            inLanguage: "pt-BR",
+            isPartOf: {
+              "@type": "WebSite",
+              name: "Radar do Povo",
+              url: "https://radardopovo.com",
+            },
+            about: [
+              { "@type": "Thing", name: "Viagens oficiais" },
+              { "@type": "Thing", name: "Gastos publicos" },
+              { "@type": "Thing", name: "Transparencia publica" },
+            ],
+          },
+          buildBreadcrumbStructuredData([
+            { name: "Home", path: "/" },
+            { name: "Viagens", path: "/viagens" },
+          ]),
+        ]}
+      />
       <AppSidebar />
 
       <main className="overflow-x-hidden lg:ml-72">

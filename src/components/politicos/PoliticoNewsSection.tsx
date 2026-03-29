@@ -67,40 +67,40 @@ export function PoliticoNewsSection({
               </div>
             ) : null}
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {items.map((item, index) => (
-                <article
-                  key={`${item.link}-${index}`}
-                  className="rounded-[22px] border border-border/70 bg-background/85 p-4 transition-colors hover:bg-muted/30"
-                >
-                  <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                    <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-                      {item.sourceName}
+            {items.map((item, index) => (
+              <article
+                key={`${item.link}-${index}`}
+                className="rounded-[22px] border border-border/70 bg-background/85 p-4 transition-colors hover:bg-muted/30"
+              >
+                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                  <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
+                    {item.sourceName}
+                  </span>
+                  {item.publishedAt ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
+                      <Clock3 className="h-3 w-3" />
+                      {formatDate(item.publishedAt)}
                     </span>
-                    {item.publishedAt ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
-                        <Clock3 className="h-3 w-3" />
-                        {formatDate(item.publishedAt)}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-start gap-2 text-sm font-semibold leading-6 text-foreground hover:text-primary"
-                  >
-                    <span className="line-clamp-2">{item.title}</span>
-                    <ExternalLink className="mt-0.5 h-4 w-4 shrink-0" />
-                  </a>
-
-                  {item.summary ? (
-                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
-                      {item.summary}
-                    </p>
                   ) : null}
-                </article>
-              ))}
+                </div>
+
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-start gap-2 text-sm font-semibold leading-6 text-foreground hover:text-primary"
+                >
+                  <span className="line-clamp-2">{item.title}</span>
+                  <ExternalLink className="mt-0.5 h-4 w-4 shrink-0" />
+                </a>
+
+                {item.summary ? (
+                  <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
+                    {item.summary}
+                  </p>
+                ) : null}
+              </article>
+            ))}
             </div>
           </div>
         ) : null}

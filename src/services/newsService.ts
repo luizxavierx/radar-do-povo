@@ -1,5 +1,5 @@
-import { ApiRequestError } from "@/api/requestError";
 import { restRequest } from "@/api/restClient";
+import { ApiRequestError } from "@/api/requestError";
 import type { PoliticoNewsResponse } from "@/api/types";
 
 const NEWS_CACHE_TTL_MS = 10 * 60 * 1000;

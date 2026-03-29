@@ -25,6 +25,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } 
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
+import SeoHead from "@/components/SeoHead";
 import ShareActions from "@/components/ShareActions";
 import { EmptyState, ErrorState } from "@/components/StateViews";
 import { PoliticoNewsSection } from "@/components/politicos/PoliticoNewsSection";
@@ -42,6 +43,7 @@ import {
   toBigInt,
 } from "@/lib/formatters";
 import { buildPoliticoPath, getPoliticoLookupValue } from "@/lib/politicos";
+import { buildBreadcrumbStructuredData, truncateSeoDescription } from "@/lib/seo";
 import type { Emenda, PerfilExterno, Viagem } from "@/api/types";
 
 const PAGE_SIZE = 10;
@@ -165,6 +167,55 @@ const PoliticoDetalhe = () => {
     nomeBusca.replace(/-/g, " ");
   const politicoShareUrl =
     typeof window !== "undefined" ? window.location.href : "";
+  const politicoCanonicalPath = buildPoliticoPath({
+    nomeCompleto: politico?.nomeCompleto || politicoDisplayName || routeLookup,
+    nomeCanonico: politico?.nomeCanonico,
+    id: politico?.id,
+  });
+  const politicoSeoDescription = truncateSeoDescription(
+    perfilExterno?.wikipedia?.resumo ||
+      `Veja o perfil completo de ${politicoDisplayName}, com viagens oficiais, emendas parlamentares e referencias externas organizadas pelo Radar do Povo.`
+  );
+  const politicoSameAs = [
+    perfilExterno?.wikipedia?.url,
+    perfilExterno?.camara?.uri,
+    perfilExterno?.senado?.urlPagina,
+    perfilExterno?.tse?.divulgaCandContasUrl,
+  ].filter((value): value is string => Boolean(value));
+  const politicoStructuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      name: `${politicoDisplayName} | Radar do Povo`,
+      description: politicoSeoDescription,
+      url: `https://radardopovo.com${politicoCanonicalPath}`,
+      inLanguage: "pt-BR",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "Radar do Povo",
+        url: "https://radardopovo.com",
+      },
+      mainEntity: {
+        "@type": "Person",
+        name: politicoDisplayName,
+        description: politicoSeoDescription,
+        image: fotoUrl || "https://radardopovo.com/logo.png",
+        jobTitle: politico?.cargoAtual,
+        affiliation: politico?.partido
+          ? {
+              "@type": "Organization",
+              name: politico.partido,
+            }
+          : undefined,
+        sameAs: politicoSameAs.length ? politicoSameAs : undefined,
+      },
+    },
+    buildBreadcrumbStructuredData([
+      { name: "Home", path: "/" },
+      { name: "Busca", path: "/busca" },
+      { name: politicoDisplayName, path: politicoCanonicalPath },
+    ]),
+  ];
 
   const pieData = useMemo(() => {
     if (!gastos) return [];
@@ -200,6 +251,23 @@ const PoliticoDetalhe = () => {
 
   return (
     <div className="min-h-screen bg-grid-pattern">
+      <SeoHead
+        title={`${politicoDisplayName} | Perfil politico no Radar do Povo`}
+        description={politicoSeoDescription}
+        path={politicoCanonicalPath}
+        image={fotoUrl || "/logo.png"}
+        imageAlt={politicoDisplayName}
+        type="profile"
+        robots={!isLoading && (!politico || Boolean(error)) ? "noindex,nofollow" : undefined}
+        keywords={[
+          politicoDisplayName,
+          "perfil politico",
+          "viagens oficiais",
+          "emendas parlamentares",
+          "radar do povo",
+        ]}
+        structuredData={politicoStructuredData}
+      />
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">

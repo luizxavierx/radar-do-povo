@@ -1,6 +1,8 @@
 import { ShieldCheck } from "lucide-react";
 
 import AppSidebar from "@/components/AppSidebar";
+import SeoHead from "@/components/SeoHead";
+import { buildBreadcrumbStructuredData, buildCanonicalUrl } from "@/lib/seo";
 
 type InstitutionalSection = {
   title: string;
@@ -13,6 +15,9 @@ type InstitutionalPageShellProps = {
   title: string;
   intro: string;
   sections: InstitutionalSection[];
+  seoTitle: string;
+  seoDescription: string;
+  seoPath: string;
 };
 
 const InstitutionalPageShell = ({
@@ -20,9 +25,36 @@ const InstitutionalPageShell = ({
   title,
   intro,
   sections,
+  seoTitle,
+  seoDescription,
+  seoPath,
 }: InstitutionalPageShellProps) => {
   return (
     <div>
+      <SeoHead
+        title={seoTitle}
+        description={seoDescription}
+        path={seoPath}
+        structuredData={[
+          {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: seoTitle,
+            description: seoDescription,
+            url: buildCanonicalUrl(seoPath),
+            inLanguage: "pt-BR",
+            isPartOf: {
+              "@type": "WebSite",
+              name: "Radar do Povo",
+              url: "https://radardopovo.com",
+            },
+          },
+          buildBreadcrumbStructuredData([
+            { name: "Home", path: "/" },
+            { name: title, path: seoPath },
+          ]),
+        ]}
+      />
       <AppSidebar />
 
       <main className="lg:ml-72">

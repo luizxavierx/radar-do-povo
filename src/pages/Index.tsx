@@ -27,6 +27,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
+import SeoHead from "@/components/SeoHead";
 import ShareActions from "@/components/ShareActions";
 import SearchBar from "@/components/SearchBar";
 import StatsCard from "@/components/StatsCard";
@@ -52,6 +53,12 @@ import {
   formatCountCompact,
 } from "@/lib/formatters";
 import { buildPoliticoPath } from "@/lib/politicos";
+import {
+  SEO_SITE_NAME,
+  buildBreadcrumbStructuredData,
+  buildCanonicalUrl,
+  truncateSeoDescription,
+} from "@/lib/seo";
 import type {
   Connection,
   PoliticoResumo,
@@ -259,6 +266,67 @@ const Index = () => {
   );
   const featuredPrimary = featuredShelf[0];
   const featuredSecondary = featuredShelf.slice(1);
+  const homeSeoDescription = truncateSeoDescription(
+    "Consulte viagens oficiais, emendas parlamentares, rankings comparativos e perfis politicos em uma leitura clara orientada por dados publicos."
+  );
+  const homeStructuredData = useMemo(
+    () => {
+      const featuredItemList = featuredShelf.slice(0, 4).map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: buildCanonicalUrl(item.profilePath),
+        name: item.nome,
+      }));
+
+      return [
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: SEO_SITE_NAME,
+          url: "https://radardopovo.com",
+          logo: "https://radardopovo.com/logo.png",
+          email: "radardopovo@proton.me",
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: SEO_SITE_NAME,
+          url: "https://radardopovo.com",
+          inLanguage: "pt-BR",
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Radar do Povo",
+          url: "https://radardopovo.com/",
+          description: homeSeoDescription,
+          inLanguage: "pt-BR",
+          isPartOf: {
+            "@type": "WebSite",
+            name: SEO_SITE_NAME,
+            url: "https://radardopovo.com",
+          },
+          about: [
+            { "@type": "Thing", name: "Transparencia politica" },
+            { "@type": "Thing", name: "Emendas parlamentares" },
+            { "@type": "Thing", name: "Viagens oficiais" },
+          ],
+        },
+        buildBreadcrumbStructuredData([{ name: "Home", path: "/" }]),
+        ...(featuredItemList.length
+          ? [
+              {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                name: "Perfis politicos em destaque",
+                itemListElement: featuredItemList,
+              },
+            ]
+          : []),
+      ];
+    },
+    [featuredShelf, homeSeoDescription]
+  );
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -341,6 +409,20 @@ const Index = () => {
 
   return (
     <div>
+      <SeoHead
+        title="Radar do Povo | Transparencia politica em dados publicos"
+        description={homeSeoDescription}
+        path="/"
+        keywords={[
+          "radar do povo",
+          "transparencia politica",
+          "emendas parlamentares",
+          "viagens oficiais",
+          "perfis politicos",
+          "gastos publicos",
+        ]}
+        structuredData={homeStructuredData}
+      />
       <AppSidebar />
 
       <main className="lg:ml-72">

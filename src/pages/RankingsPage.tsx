@@ -28,6 +28,7 @@ import {
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
+import SeoHead from "@/components/SeoHead";
 import StatsCard from "@/components/StatsCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import {
@@ -43,6 +44,7 @@ import {
   formatCentsCompact,
   formatCountCompact,
 } from "@/lib/formatters";
+import { buildBreadcrumbStructuredData } from "@/lib/seo";
 import type {
   EmendaSerieAnualNode,
   RankingEmendaFiltroInput,
@@ -238,9 +240,47 @@ const RankingsPage = () => {
   const totalPagoCents       = resumo?.totalPagoCents       ?? "0";
   const totalEmpenhadoCents  = resumo?.totalEmpenhadoCents  ?? "0";
   const ticketMedioPagoCents = resumo?.ticketMedioPagoCents ?? "0";
+  const seoDescription =
+    "Compare rankings de emendas parlamentares, evolucao anual, composicao por tipo e distribuicao geografica em uma leitura orientada por recorte.";
 
   return (
     <div>
+      <SeoHead
+        title="Rankings de emendas parlamentares | Radar do Povo"
+        description={seoDescription}
+        path="/rankings"
+        keywords={[
+          "rankings de emendas",
+          "emendas parlamentares",
+          "comparativo de emendas",
+          "ranking de gastos publicos",
+          "radar do povo rankings",
+        ]}
+        structuredData={[
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: "Rankings de emendas parlamentares",
+            description: seoDescription,
+            url: "https://radardopovo.com/rankings",
+            inLanguage: "pt-BR",
+            isPartOf: {
+              "@type": "WebSite",
+              name: "Radar do Povo",
+              url: "https://radardopovo.com",
+            },
+            about: [
+              { "@type": "Thing", name: "Emendas parlamentares" },
+              { "@type": "Thing", name: "Rankings comparativos" },
+              { "@type": "Thing", name: "Serie anual de gastos" },
+            ],
+          },
+          buildBreadcrumbStructuredData([
+            { name: "Home", path: "/" },
+            { name: "Rankings", path: "/rankings" },
+          ]),
+        ]}
+      />
       <AppSidebar />
 
       <main className="lg:ml-72">
