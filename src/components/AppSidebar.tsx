@@ -5,7 +5,6 @@ import {
   BarChart3,
   ChevronRight,
   Compass,
-  KeyRound,
   Home,
   LibraryBig,
   Menu,
@@ -28,10 +27,6 @@ const navGroups = [
     label: "Explorar",
     items: [{ icon: Search, label: "Busca", path: "/busca", hint: "Encontrar politico" }],
   },
-  {
-    label: "Membros",
-    items: [{ icon: KeyRound, label: "Membros", path: "/membros", hint: "API paga e docs" }],
-  },
 ];
 
 const quickLinks = [
@@ -46,12 +41,6 @@ const quickLinks = [
     label: "Comparativos",
     description: "Rankings anuais",
     path: "/rankings",
-  },
-  {
-    icon: KeyRound,
-    label: "Area de membros",
-    description: "Plano mensal",
-    path: "/membros",
   },
 ];
 

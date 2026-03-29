@@ -28,7 +28,10 @@ import PaginationControls from "@/components/PaginationControls";
 import { EmptyState, ErrorState } from "@/components/StateViews";
 import { PoliticoNewsSection } from "@/components/politicos/PoliticoNewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePoliticoDossieCompleto, usePoliticoNoticias } from "@/hooks/usePoliticos";
+import {
+  usePoliticoDossieCompleto,
+  usePoliticoNoticias,
+} from "@/hooks/usePoliticos";
 import {
   centsToNumber,
   formatCents,
@@ -71,7 +74,30 @@ const PoliticoDetalhe = () => {
     trechosLimit: 12,
     conveniosLimit: 12,
     favorecidosLimit: 12,
+    includePerfilExterno: false,
+    includePassagens: false,
+    includePagamentos: false,
+    includeTrechos: true,
+    includeConvenios: false,
+    includeFavorecidos: false,
   });
+  const { data: politicoPerfilExterno, isLoading: isPerfilExternoLoading } = usePoliticoDossieCompleto(
+    politico ? nomeBusca : undefined,
+    {
+      lexmlLimit: LEXML_PAGE_SIZE,
+      lexmlOffset,
+      includePerfilExterno: true,
+      includeGastos: false,
+      includeEmendasResumo: false,
+      includeViagens: false,
+      includeEmendas: false,
+      includePassagens: false,
+      includePagamentos: false,
+      includeTrechos: false,
+      includeConvenios: false,
+      includeFavorecidos: false,
+    }
+  );
   const nomePoliticoNoticias = politico
     ? politico.nomeCompleto || politico.nomeCanonico?.replace(/-/g, " ") || nomeBusca.replace(/-/g, " ")
     : "";
@@ -111,10 +137,12 @@ const PoliticoDetalhe = () => {
     [emendasNodes, politico?.emendasResumo]
   );
 
+  const perfilExterno = politicoPerfilExterno?.perfilExterno ?? politico?.perfilExterno;
+
   const fotoUrl =
     politico?.fotoUrl ||
-    politico?.perfilExterno?.camara?.urlFoto ||
-    politico?.perfilExterno?.senado?.urlFoto;
+    perfilExterno?.camara?.urlFoto ||
+    perfilExterno?.senado?.urlFoto;
 
   const pieData = useMemo(() => {
     if (!gastos) return [];
@@ -223,12 +251,12 @@ const PoliticoDetalhe = () => {
                         {politico.dataNascimento ? (
                           <span>Nascimento: {formatDate(politico.dataNascimento)}</span>
                         ) : null}
-                        {politico.perfilExterno?.camara?.email ||
-                        politico.perfilExterno?.senado?.email ? (
+                        {perfilExterno?.camara?.email ||
+                        perfilExterno?.senado?.email ? (
                           <span className="inline-flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            {politico.perfilExterno?.camara?.email ||
-                              politico.perfilExterno?.senado?.email}
+                            {perfilExterno?.camara?.email ||
+                              perfilExterno?.senado?.email}
                           </span>
                         ) : null}
                       </div>
@@ -639,14 +667,15 @@ const PoliticoDetalhe = () => {
                   </>
                 )}
               </section>
-
-                  {politico.perfilExterno ? (
+                  {perfilExterno ? (
                   <PerfilExternoSection
-                    perfil={politico.perfilExterno}
+                    perfil={perfilExterno}
                     lexmlLimit={LEXML_PAGE_SIZE}
                     lexmlOffset={lexmlOffset}
                     onLexmlPageChange={setLexmlOffset}
                   />
+                  ) : isPerfilExternoLoading ? (
+                    <Skeleton className="h-72 w-full rounded-[28px]" />
                   ) : null}
               </div>
             ) : null}
