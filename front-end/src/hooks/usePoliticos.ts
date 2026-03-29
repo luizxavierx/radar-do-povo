@@ -143,6 +143,16 @@ export interface PoliticoDossieQueryOptions {
   trechosLimit?: number;
   conveniosLimit?: number;
   favorecidosLimit?: number;
+  includePerfilExterno?: boolean;
+  includeGastos?: boolean;
+  includeEmendasResumo?: boolean;
+  includeViagens?: boolean;
+  includeEmendas?: boolean;
+  includePassagens?: boolean;
+  includePagamentos?: boolean;
+  includeTrechos?: boolean;
+  includeConvenios?: boolean;
+  includeFavorecidos?: boolean;
 }
 
 export function usePoliticoDossieCompleto(
@@ -164,6 +174,16 @@ export function usePoliticoDossieCompleto(
     trechosLimit: options.trechosLimit ?? 12,
     conveniosLimit: options.conveniosLimit ?? 12,
     favorecidosLimit: options.favorecidosLimit ?? 12,
+    includePerfilExterno: options.includePerfilExterno ?? true,
+    includeGastos: options.includeGastos ?? true,
+    includeEmendasResumo: options.includeEmendasResumo ?? true,
+    includeViagens: options.includeViagens ?? true,
+    includeEmendas: options.includeEmendas ?? true,
+    includePassagens: options.includePassagens ?? true,
+    includePagamentos: options.includePagamentos ?? true,
+    includeTrechos: options.includeTrechos ?? true,
+    includeConvenios: options.includeConvenios ?? true,
+    includeFavorecidos: options.includeFavorecidos ?? true,
   };
 
   return useQuery({
