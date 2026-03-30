@@ -34,6 +34,50 @@ O objetivo do Radar do Povo é transformar bases públicas dispersas em uma expe
 - shadcn/ui + Radix UI
 - Recharts
 
+## Stack de backend utilizada pelo produto
+
+Embora este repositório publique o frontend, o projeto foi desenhado em cima de um backend Laravel dedicado, consumido internamente pela aplicação.
+
+- Laravel
+- PHP 8+
+- PostgreSQL
+- Redis
+- GraphQL
+- REST
+- Apache como reverse proxy
+- Cloudflare na borda
+
+## O que existe no backend
+
+O backend concentra a parte mais sensível da plataforma:
+
+- agregação de dados públicos de viagens oficiais
+- agregação e rankings de emendas parlamentares
+- dossiê consolidado por político
+- enriquecimento com fontes externas como Câmara, Senado, TSE, LexML e Wikipedia
+- cache de aplicação e cache HTTP para reduzir latência
+- rate limiting por rota
+- headers de segurança e proteção de borda
+
+Na prática, a aplicação opera em arquitetura híbrida:
+
+- **GraphQL** para listagens e navegação mais flexível
+- **REST** para endpoints pesados e especializados, como rankings, notícias e dossiês
+
+## Skills técnicas demonstradas no backend
+
+Além do frontend, o projeto também demonstra capacidade real de backend e operação:
+
+- **Modelagem de API**: desenho híbrido entre GraphQL e REST para equilibrar flexibilidade e performance.
+- **Otimização de consulta**: redução de gargalos, cache de resposta e reaproveitamento de resultados quentes.
+- **Banco de dados**: leitura analítica sobre PostgreSQL com foco em paginação, agregação e relatórios.
+- **Caching distribuído**: uso de Redis para cache e throttling consistente em produção.
+- **Hardening de API pública**: chave compartilhada de borda, rate limit por rota, trust proxies e headers de segurança.
+- **Observabilidade**: request id, logging enriquecido e rastreabilidade para investigação de abuso e timeout.
+- **Integração com fontes externas**: composição de dados públicos vindos de múltiplos órgãos e bases.
+- **Operação em produção**: Apache como proxy reverso, Cloudflare na borda, build estático no frontend e backend isolado internamente.
+- **Resiliência**: fallback de cache, proteção contra burst e redução de exposição de erro para o usuário final.
+
 ## Arquitetura resumida
 
 O frontend funciona como SPA, mas foi estruturado para reduzir custo de navegação e melhorar indexação:
@@ -55,6 +99,7 @@ Este projeto é relevante para portfólio porque mostra, na prática, combinaç�
 - **Performance tuning**: cache de consulta, staged loading, reaproveitamento de dados anteriores e redução de timeout visual.
 - **SEO técnico**: títulos e descrições por rota, canonical, Open Graph, Twitter Cards, JSON-LD, sitemap index e páginas de perfis.
 - **Integração com backend**: consumo de GraphQL e endpoints REST especializados, com tratamento de erro e retry controlado.
+- **Backend engineering**: desenho de API, cache Redis, agregações pesadas, segurança por middleware e exposição pública controlada.
 - **UX para dados públicos**: interface pensada para filtros, exploração, comparação e compartilhamento.
 - **Entrega em produção**: publicação em VPS com Apache reverso, integração com Cloudflare e operação contínua.
 - **Hardening de leitura pública**: trabalho conjunto com backend para caching, rate limiting e redução de exposição de erro.
