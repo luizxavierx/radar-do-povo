@@ -1,21 +1,11 @@
-import { Banknote, CalendarDays, Landmark, MapPinned } from "lucide-react";
-import type { ImpostometroResumo, ImpostometroTributoGroup } from "@/api/types";
+import { Banknote, CalendarDays } from "lucide-react";
+import type { ImpostometroResumo } from "@/api/types";
 
 interface ImpostometroSpotlightProps {
   data?: ImpostometroResumo;
   isLoading?: boolean;
   isError?: boolean;
 }
-
-const esferaMeta: Array<{
-  key: keyof NonNullable<ImpostometroResumo["tributos"]>;
-  label: string;
-  icon: typeof Landmark;
-}> = [
-  { key: "federal", label: "Federal", icon: Landmark },
-  { key: "estadual", label: "Estadual", icon: MapPinned },
-  { key: "municipal", label: "Municipal", icon: Banknote },
-];
 
 export default function ImpostometroSpotlight({
   data,
@@ -24,7 +14,6 @@ export default function ImpostometroSpotlight({
 }: ImpostometroSpotlightProps) {
   const brasil = data?.brasil;
   const meta = data?.meta;
-  const tributos = data?.tributos;
   const odometerGroups = buildOdometerGroups(brasil?.valor);
 
   return (
@@ -49,7 +38,16 @@ export default function ImpostometroSpotlight({
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-[28px] border border-teal-900/20 bg-[linear-gradient(135deg,rgba(17,108,112,0.96),rgba(14,128,134,0.94))] px-4 py-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:px-5">
+      <div className="relative mt-4 overflow-hidden rounded-[28px] border border-teal-900/20 bg-[linear-gradient(135deg,rgba(14,112,118,0.98),rgba(18,140,146,0.95))] px-4 py-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:px-5">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2.5rem] bg-[rgba(255,205,54,0.22)] blur-[1px]" />
+          <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-[rgba(21,53,122,0.34)]" />
+          <div className="absolute -left-10 top-8 h-28 w-28 rounded-full bg-[rgba(255,205,54,0.12)] blur-2xl" />
+          <div className="absolute -right-12 bottom-0 h-36 w-36 rounded-full bg-[rgba(21,53,122,0.18)] blur-2xl" />
+          <div className="absolute inset-x-12 top-1/2 h-px -translate-y-1/2 bg-white/8" />
+        </div>
+
+        <div className="relative">
         {isLoading && !brasil ? (
           <LoadingCounterBoard />
         ) : isError && !brasil ? (
@@ -83,18 +81,7 @@ export default function ImpostometroSpotlight({
             </p>
           </>
         )}
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        {esferaMeta.map(({ key, label, icon: Icon }) => (
-          <EsferaCard
-            key={key}
-            label={label}
-            icon={Icon}
-            group={tributos?.[key]}
-            loading={Boolean(isLoading && !data)}
-          />
-        ))}
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-amber-200/70 pt-4 text-[11px] text-muted-foreground">
@@ -143,49 +130,6 @@ function DigitGroup({
         {label}
       </p>
     </div>
-  );
-}
-
-function EsferaCard({
-  label,
-  icon: Icon,
-  group,
-  loading,
-}: {
-  label: string;
-  icon: typeof Landmark;
-  group?: ImpostometroTributoGroup;
-  loading?: boolean;
-}) {
-  const destaque = group?.itens?.[0]?.nome;
-
-  return (
-    <article className="rounded-2xl border border-amber-200/70 bg-white/82 px-4 py-3 shadow-[0_14px_32px_-26px_rgba(120,53,15,0.38)]">
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </div>
-
-      {loading ? (
-        <>
-          <div className="mt-3 h-5 w-24 animate-pulse rounded-full bg-amber-100/80" />
-          <div className="mt-2 h-3 w-32 animate-pulse rounded-full bg-amber-100/70" />
-        </>
-      ) : (
-        <>
-          <p className="mt-3 text-lg font-extrabold tracking-tight text-foreground">
-            {group?.totalCompacto || group?.totalFormatado || "R$ --"}
-          </p>
-          <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-muted-foreground">
-            {destaque
-              ? `Maior rubrica agora: ${destaque}.`
-              : group?.totalItens
-                ? `${group.totalItens} tributos monitorados nesta esfera.`
-                : "Sem detalhamento agora."}
-          </p>
-        </>
-      )}
-    </article>
   );
 }
 
