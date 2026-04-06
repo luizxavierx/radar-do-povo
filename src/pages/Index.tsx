@@ -26,6 +26,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
+import ImpostometroSpotlight from "@/components/ImpostometroSpotlight";
 import PaginationControls from "@/components/PaginationControls";
 import SeoHead from "@/components/SeoHead";
 import ShareActions from "@/components/ShareActions";
@@ -37,6 +38,7 @@ import {
   useFeaturedPoliticos,
   usePoliticos,
 } from "@/hooks/usePoliticos";
+import { useImpostometroResumo } from "@/hooks/useImpostometro";
 import {
   isBancadaNome,
   useEmendaRankingResumo,
@@ -107,7 +109,7 @@ const featuredFallback = [
     search: "lula",
     nomeCanonico: "lula",
     nome: "Luiz Inacio Lula da Silva",
-    foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28rosto%29.jpg/960px-Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28rosto%29.jpg",
+    foto: "https://imagens.ebc.com.br/f0xBJtGd9zN4rfk4F1Yt8BZBv6I=/1170x700/smart/https://agenciabrasil.ebc.com.br/sites/default/files/thumbnails/image/2025/09/06/54770136894_59403684a2_o.jpg",
   },
   {
     key: "bolsonaro",
@@ -156,6 +158,7 @@ const Index = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const apiHealthQuery = useApiHealth();
+  const impostometroQuery = useImpostometroResumo();
   const featuredQuery = useFeaturedPoliticos();
 
   const rankingFilter = useMemo<RankingEmendaFiltroInput>(() => {
@@ -471,6 +474,14 @@ const Index = () => {
                 </label>
               </div>
             </div>
+          </section>
+
+          <section className="mt-6 animate-fade-up" style={{ animationDelay: "40ms" }}>
+            <ImpostometroSpotlight
+              data={impostometroQuery.data}
+              isLoading={impostometroQuery.isLoading}
+              isError={Boolean(impostometroQuery.error)}
+            />
           </section>
 
           {/* ── Search ── */}
