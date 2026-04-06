@@ -5,9 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ApiRequestError } from "@/api/requestError";
+import AppRouteFallback from "@/components/AppRouteFallback";
 import AppShellLayout from "@/components/AppShellLayout";
 import ScrollToTop from "@/components/ScrollToTop";
-import logo from "@/assets/logo.png";
 
 const Index = lazy(() => import("./pages/Index"));
 const PoliticoDetalhe = lazy(() => import("./pages/PoliticoDetalhe"));
@@ -57,17 +57,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
-        <Suspense
-          fallback={
-            <div className="flex min-h-screen items-center justify-center px-6">
-              <img
-                src={logo}
-                alt="Radar do Povo"
-                className="h-12 w-auto opacity-90 sm:h-14"
-              />
-            </div>
-          }
-        >
+        <Suspense fallback={<AppRouteFallback />}>
           <Routes>
             <Route element={<AppShellLayout />}>
               <Route path="/" element={<Index />} />

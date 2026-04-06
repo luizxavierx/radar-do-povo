@@ -104,7 +104,12 @@ const AppSidebar = () => {
               </button>
             </div>
 
-            <div className="mt-4 rounded-[24px] border border-primary/15 bg-gradient-to-br from-primary/10 via-white to-cyan-50 p-4 shadow-sm">
+            <div className="animate-float-slow relative mt-4 overflow-hidden rounded-[24px] border border-primary/15 bg-gradient-to-br from-primary/10 via-white to-cyan-50 p-4 shadow-sm">
+              <div className="pointer-events-none absolute inset-0">
+                <div className="animate-sheen absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-transparent via-white/45 to-transparent" />
+                <div className="animate-float-wide absolute -right-6 top-2 h-16 w-16 rounded-full bg-primary/10 blur-2xl" />
+                <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+              </div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
                 Painel institucional
               </p>
@@ -128,12 +133,13 @@ const AppSidebar = () => {
                       <button
                         key={item.path}
                         onClick={() => goTo(item.path)}
-                        className={`group relative w-full overflow-hidden rounded-2xl border px-3.5 py-3 text-left transition-all duration-200 ${
+                        className={`group relative w-full overflow-hidden rounded-2xl border px-3.5 py-3 text-left transition-all duration-200 hover:-translate-y-0.5 ${
                           active
                             ? "border-primary/20 bg-primary/10 text-primary shadow-sm"
                             : "border-transparent text-sidebar-foreground hover:border-border/70 hover:bg-white"
                         }`}
                       >
+                        <div className={`absolute inset-0 opacity-0 transition-opacity duration-300 ${active ? "bg-gradient-to-r from-primary/8 via-transparent to-transparent opacity-100" : "group-hover:opacity-100 bg-gradient-to-r from-primary/6 via-transparent to-transparent"}`} />
                         <div
                           className={`absolute left-0 top-3 bottom-3 w-1 rounded-full transition-colors ${
                             active ? "bg-primary" : "bg-transparent group-hover:bg-primary/20"
@@ -173,7 +179,7 @@ const AppSidebar = () => {
                   <button
                     key={item.label}
                     onClick={() => goTo(item.path)}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-transparent bg-background/85 px-3 py-3 text-left transition-colors hover:border-border/70 hover:bg-white"
+                    className="flex w-full items-center gap-3 rounded-2xl border border-transparent bg-background/85 px-3 py-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-border/70 hover:bg-white"
                   >
                     <span className="rounded-xl bg-primary/10 p-2 text-primary">
                       <item.icon className="h-4 w-4" />
@@ -189,7 +195,8 @@ const AppSidebar = () => {
           </nav>
 
           <div className="mt-auto border-t border-sidebar-border/80 px-5 py-5">
-            <div className="rounded-[20px] border border-border/70 bg-white/80 p-3">
+            <div className="relative overflow-hidden rounded-[20px] border border-border/70 bg-white/80 p-3">
+              <div className="animate-sheen pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   Status da base
