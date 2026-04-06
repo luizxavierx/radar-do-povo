@@ -261,22 +261,31 @@
   }
 
   .editorial-panel {
-    @apply rounded-[1.8rem] border border-white/75 bg-card/94 p-5 sm:p-6;
+    @apply rounded-[1.8rem] border p-5 sm:p-6;
+    border-color: rgb(255 255 255 / 0.75);
+    background-color: hsl(var(--card) / 0.94);
     box-shadow: var(--shadow-card);
   }
 
   .editorial-panel-soft {
-    @apply rounded-[1.7rem] border border-border/70 bg-card/88 p-5 sm:p-6;
+    @apply rounded-[1.7rem] border p-5 sm:p-6;
+    border-color: hsl(var(--border) / 0.7);
+    background-color: hsl(var(--card) / 0.88);
     box-shadow: var(--shadow-card);
   }
 
   .editorial-panel-strong {
-    @apply rounded-[1.8rem] border border-primary/15 bg-card/95 p-5 sm:p-6;
+    @apply rounded-[1.8rem] border p-5 sm:p-6;
+    border-color: hsl(var(--primary) / 0.15);
+    background-color: hsl(var(--card) / 0.95);
     box-shadow: var(--shadow-elevated);
   }
 
   .editorial-eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary;
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em];
+    border-color: hsl(var(--primary) / 0.15);
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
   }
 
   .editorial-title {
@@ -288,7 +297,10 @@
   }
 
   .editorial-chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-border/70 bg-white/88 px-3 py-1.5 text-xs font-medium text-foreground;
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium;
+    border-color: hsl(var(--border) / 0.7);
+    background-color: rgb(255 255 255 / 0.88);
+    color: hsl(var(--foreground));
   }
 
   .editorial-divider {
@@ -296,7 +308,9 @@
   }
 
   .editorial-input-shell {
-    @apply relative overflow-hidden rounded-[1.65rem] border border-white/80 bg-white/92 p-2 shadow-card backdrop-blur-sm;
+    @apply relative overflow-hidden rounded-[1.65rem] border p-2 shadow-card backdrop-blur-sm;
+    border-color: rgb(255 255 255 / 0.8);
+    background-color: rgb(255 255 255 / 0.92);
   }
 
   .editorial-stacked-list > * + * {
@@ -312,15 +326,21 @@
   }
 
   .surface-muted {
-    @apply rounded-[1.45rem] border border-border/70 bg-background/80;
+    @apply rounded-[1.45rem] border;
+    border-color: hsl(var(--border) / 0.7);
+    background-color: hsl(var(--background) / 0.8);
   }
 
   .surface-tint {
-    @apply rounded-[1.45rem] border border-primary/15 bg-primary/[0.055];
+    @apply rounded-[1.45rem] border;
+    border-color: hsl(var(--primary) / 0.15);
+    background-color: hsl(var(--primary) / 0.055);
   }
 
   .ui-skeleton {
-    @apply animate-pulse rounded-[1.3rem] border border-white/40 bg-white/70;
+    @apply animate-pulse rounded-[1.3rem] border;
+    border-color: rgb(255 255 255 / 0.4);
+    background-color: rgb(255 255 255 / 0.7);
   }
 }
 
