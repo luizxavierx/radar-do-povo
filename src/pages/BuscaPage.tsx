@@ -184,16 +184,6 @@ const BuscaPage = () => {
                   value={hasFilter ? "Filtrado" : "Aberto"}
                   helper={hasFilter ? "Busca ativa na base" : "Aguardando filtros"}
                 />
-                <SearchPageHeaderMetric
-                  label="Resultados"
-                  value={formatCount(total)}
-                  helper="Contagem atual"
-                />
-                <SearchPageHeaderMetric
-                  label="Pagina"
-                  value={`${currentPage}/${totalPages}`}
-                  helper="Navegacao da consulta"
-                />
               </div>
             }
             meta={
@@ -413,9 +403,5 @@ const SearchPageHeaderMetric = ({
     <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p>
   </div>
 );
-
-function formatCount(value: number) {
-  return value > 0 ? value.toLocaleString("pt-BR") : "0";
-}
 
 export default BuscaPage;
