@@ -184,7 +184,7 @@ const ViagensFilters = ({
   const activeFiltersCount = activeBadges.length;
 
   const advancedFiltersContent = (
-    <div className="rounded-[28px] border border-border/70 bg-background/70 p-4 sm:p-5">
+    <div className="surface-muted p-4 sm:p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-foreground">Campos avancados</h3>
@@ -222,7 +222,7 @@ const ViagensFilters = ({
   );
 
   return (
-    <section className="rounded-[30px] border border-border/75 bg-card/90 p-5 shadow-card sm:p-6">
+    <section className="editorial-panel">
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-2xl">
@@ -237,7 +237,7 @@ const ViagensFilters = ({
           <div className="grid gap-2 sm:grid-cols-3 xl:w-auto">
             <Button
               variant="outline"
-              className="justify-center rounded-2xl bg-white"
+              className="justify-center rounded-[1rem] bg-white"
               onClick={onComparePreviousPeriod}
               disabled={!canComparePreviousPeriod}
             >
@@ -246,7 +246,7 @@ const ViagensFilters = ({
             </Button>
             <Button
               variant="outline"
-              className="justify-center rounded-2xl bg-white"
+              className="justify-center rounded-[1rem] bg-white"
               onClick={onSaveView}
             >
               <Save className="h-4 w-4" />
@@ -254,7 +254,7 @@ const ViagensFilters = ({
             </Button>
             <Button
               variant="outline"
-              className="justify-center rounded-2xl bg-white"
+              className="justify-center rounded-[1rem] bg-white"
               onClick={onReset}
             >
               <RefreshCcw className="h-4 w-4" />
@@ -263,7 +263,7 @@ const ViagensFilters = ({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-border/70 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-4 sm:p-5">
+        <div className="surface-muted bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(244,248,250,0.92)_58%,rgba(235,247,245,0.82)_100%)] p-4 sm:p-5">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))] xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,1fr))]">
             <div className="space-y-2 xl:col-span-2">
               <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -277,7 +277,7 @@ const ViagensFilters = ({
                     setTextDraft((current) => ({ ...current, search: event.target.value }))
                   }
                   placeholder="Nome, destino, motivo, cargo, funcao ou orgao"
-                  className="h-11 rounded-2xl border-border/70 bg-white pl-9"
+                  className="h-11 rounded-[1rem] border-border/70 bg-white pl-9"
                 />
               </div>
             </div>
@@ -290,7 +290,7 @@ const ViagensFilters = ({
                 value={String(value.anoInicio)}
                 onValueChange={(nextValue) => onChange({ anoInicio: Number(nextValue) })}
               >
-                <SelectTrigger className="h-11 rounded-2xl bg-white">
+                <SelectTrigger className="h-11 rounded-[1rem] bg-white">
                   <SelectValue placeholder="Selecione o ano inicial" />
                 </SelectTrigger>
                 <SelectContent>
@@ -311,7 +311,7 @@ const ViagensFilters = ({
                 value={String(value.anoFim)}
                 onValueChange={(nextValue) => onChange({ anoFim: Number(nextValue) })}
               >
-                <SelectTrigger className="h-11 rounded-2xl bg-white">
+                <SelectTrigger className="h-11 rounded-[1rem] bg-white">
                   <SelectValue placeholder="Selecione o ano final" />
                 </SelectTrigger>
                 <SelectContent>

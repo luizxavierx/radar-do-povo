@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { MotionConfig } from "framer-motion";
 import { ApiRequestError } from "@/api/requestError";
 import AppRouteFallback from "@/components/AppRouteFallback";
 import AppShellLayout from "@/components/AppShellLayout";
@@ -52,29 +53,31 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Suspense fallback={<AppRouteFallback />}>
-          <Routes>
-            <Route element={<AppShellLayout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/politico/:id" element={<PoliticoDetalhe />} />
-              <Route path="/busca" element={<BuscaPage />} />
-              <Route path="/viagens" element={<ViagensPage />} />
-              <Route path="/rankings" element={<RankingsPage />} />
-              <Route path="/termos" element={<TermosPage />} />
-              <Route path="/metodologia" element={<MetodologiaPage />} />
-              <Route path="/diretrizes-editoriais" element={<DiretrizesPage />} />
-              <Route path="/contato" element={<ContatoPage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
+    <MotionConfig reducedMotion="user">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Suspense fallback={<AppRouteFallback />}>
+            <Routes>
+              <Route element={<AppShellLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/politico/:id" element={<PoliticoDetalhe />} />
+                <Route path="/busca" element={<BuscaPage />} />
+                <Route path="/viagens" element={<ViagensPage />} />
+                <Route path="/rankings" element={<RankingsPage />} />
+                <Route path="/termos" element={<TermosPage />} />
+                <Route path="/metodologia" element={<MetodologiaPage />} />
+                <Route path="/diretrizes-editoriais" element={<DiretrizesPage />} />
+                <Route path="/contato" element={<ContatoPage />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </TooltipProvider>
+    </MotionConfig>
   </QueryClientProvider>
 );
 

@@ -25,8 +25,11 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import AppSidebar from "@/components/AppSidebar";
+import EditorialPageHeader from "@/components/EditorialPageHeader";
+import EditorialSection from "@/components/EditorialSection";
 import PaginationControls from "@/components/PaginationControls";
 import SeoHead from "@/components/SeoHead";
 import StatsCard from "@/components/StatsCard";
@@ -45,6 +48,7 @@ import {
   formatCountCompact,
 } from "@/lib/formatters";
 import { buildBreadcrumbStructuredData } from "@/lib/seo";
+import { buildHoverLift, buildRevealVariants, buildStaggerVariants, editorialViewport } from "@/lib/motion";
 import type {
   EmendaSerieAnualNode,
   RankingEmendaFiltroInput,
@@ -242,6 +246,7 @@ const RankingsPage = () => {
   const ticketMedioPagoCents = resumo?.ticketMedioPagoCents ?? "0";
   const seoDescription =
     "Compare rankings de emendas parlamentares, evolucao anual, composicao por tipo e distribuicao geografica em uma leitura orientada por recorte.";
+  const reduceMotion = useReducedMotion();
 
   return (
     <div>
@@ -287,24 +292,17 @@ const RankingsPage = () => {
         <div className="mx-auto w-full max-w-[1320px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
 
           {/* ── Hero ── */}
-          <section className="rounded-3xl border border-border bg-card px-6 py-7 sm:px-8 sm:py-8">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-              <div className="max-w-2xl">
-                <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                  <FileText className="h-3 w-3" />
-                  Panorama de emendas
-                </p>
-                <h1 className="mt-3 text-[2rem] font-extrabold leading-[1.15] tracking-tight text-foreground sm:text-[2.4rem]">
-                  Emendas por{" "}
-                  <span className="text-primary">ano, autor e tipo</span>
-                </h1>
-                <p className="mt-2.5 max-w-xl text-sm leading-6 text-muted-foreground">
-                  Painel completo para enxergar volume financeiro, distribuicao anual,
-                  concentracao por autores e composicao do gasto com mais clareza.
-                </p>
-              </div>
-
-              <div className="grid gap-2.5 sm:grid-cols-3 xl:w-[400px] xl:shrink-0">
+          <EditorialPageHeader
+            eyebrow="Panorama de emendas"
+            icon={FileText}
+            title={
+              <>
+                Emendas por <span className="text-gradient-primary">ano, autor e tipo</span>
+              </>
+            }
+            description="Painel comparativo para enxergar volume financeiro, distribuicao anual, concentracao por autoria e composicao do gasto com uma leitura mais limpa."
+            aside={
+              <div className="grid gap-2.5 sm:grid-cols-3 xl:grid-cols-1">
                 <HeroSummaryCard
                   label="Escopo"
                   value={activeScopeMeta.label}
@@ -321,23 +319,31 @@ const RankingsPage = () => {
                   helper={tipoEmenda.trim() || "Todos os tipos"}
                 />
               </div>
-            </div>
-          </section>
+            }
+            meta={
+              <>
+                <span className="editorial-chip">{formatCountCompact(totalRanking)} autores</span>
+                <span className="editorial-chip">
+                  {formatCountCompact(resumo?.totalEmendas ?? 0)} emendas consolidadas
+                </span>
+              </>
+            }
+          />
 
           {/* ── Filters + scope tabs ── */}
-          <section className="mt-4 rounded-3xl border border-border bg-card p-5 sm:p-6">
+          <EditorialSection tone="muted" className="mt-4">
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-sm font-bold text-foreground">Controles do recorte</h2>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <h2 className="panel-heading">Controles do recorte</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Escolha o escopo, o periodo e refinamentos antes de comparar os dados.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                  className="inline-flex items-center gap-2 rounded-[1rem] border border-border bg-white px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
                 >
                   <RefreshCcw className="h-3.5 w-3.5" />
                   Limpar filtros
@@ -352,10 +358,10 @@ const RankingsPage = () => {
                       key={tab.id}
                       type="button"
                       onClick={() => { setScope(tab.id); setOffset(0); }}
-                      className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
+                      className={`inline-flex items-center gap-2 rounded-[1rem] border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                         scope === tab.id
-                          ? "border-primary bg-primary text-white"
-                          : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                          ? "border-primary/18 bg-primary/8 text-primary"
+                          : "border-border bg-white text-muted-foreground hover:border-primary/18 hover:text-foreground"
                       }`}
                     >
                       <tab.icon className="h-3.5 w-3.5" />
@@ -376,7 +382,7 @@ const RankingsPage = () => {
                       if (next > anoFim) setAnoFim(next);
                       setOffset(0);
                     }}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/50"
+                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
                   >
                     {years.map((year) => <option key={`start-${year}`} value={year}>{year}</option>)}
                   </select>
@@ -391,7 +397,7 @@ const RankingsPage = () => {
                       if (next < anoInicio) setAnoInicio(next);
                       setOffset(0);
                     }}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/50"
+                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
                   >
                     {years.map((year) => <option key={`end-${year}`} value={year}>{year}</option>)}
                   </select>
@@ -401,7 +407,7 @@ const RankingsPage = () => {
                   <select
                     value={uf}
                     onChange={(e) => { setUf(e.target.value); setOffset(0); }}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/50"
+                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
                   >
                     <option value="">Todas</option>
                     {ufOptions.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -413,67 +419,81 @@ const RankingsPage = () => {
                     value={tipoEmenda}
                     onChange={(e) => { setTipoEmenda(e.target.value); setOffset(0); }}
                     placeholder="Ex.: Individual"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/50"
+                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/25"
                   />
                 </FilterField>
 
                 <FilterField label="Resultados">
-                  <div className="flex h-10 items-center rounded-2xl border border-border bg-muted/30 px-3 text-sm font-medium text-foreground">
+                  <div className="flex h-10 items-center rounded-[1rem] border border-border/75 bg-white/88 px-3 text-sm font-medium text-foreground">
                     {formatCountCompact(totalRanking)} autores
                   </div>
                 </FilterField>
               </div>
             </div>
-          </section>
+          </EditorialSection>
 
           {/* ── KPIs ── */}
-          <section className="mt-4">
+          <motion.section
+            initial="hidden"
+            whileInView="visible"
+            viewport={editorialViewport}
+            variants={buildStaggerVariants(Boolean(reduceMotion))}
+            className="mt-4"
+          >
             {resumoQuery.isLoading && !resumo ? <LoadingState message="Carregando resumo de emendas..." /> : null}
             {resumoQuery.error && !resumo ? <ErrorState error={resumoQuery.error as Error} /> : null}
 
             {resumo ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <StatsCard
+                <motion.div variants={buildRevealVariants(Boolean(reduceMotion), { y: 12 })}>
+                  <StatsCard
                   label="Total pago"
                   value={formatCentsCompact(totalPagoCents)}
                   helper={formatCents(totalPagoCents)}
                   description={`Escopo ${activeScopeMeta.label.toLowerCase()}`}
                   icon={Landmark}
                   variant="green"
-                />
-                <StatsCard
+                  />
+                </motion.div>
+                <motion.div variants={buildRevealVariants(Boolean(reduceMotion), { y: 12, delay: 0.02 })}>
+                  <StatsCard
                   label="Total emendas"
                   value={formatCountCompact(resumo.totalEmendas ?? 0)}
                   helper={(resumo.totalEmendas ?? 0).toLocaleString("pt-BR")}
                   description="Registros consolidados no recorte"
                   icon={FileText}
                   variant="blue"
-                />
-                <StatsCard
+                  />
+                </motion.div>
+                <motion.div variants={buildRevealVariants(Boolean(reduceMotion), { y: 12, delay: 0.04 })}>
+                  <StatsCard
                   label="Autores distintos"
                   value={formatCountCompact(resumo.totalAutores ?? 0)}
                   helper={(resumo.totalAutores ?? 0).toLocaleString("pt-BR")}
                   description="Autores ou grupos identificados"
                   icon={Users}
                   variant="yellow"
-                />
-                <StatsCard
+                  />
+                </motion.div>
+                <motion.div variants={buildRevealVariants(Boolean(reduceMotion), { y: 12, delay: 0.06 })}>
+                  <StatsCard
                   label="Ticket medio pago"
                   value={formatCentsCompact(ticketMedioPagoCents)}
                   helper={formatCents(ticketMedioPagoCents)}
                   description={`${formatCountCompact(resumo.totalTipos ?? 0)} tipos e ${formatCountCompact(resumo.totalPaises ?? 0)} paises`}
                   icon={PieChartIcon}
                   variant="blue"
-                />
+                  />
+                </motion.div>
               </div>
             ) : null}
-          </section>
+          </motion.section>
 
           {/* ── Charts row ── */}
           <section className="mt-4 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
 
             {/* Annual evolution */}
-            <div className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+            <div className="editorial-panel p-5 sm:p-6">
               <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-base font-bold text-foreground">Evolucao anual</h2>
@@ -481,7 +501,7 @@ const RankingsPage = () => {
                     Pago e empenhado por ano para comparar ritmo de execucao.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-border bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                <div className="editorial-chip">
                   {anoInicio} – {anoFim}
                 </div>
               </div>
@@ -501,7 +521,7 @@ const RankingsPage = () => {
                     <InsightPill label="Emendas"        value={formatCountCompact(singleYearNode.totalEmendas ?? 0)}            helper={`${(singleYearNode.totalAutores ?? 0).toLocaleString("pt-BR")} autores`} />
                   </div>
 
-                  <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                  <div className="surface-muted p-4">
                     <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-primary" />
@@ -556,7 +576,7 @@ const RankingsPage = () => {
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                  <div className="surface-muted p-4">
                     <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-primary" />
@@ -609,7 +629,7 @@ const RankingsPage = () => {
             <div className="space-y-4">
 
               {/* Tipo chart */}
-              <section className="overflow-hidden rounded-3xl border border-border bg-card p-5 sm:p-6">
+              <section className="editorial-panel-soft overflow-hidden p-5 sm:p-6">
                 <div className="mb-5">
                   <h2 className="text-base font-bold text-foreground">Composicao por tipo</h2>
                   <p className="text-xs text-muted-foreground">
@@ -625,7 +645,7 @@ const RankingsPage = () => {
 
                 {tipoChartData.length ? (
                   <div className="grid min-w-0 gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[220px_minmax(0,1fr)]">
-                    <div className="min-w-0 overflow-hidden rounded-[28px] border border-border bg-gradient-to-b from-primary/5 via-background to-background p-4 sm:p-5">
+                    <div className="surface-muted min-w-0 overflow-hidden p-4 sm:p-5">
                       <div className="relative mx-auto aspect-square w-full max-w-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
@@ -653,7 +673,7 @@ const RankingsPage = () => {
                         </ResponsiveContainer>
 
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                          <div className="w-full max-w-[132px] rounded-full border border-border bg-card/95 px-3 py-3 text-center shadow-sm backdrop-blur-sm">
+                          <div className="w-full max-w-[132px] rounded-full border border-border/70 bg-white/90 px-3 py-3 text-center shadow-[0_12px_24px_-28px_rgba(15,23,42,0.3)] backdrop-blur-sm">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Top 6</p>
                             <p className="mt-1 text-lg font-bold text-foreground">{tipoCoverage.toFixed(1)}%</p>
                             <p className="text-[11px] text-muted-foreground">do valor pago</p>
@@ -694,7 +714,7 @@ const RankingsPage = () => {
               </section>
 
               {/* Países */}
-              <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+              <section className="editorial-panel-soft p-5 sm:p-6">
                 <div className="mb-4">
                   <h2 className="text-base font-bold text-foreground">Localidade de aplicacao</h2>
                   <p className="text-xs text-muted-foreground">
@@ -744,7 +764,7 @@ const RankingsPage = () => {
           </section>
 
           {/* ── Ranking table ── */}
-          <section className="mt-4 rounded-3xl border border-border bg-card p-5 sm:p-6">
+          <section className="editorial-panel mt-4 p-5 sm:p-6">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-base font-bold text-foreground">Principais autores do recorte</h2>
@@ -752,7 +772,7 @@ const RankingsPage = () => {
                   Ranking detalhado com valor pago, empenhado e volume de emendas.
                 </p>
               </div>
-              <div className="rounded-2xl border border-border bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              <div className="editorial-chip">
                 {formatCentsCompact(totalEmpenhadoCents)} empenhados
               </div>
             </div>
@@ -793,7 +813,7 @@ const RankingsPage = () => {
 /* ─────────────────────────────────────────────── sub-components ── */
 
 const HeroSummaryCard = ({ label, value, helper }: { label: string; value: string; helper: string }) => (
-  <div className="rounded-2xl border border-border bg-muted/30 p-4">
+  <div className="surface-muted p-4">
     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
     <p className="mt-2 text-sm font-bold text-foreground">{value}</p>
     <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">{helper}</p>
@@ -801,7 +821,7 @@ const HeroSummaryCard = ({ label, value, helper }: { label: string; value: strin
 );
 
 const InsightPill = ({ label, value, helper }: { label: string; value: string; helper: string }) => (
-  <div className="rounded-2xl border border-border bg-background px-4 py-3">
+  <div className="rounded-[1rem] border border-border/75 bg-white/88 px-4 py-3">
     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
     <p className="mt-1.5 text-base font-bold text-foreground">{value}</p>
     <p className="mt-0.5 text-[11px] text-muted-foreground">{helper}</p>
@@ -809,7 +829,7 @@ const InsightPill = ({ label, value, helper }: { label: string; value: string; h
 );
 
 const BreakdownStatCard = ({ label, value, helper }: { label: string; value: string; helper: string }) => (
-  <div className="min-w-0 overflow-hidden rounded-[22px] border border-border bg-background px-4 py-3">
+  <div className="min-w-0 overflow-hidden rounded-[1.15rem] border border-border/75 bg-white/88 px-4 py-3">
     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
     <p className="mt-1.5 line-clamp-2 text-sm font-bold leading-5 text-foreground sm:text-base">{value}</p>
     <p className="mt-0.5 text-[11px] text-muted-foreground">{helper}</p>
@@ -836,7 +856,7 @@ const BreakdownListItem = ({
   const width = share > 0 ? `${Math.min(100, Math.max(8, share))}%` : "0%";
 
   return (
-    <article className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-background px-4 py-4">
+    <article className="min-w-0 overflow-hidden rounded-[1.25rem] border border-border/75 bg-white/88 px-4 py-4 shadow-[0_16px_28px_-30px_rgba(15,23,42,0.25)]">
       <div className="flex flex-col gap-3 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <div
@@ -877,7 +897,7 @@ const AnnualBar = ({
   const width = `${Math.min(100, Math.max(12, ratio * 100))}%`;
 
   return (
-    <div className="rounded-2xl border border-border bg-background p-4">
+    <div className="rounded-[1rem] border border-border/75 bg-white/88 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
@@ -906,7 +926,7 @@ const RankingAuthorRow = ({ node, rank }: { node: TopGastadorEmenda; rank: numbe
   const RankIcon = rank <= 3 ? rankIcons[rank - 1] : null;
 
   return (
-    <article className="rounded-[28px] border border-border bg-background px-4 py-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20 sm:px-5">
+    <article className="rounded-[1.5rem] border border-border/75 bg-white/90 px-4 py-4 transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.025] sm:px-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Rank + name */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -927,19 +947,19 @@ const RankingAuthorRow = ({ node, rank }: { node: TopGastadorEmenda; rank: numbe
         {/* Metrics */}
         <div className="grid gap-2 min-[520px]:grid-cols-3 lg:w-[440px]">
           {/* Pago — destaque */}
-          <div className="rounded-2xl border border-primary/20 bg-primary/8 px-3.5 py-3">
+          <div className="rounded-[1rem] border border-primary/20 bg-primary/8 px-3.5 py-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-primary/70">Pago</p>
             <p className="mt-1 text-sm font-bold text-primary">{formatCentsCompact(node.totalPagoCents)}</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">{formatCents(node.totalPagoCents)}</p>
           </div>
           {/* Empenhado — neutro */}
-          <div className="rounded-2xl border border-border bg-muted/20 px-3.5 py-3">
+          <div className="rounded-[1rem] border border-border/75 bg-white/88 px-3.5 py-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Empenhado</p>
             <p className="mt-1 text-sm font-semibold text-foreground/70">{formatCentsCompact(node.totalEmpenhadoCents)}</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">{formatCents(node.totalEmpenhadoCents)}</p>
           </div>
           {/* Liquidado — neutro */}
-          <div className="rounded-2xl border border-border bg-muted/20 px-3.5 py-3">
+          <div className="rounded-[1rem] border border-border/75 bg-white/88 px-3.5 py-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Liquidado</p>
             <p className="mt-1 text-sm font-semibold text-foreground/70">{formatCentsCompact(node.totalLiquidadoCents)}</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">{formatCents(node.totalLiquidadoCents)}</p>

@@ -23,9 +23,11 @@ import {
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
 } from "recharts";
+import { motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
+import EditorialSection from "@/components/EditorialSection";
 import ImpostometroSpotlight from "@/components/ImpostometroSpotlight";
 import PaginationControls from "@/components/PaginationControls";
 import SeoHead from "@/components/SeoHead";
@@ -61,6 +63,7 @@ import {
   buildCanonicalUrl,
   truncateSeoDescription,
 } from "@/lib/seo";
+import { buildRevealVariants, buildStaggerVariants, editorialViewport } from "@/lib/motion";
 import type {
   Connection,
   PoliticoResumo,
@@ -149,6 +152,7 @@ const featuredFallback = [
 ];
 
 const Index = () => {
+  const reduceMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState<TabId>("parlamentares");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState(DEFAULT_HOME_YEAR);
@@ -432,31 +436,40 @@ const Index = () => {
         <div className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
 
           {/* ── Hero ── */}
-          <section className="animate-fade-up relative overflow-hidden rounded-[2rem] border border-border/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(241,248,255,0.9),rgba(255,249,239,0.86))] px-7 py-8 shadow-elevated sm:px-10 sm:py-10">
+          <motion.section
+            initial="hidden"
+            whileInView="visible"
+            viewport={editorialViewport}
+            variants={buildRevealVariants(Boolean(reduceMotion))}
+            className="editorial-hero px-7 py-8 sm:px-10 sm:py-10"
+          >
             <div className="pointer-events-none absolute inset-0">
-              <div className="animate-float-wide absolute -right-12 top-6 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-              <div className="animate-float-slow absolute left-[12%] top-8 h-32 w-32 rounded-full border border-primary/10" />
-              <div className="absolute right-16 top-10 h-56 w-56 rounded-full border border-primary/10" />
-              <div className="animate-radar-sweep absolute right-10 top-6 h-64 w-64 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,transparent_315deg,rgba(15,118,110,0.16)_342deg,transparent_360deg)] opacity-80" />
-              <div className="absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+              <div className="absolute inset-y-0 left-[52%] w-px bg-gradient-to-b from-transparent via-slate-200/80 to-transparent" />
+              <div className="absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-300/80 to-transparent" />
+              <div className="animate-float-wide absolute -right-20 top-8 h-56 w-56 rounded-full bg-primary/8 blur-3xl" />
+              <div className="animate-float-slow absolute right-20 top-10 h-36 w-36 rounded-full border border-primary/10" />
+              <div className="absolute left-[10%] top-8 h-24 w-24 rounded-full border border-slate-200/90" />
             </div>
 
             <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] xl:items-center">
-              <div>
-                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+              <motion.div variants={buildRevealVariants(Boolean(reduceMotion), { y: 14 })}>
+                <p className="editorial-eyebrow mb-3">
                   <Sparkles className="h-3 w-3" />
                   Painel de transparencia
                 </p>
-                <h1 className="text-[2rem] font-extrabold leading-[1.15] tracking-tight text-foreground sm:text-[2.5rem]">
+                <h1 className="text-[2rem] font-extrabold leading-[1.1] tracking-tight text-foreground sm:text-[2.8rem]">
                   Radar do Povo{" "}
                   <span className="text-gradient-primary">orientado por dados</span>
                 </h1>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                  Emendas, gastos publicos e perfis politicos em uma leitura mais clara e direta.
+                <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground sm:text-[15px]">
+                  Leitura institucional de emendas, viagens oficiais e perfis politicos, com menos ruido e mais criterio na comparacao dos dados.
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="grid gap-3 xl:justify-items-end">
+              <motion.div
+                variants={buildRevealVariants(Boolean(reduceMotion), { y: 14, delay: 0.03 })}
+                className="grid gap-3 xl:justify-items-end"
+              >
                 <div className="flex flex-wrap items-center gap-2.5">
                   <StatusBadge
                     status={apiHealthQuery.data?.status}
@@ -503,24 +516,23 @@ const Index = () => {
                     helper="Localidade registrada"
                   />
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </section>
+          </motion.section>
 
-          <section className="mt-6 animate-fade-up" style={{ animationDelay: "40ms" }}>
+          <EditorialSection tone="strong" className="mt-6 px-0 py-0" delay={0.04}>
             <ImpostometroSpotlight
               data={impostometroQuery.data}
               isLoading={impostometroQuery.isLoading}
               isError={Boolean(impostometroQuery.error)}
             />
-          </section>
+          </EditorialSection>
 
           {/* ── Search ── */}
-          <section className="mt-6 animate-fade-up" style={{ animationDelay: "80ms" }}>
-            <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(241,248,255,0.74))] px-4 py-4 shadow-card sm:px-5">
+          <EditorialSection tone="strong" className="mt-6 px-4 py-4 sm:px-5" delay={0.08}>
+            <div className="relative overflow-hidden">
               <div className="pointer-events-none absolute inset-0">
-                <div className="animate-float-wide absolute -right-6 top-1/2 h-20 w-20 -translate-y-1/2 rounded-full bg-primary/10 blur-2xl" />
-                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300/70 to-transparent" />
               </div>
 
               <div className="relative">
@@ -534,11 +546,11 @@ const Index = () => {
                 />
               </div>
             </div>
-          </section>
+          </EditorialSection>
 
           {/* ── Featured shelf ── */}
           {!isSearching ? (
-            <section className="mt-6 overflow-hidden rounded-3xl border border-border bg-card">
+            <EditorialSection className="mt-6 overflow-hidden px-0 py-0" delay={0.11}>
               <div className="border-b border-border px-6 py-5 sm:px-7">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -550,7 +562,7 @@ const Index = () => {
                   <div className="flex flex-col gap-2 sm:items-end">
                     <button
                       onClick={() => navigate("/busca")}
-                      className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                      className="inline-flex items-center gap-1.5 rounded-[1rem] border border-border/75 bg-white/88 px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:text-primary"
                     >
                       <Search className="h-3.5 w-3.5" />
                       Busca completa
@@ -602,12 +614,18 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-            </section>
+            </EditorialSection>
           ) : null}
 
           {/* ── Search results ── */}
           {isSearching ? (
-            <section className="mt-6 space-y-3 animate-fade-up" style={{ animationDelay: "120ms" }}>
+            <motion.section
+              initial="hidden"
+              whileInView="visible"
+              viewport={editorialViewport}
+              variants={buildStaggerVariants(Boolean(reduceMotion))}
+              className="mt-6 space-y-3"
+            >
               {searchQuery.isLoading ? <LoadingState message="Buscando politicos na API..." /> : null}
               {searchQuery.error ? <ErrorState error={searchQuery.error as Error} /> : null}
               {!searchQuery.isLoading && !searchQuery.error && searchQuery.data?.nodes.length === 0 ? (
@@ -615,22 +633,23 @@ const Index = () => {
               ) : null}
 
               {searchQuery.data?.nodes.map((politico) => (
-                <button
+                <motion.button
                   key={politico.id}
                   onClick={() => navigate(buildPoliticoPath(politico))}
+                  variants={buildRevealVariants(Boolean(reduceMotion), { y: 10 })}
                   className="w-full text-left"
                 >
                   <PoliticianSearchCard politico={politico} />
-                </button>
+                </motion.button>
               ))}
-            </section>
+            </motion.section>
           ) : (
             <>
               {/* ── Ranking header ── */}
-              <section className="mt-6 rounded-3xl border border-border bg-card p-6 sm:p-7">
+              <EditorialSection className="mt-6 p-6 sm:p-7" delay={0.12}>
                 <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                   <div className="max-w-2xl">
-                    <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                    <p className="editorial-eyebrow">
                       <Sparkles className="h-3 w-3" />
                       Leitura anual de emendas
                     </p>
@@ -675,7 +694,7 @@ const Index = () => {
                         className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                           tab.id === activeTab
                             ? "border-primary bg-primary text-white"
-                            : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                            : "border-border/75 bg-white/88 text-muted-foreground hover:border-primary/18 hover:text-foreground"
                         }`}
                       >
                         <tab.icon className="h-3.5 w-3.5" />
@@ -684,7 +703,7 @@ const Index = () => {
                     ))}
                   </div>
                 </div>
-              </section>
+              </EditorialSection>
 
               {/* ── Stats row ── */}
               <section className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -732,7 +751,7 @@ const Index = () => {
 
                   {/* Leader card */}
                   {leader ? (
-                    <section className="overflow-hidden rounded-3xl border border-border bg-card">
+                    <section className="editorial-panel overflow-hidden px-0 py-0">
                       <div className="border-b border-border px-5 py-5 sm:px-6">
                         <p className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
                           <Crown className="h-3 w-3" />
@@ -814,7 +833,7 @@ const Index = () => {
                                 {leaderRunnersUp.map((node, index) => (
                                   <div
                                     key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${index}`}
-                                    className="inline-flex min-w-[180px] items-center justify-between gap-3 rounded-2xl border border-border bg-muted/40 px-3 py-2.5 text-xs"
+                                    className="inline-flex min-w-[180px] items-center justify-between gap-3 rounded-[1rem] border border-border/70 bg-white/85 px-3 py-2.5 text-xs shadow-[0_10px_24px_-26px_rgba(15,23,42,0.4)]"
                                   >
                                     <div className="min-w-0">
                                       <p className="truncate font-semibold text-foreground">
@@ -856,7 +875,7 @@ const Index = () => {
                   ) : null}
 
                   {/* Ranking list */}
-                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                  <section className="editorial-panel p-5 sm:p-6">
                     <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h2 className="text-base font-bold text-foreground">Principais autores do ano</h2>
@@ -864,7 +883,7 @@ const Index = () => {
                           Clique no nome quando houver perfil individual identificado.
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                      <div className="surface-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
                         {formatCountCompact(total)} autores no ranking
                       </div>
                     </div>
@@ -907,7 +926,7 @@ const Index = () => {
                 <div className="space-y-4">
 
                   {/* Tipo chart */}
-                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                  <section className="editorial-panel-soft p-5 sm:p-6">
                     <div className="mb-5 flex items-center gap-2">
                       <PieChartIcon className="h-4 w-4 text-primary" />
                       <div>
@@ -966,7 +985,7 @@ const Index = () => {
                         </div>
 
                         {/* Bar summary */}
-                        <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                        <div className="surface-muted p-4">
                           <div className="mb-2 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
                             <span>Distribuicao por valor pago</span>
                             <span>100%</span>
@@ -989,7 +1008,7 @@ const Index = () => {
                           {typeChartData.map((item, index) => (
                             <div
                               key={item.nome}
-                              className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3"
+                              className="flex items-center justify-between gap-3 rounded-[1rem] border border-border/70 bg-white/85 px-4 py-3"
                             >
                               <div className="flex min-w-0 items-center gap-2.5">
                                 <span
@@ -1021,7 +1040,7 @@ const Index = () => {
                   </section>
 
                   {/* Paises */}
-                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                  <section className="editorial-panel-soft p-5 sm:p-6">
                     <div className="mb-5 flex items-center gap-2">
                       <Globe className="h-4 w-4 text-primary" />
                       <div>
@@ -1042,7 +1061,7 @@ const Index = () => {
                       {paisesQuery.data?.nodes.slice(0, 5).map((pais, index) => (
                         <div
                           key={`${pais.pais}-${index}`}
-                          className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3"
+                          className="flex items-center justify-between gap-3 rounded-[1rem] border border-border/70 bg-white/85 px-4 py-3"
                         >
                           <div className="min-w-0">
                             <p className="truncate text-xs font-semibold text-foreground">
@@ -1129,7 +1148,7 @@ const HomeBriefCard = ({
   value: string;
   helper: string;
 }) => (
-  <div className="rounded-2xl border border-border bg-muted/30 p-4">
+  <div className="surface-muted p-4">
     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
       {label}
     </p>
@@ -1149,11 +1168,11 @@ const HeroSignalTile = ({
   value: string;
   helper: string;
 }) => (
-  <div className="group relative overflow-hidden rounded-[1.35rem] border border-white/80 bg-white/65 px-4 py-4 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card">
-    <div className="animate-sheen pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+  <div className="group relative overflow-hidden rounded-[1.35rem] border border-white/80 bg-white/76 px-4 py-4 shadow-[0_16px_30px_-28px_rgba(15,23,42,0.28)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/18">
+    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300/70 to-transparent" />
     <div className="relative">
       <div className="flex items-center gap-2 text-primary">
-        <span className="rounded-xl bg-primary/10 p-2">
+        <span className="rounded-[0.9rem] bg-primary/10 p-2">
           <Icon className="h-4 w-4" />
         </span>
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -1182,9 +1201,9 @@ const RankingRow = ({
   const Icon = rank <= 3 ? rankIcons[rank - 1] : null;
 
   return (
-    <article className="rounded-2xl border border-border bg-background px-4 py-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20">
+    <article className="rounded-[1.15rem] border border-border/75 bg-white/88 px-4 py-4 shadow-[0_18px_34px_-32px_rgba(15,23,42,0.35)] transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.03]">
       <div className="flex min-w-0 items-start gap-3">
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[0.9rem] bg-muted/75 text-muted-foreground">
           {Icon ? <Icon className="h-4 w-4 text-primary" /> : (
             <span className="text-[11px] font-bold">#{rank}</span>
           )}
@@ -1208,7 +1227,7 @@ const RankingRow = ({
           )}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+            <span className="rounded-full bg-muted/75 px-2 py-0.5 font-medium text-muted-foreground">
               {formatCountCompact(node.totalEmendas ?? 0)} emendas
             </span>
             {canOpenProfile ? (
@@ -1216,7 +1235,7 @@ const RankingRow = ({
                 {openingProfile ? "Abrindo..." : "Perfil disponivel"}
               </span>
             ) : (
-              <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+              <span className="rounded-full bg-muted/80 px-2 py-0.5 font-medium text-muted-foreground">
                 Sem perfil
               </span>
             )}
@@ -1261,7 +1280,7 @@ const RankingRow = ({
 };
 
 const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
-  <article className="group rounded-2xl border border-border bg-card p-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20">
+  <article className="group rounded-[1.35rem] border border-border/75 bg-white/90 p-4 shadow-[0_18px_32px_-30px_rgba(15,23,42,0.28)] transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.03]">
     <div className="flex items-center gap-3">
       {politico.fotoUrl ? (
         <img
@@ -1270,7 +1289,7 @@ const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
           className="h-11 w-11 rounded-xl object-cover"
         />
       ) : (
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted">
+        <div className="flex h-11 w-11 items-center justify-center rounded-[0.9rem] bg-muted/80">
           <Users className="h-5 w-5 text-muted-foreground" />
         </div>
       )}
@@ -1286,12 +1305,12 @@ const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
             </span>
           ) : null}
           {politico.uf ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+            <span className="rounded-full bg-muted/80 px-2 py-0.5 font-semibold text-muted-foreground">
               {politico.uf}
             </span>
           ) : null}
           {politico.cargoAtual ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+            <span className="rounded-full bg-muted/80 px-2 py-0.5 font-semibold text-muted-foreground">
               {politico.cargoAtual}
             </span>
           ) : null}
@@ -1341,11 +1360,11 @@ const FeaturedPoliticoLeadCard = ({
 }) => (
   <button
     onClick={onClick}
-    className="group relative flex min-h-[172px] flex-col justify-between overflow-hidden rounded-2xl border border-border bg-background px-5 py-5 text-left transition-all duration-150 hover:border-primary/30 hover:bg-muted/20 sm:px-6 sm:py-6"
+    className="group relative flex min-h-[172px] flex-col justify-between overflow-hidden rounded-[1.5rem] border border-border/75 bg-white/92 px-5 py-5 text-left shadow-[0_24px_48px_-38px_rgba(15,23,42,0.35)] transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.025] sm:px-6 sm:py-6"
   >
     <div className="relative flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <p className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           <Crown className="h-3 w-3 text-primary" />
           Perfil mais acessado
         </p>
@@ -1360,7 +1379,7 @@ const FeaturedPoliticoLeadCard = ({
       <FeaturedPoliticoImage
         nome={nome}
         imageCandidates={imageCandidates}
-        className="h-20 w-20 flex-shrink-0 rounded-2xl border border-border object-cover sm:h-24 sm:w-24"
+        className="h-20 w-20 flex-shrink-0 rounded-[1.25rem] border border-border/70 object-cover sm:h-24 sm:w-24"
       />
     </div>
 
@@ -1368,7 +1387,7 @@ const FeaturedPoliticoLeadCard = ({
       <p className="text-xs text-muted-foreground">
         <span className="font-semibold text-foreground">Top buscas</span> da home neste momento
       </p>
-      <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold text-primary">
+      <span className="inline-flex items-center gap-1 rounded-full border border-primary/18 bg-primary/7 px-3 py-1 text-[11px] font-semibold text-primary">
         Abrir perfil
         <ArrowUpRight className="h-3 w-3" />
       </span>
@@ -1387,18 +1406,18 @@ const FeaturedPoliticoCard = ({
 }) => (
   <button
     onClick={onClick}
-    className="group flex min-w-[220px] snap-start items-center gap-3 rounded-2xl border border-border bg-background px-3.5 py-3 text-left transition-all duration-150 hover:border-primary/30 hover:bg-muted/20 sm:min-w-[240px] lg:min-w-0"
+    className="group flex min-w-[220px] snap-start items-center gap-3 rounded-[1.15rem] border border-border/75 bg-white/88 px-3.5 py-3 text-left shadow-[0_14px_28px_-28px_rgba(15,23,42,0.3)] transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.025] sm:min-w-[240px] lg:min-w-0"
   >
     <FeaturedPoliticoImage
       nome={nome}
       imageCandidates={imageCandidates}
-      className="h-12 w-12 flex-shrink-0 rounded-xl border border-border object-cover"
+      className="h-12 w-12 flex-shrink-0 rounded-[0.9rem] border border-border/70 object-cover"
     />
     <div className="min-w-0 flex-1">
       <p className="truncate text-xs font-bold text-foreground">{nome}</p>
       <p className="mt-0.5 text-[11px] text-muted-foreground">Abrir perfil</p>
     </div>
-    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[0.9rem] bg-muted/75 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
       <ArrowUpRight className="h-3.5 w-3.5" />
     </div>
   </button>
