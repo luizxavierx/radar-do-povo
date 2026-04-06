@@ -18,6 +18,7 @@ export default function ImpostometroSpotlight({
 
   return (
     <section className="animate-fade-up overflow-hidden rounded-3xl border border-amber-200/70 bg-[linear-gradient(135deg,rgba(255,248,235,0.96),rgba(255,255,255,0.98))] px-5 py-5 shadow-[0_20px_45px_-34px_rgba(120,53,15,0.5)] sm:px-6 sm:py-6">
+      <ImpostometroMotionStyles />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/80 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
@@ -40,47 +41,60 @@ export default function ImpostometroSpotlight({
 
       <div className="relative mt-4 overflow-hidden rounded-[28px] border border-teal-900/20 bg-[linear-gradient(135deg,rgba(14,112,118,0.98),rgba(18,140,146,0.95))] px-4 py-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:px-5">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2.5rem] bg-[rgba(255,205,54,0.22)] blur-[1px]" />
-          <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-[rgba(21,53,122,0.34)]" />
-          <div className="absolute -left-10 top-8 h-28 w-28 rounded-full bg-[rgba(255,205,54,0.12)] blur-2xl" />
-          <div className="absolute -right-12 bottom-0 h-36 w-36 rounded-full bg-[rgba(21,53,122,0.18)] blur-2xl" />
+          <div
+            className="absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2.5rem] bg-[rgba(255,205,54,0.24)] blur-[0.5px]"
+            style={{ animation: "imposto-breathe 9s ease-in-out infinite" }}
+          />
+          <div
+            className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-[rgba(21,53,122,0.34)]"
+            style={{ animation: "imposto-drift 14s ease-in-out infinite" }}
+          />
+          <div
+            className="absolute left-1/2 top-1/2 h-2 w-20 -translate-x-1/2 -translate-y-1/2 rotate-[12deg] rounded-full bg-white/35 blur-[0.5px]"
+            style={{ animation: "imposto-band 11s ease-in-out infinite" }}
+          />
+          <div
+            className="absolute -left-10 top-8 h-28 w-28 rounded-full bg-[rgba(255,205,54,0.12)] blur-2xl"
+            style={{ animation: "imposto-orbit 12s ease-in-out infinite" }}
+          />
+          <div
+            className="absolute -right-12 bottom-0 h-36 w-36 rounded-full bg-[rgba(21,53,122,0.18)] blur-2xl"
+            style={{ animation: "imposto-orbit 16s ease-in-out infinite reverse" }}
+          />
           <div className="absolute inset-x-12 top-1/2 h-px -translate-y-1/2 bg-white/8" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_42%)]" />
         </div>
 
         <div className="relative">
-        {isLoading && !brasil ? (
-          <LoadingCounterBoard />
-        ) : isError && !brasil ? (
-          <ErrorCounterBoard />
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <PeriodChip label="De" value={meta?.periodoInicio || "--"} />
+          {isLoading && !brasil ? (
+            <LoadingCounterBoard />
+          ) : isError && !brasil ? (
+            <ErrorCounterBoard />
+          ) : (
+            <>
               <div className="rounded-2xl bg-white/12 px-4 py-2 text-center shadow-[0_10px_24px_-16px_rgba(0,0,0,0.35)]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70">
                   Brasil
                 </p>
               </div>
-              <PeriodChip label="Ate" value={meta?.periodoFim || "--"} />
-            </div>
 
-            <div className="mt-4 overflow-x-auto pb-1">
-              <div className="mx-auto inline-flex min-w-max items-start gap-3">
-                {odometerGroups.map((group) => (
-                  <DigitGroup
-                    key={group.key}
-                    digits={group.digits}
-                    label={group.label}
-                  />
-                ))}
+              <div className="mt-4 overflow-x-auto pb-1">
+                <div className="mx-auto inline-flex min-w-max items-start gap-3">
+                  {odometerGroups.map((group) => (
+                    <DigitGroup
+                      key={group.key}
+                      digits={group.digits}
+                      label={group.label}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <p className="mt-4 text-center text-xs text-white/75">
-              Total acumulado no periodo de {meta?.periodoInicio || "--"} ate {meta?.periodoFim || "--"}.
-            </p>
-          </>
-        )}
+              <p className="mt-4 text-center text-xs text-white/75">
+                Total acumulado no periodo de {meta?.periodoInicio || "--"} ate {meta?.periodoFim || "--"}.
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -93,17 +107,6 @@ export default function ImpostometroSpotlight({
         </span>
       </div>
     </section>
-  );
-}
-
-function PeriodChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-3 py-2 text-xs shadow-[0_8px_20px_-16px_rgba(0,0,0,0.4)]">
-      <span className="font-semibold uppercase tracking-[0.16em] text-white/65">{label}</span>
-      <span className="rounded-xl bg-slate-950/25 px-2.5 py-1 font-bold tracking-wide text-white">
-        {value}
-      </span>
-    </div>
   );
 }
 
@@ -237,4 +240,30 @@ function formatCollectedAt(value?: string): string {
     dateStyle: "short",
     timeStyle: "short",
   }).format(parsed);
+}
+
+function ImpostometroMotionStyles() {
+  return (
+    <style>{`
+      @keyframes imposto-breathe {
+        0%, 100% { transform: translate(-50%, -50%) rotate(45deg) scale(0.94); opacity: 0.22; }
+        50% { transform: translate(-50%, -50%) rotate(45deg) scale(1.02); opacity: 0.34; }
+      }
+
+      @keyframes imposto-drift {
+        0%, 100% { transform: translate(-50%, -50%) scale(0.96); opacity: 0.78; }
+        50% { transform: translate(-48%, -52%) scale(1.04); opacity: 0.92; }
+      }
+
+      @keyframes imposto-band {
+        0%, 100% { transform: translate(-50%, -50%) rotate(12deg) scaleX(0.88); opacity: 0.2; }
+        50% { transform: translate(-50%, -50%) rotate(12deg) scaleX(1.06); opacity: 0.42; }
+      }
+
+      @keyframes imposto-orbit {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.35; }
+        50% { transform: translate3d(10px, -8px, 0) scale(1.08); opacity: 0.5; }
+      }
+    `}</style>
+  );
 }
