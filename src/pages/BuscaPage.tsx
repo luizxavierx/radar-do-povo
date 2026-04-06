@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import AppSidebar from "@/components/AppSidebar";
 import EditorialPageHeader from "@/components/EditorialPageHeader";
 import EditorialSection from "@/components/EditorialSection";
+import MobileFiltersPanel from "@/components/MobileFiltersPanel";
 import SeoHead from "@/components/SeoHead";
 import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
@@ -56,6 +57,7 @@ const BuscaPage = () => {
   const seoDescription =
     "Busque politicos por nome, partido, UF ou cargo atual e acesse perfis consolidados com filtros institucionais.";
   const reduceMotion = useReducedMotion();
+  const secondaryFilterCount = [partido, uf, cargoAtual].filter(Boolean).length;
 
   useEffect(() => {
     if (!filter || !data) return;
@@ -226,67 +228,79 @@ const BuscaPage = () => {
               />
             </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-4">
-              <label className="surface-muted px-4 py-3 text-xs">
-                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Partido
-                </span>
-                <input
-                  value={partido}
-                  onChange={(e) => {
-                    setPartido(e.target.value.slice(0, 10));
-                    setOffset(0);
-                  }}
-                  placeholder="PL, PT, PSD..."
-                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
-                />
-              </label>
+            <MobileFiltersPanel
+              className="mt-6"
+              title="Filtros complementares"
+              helper="Partido, UF e cargo atual"
+              summary={
+                secondaryFilterCount
+                  ? `${secondaryFilterCount} ativo${secondaryFilterCount > 1 ? "s" : ""}`
+                  : "Refino opcional"
+              }
+              countLabel="Toque para expandir"
+            >
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <label className="surface-muted px-4 py-3 text-xs">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Partido
+                  </span>
+                  <input
+                    value={partido}
+                    onChange={(e) => {
+                      setPartido(e.target.value.slice(0, 10));
+                      setOffset(0);
+                    }}
+                    placeholder="PL, PT, PSD..."
+                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
+                  />
+                </label>
 
-              <label className="surface-muted px-4 py-3 text-xs">
-                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  UF
-                </span>
-                <input
-                  value={uf}
-                  onChange={(e) => {
-                    setUf(e.target.value.slice(0, 2));
-                    setOffset(0);
-                  }}
-                  placeholder="SP, PR, BA..."
-                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium uppercase outline-none transition-colors focus:border-primary/25"
-                />
-              </label>
+                <label className="surface-muted px-4 py-3 text-xs">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    UF
+                  </span>
+                  <input
+                    value={uf}
+                    onChange={(e) => {
+                      setUf(e.target.value.slice(0, 2));
+                      setOffset(0);
+                    }}
+                    placeholder="SP, PR, BA..."
+                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium uppercase outline-none transition-colors focus:border-primary/25"
+                  />
+                </label>
 
-              <label className="surface-muted px-4 py-3 text-xs">
-                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Cargo atual
-                </span>
-                <select
-                  value={cargoAtual}
-                  onChange={(e) => {
-                    setCargoAtual(e.target.value);
-                    setOffset(0);
-                  }}
-                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
-                >
-                  {cargoOptions.map((option) => (
-                    <option key={option || "todos"} value={option}>
-                      {option || "Todos"}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <label className="surface-muted px-4 py-3 text-xs">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Cargo atual
+                  </span>
+                  <select
+                    value={cargoAtual}
+                    onChange={(e) => {
+                      setCargoAtual(e.target.value);
+                      setOffset(0);
+                    }}
+                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
+                  >
+                    {cargoOptions.map((option) => (
+                      <option key={option || "todos"} value={option}>
+                        {option || "Todos"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <div className="flex items-end">
-                <button
-                  onClick={resetFilters}
-                  className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-[1rem] border border-border bg-white text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
-                >
-                  <Filter className="h-3.5 w-3.5" />
-                  Limpar filtros
-                </button>
+                <div className="flex items-end">
+                  <button
+                    onClick={resetFilters}
+                    className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-[1rem] border border-border bg-white text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                    Limpar filtros
+                  </button>
+                </div>
               </div>
-            </div>
+            </MobileFiltersPanel>
           </EditorialSection>
 
           <motion.section

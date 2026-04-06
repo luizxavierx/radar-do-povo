@@ -30,6 +30,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import AppSidebar from "@/components/AppSidebar";
 import EditorialPageHeader from "@/components/EditorialPageHeader";
 import EditorialSection from "@/components/EditorialSection";
+import MobileFiltersPanel from "@/components/MobileFiltersPanel";
 import PaginationControls from "@/components/PaginationControls";
 import SeoHead from "@/components/SeoHead";
 import StatsCard from "@/components/StatsCard";
@@ -247,6 +248,12 @@ const RankingsPage = () => {
   const seoDescription =
     "Compare rankings de emendas parlamentares, evolucao anual, composicao por tipo e distribuicao geografica em uma leitura orientada por recorte.";
   const reduceMotion = useReducedMotion();
+  const rankingFilterCount = [
+    scope !== "parlamentares",
+    anoInicio !== DEFAULT_START_YEAR || anoFim !== DEFAULT_END_YEAR,
+    Boolean(uf),
+    Boolean(tipoEmenda.trim()),
+  ].filter(Boolean).length;
 
   return (
     <div>
@@ -332,104 +339,113 @@ const RankingsPage = () => {
 
           {/* ── Filters + scope tabs ── */}
           <EditorialSection tone="muted" className="mt-4">
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="panel-heading">Controles do recorte</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Escolha o escopo, o periodo e refinamentos antes de comparar os dados.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="inline-flex items-center gap-2 rounded-[1rem] border border-border bg-white px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
-                >
-                  <RefreshCcw className="h-3.5 w-3.5" />
-                  Limpar filtros
-                </button>
-              </div>
-
-              {/* Scope tabs */}
-              <div className="overflow-x-auto overscroll-x-contain">
-                <div className="flex min-w-max gap-2 pb-1">
-                  {scopeTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => { setScope(tab.id); setOffset(0); }}
-                      className={`inline-flex items-center gap-2 rounded-[1rem] border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
-                        scope === tab.id
-                          ? "border-primary/18 bg-primary/8 text-primary"
-                          : "border-border bg-white text-muted-foreground hover:border-primary/18 hover:text-foreground"
-                      }`}
-                    >
-                      <tab.icon className="h-3.5 w-3.5" />
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Filter fields */}
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                <FilterField label="Ano inicial">
-                  <select
-                    value={anoInicio}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      setAnoInicio(next);
-                      if (next > anoFim) setAnoFim(next);
-                      setOffset(0);
-                    }}
-                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
-                  >
-                    {years.map((year) => <option key={`start-${year}`} value={year}>{year}</option>)}
-                  </select>
-                </FilterField>
-
-                <FilterField label="Ano final">
-                  <select
-                    value={anoFim}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      setAnoFim(next);
-                      if (next < anoInicio) setAnoInicio(next);
-                      setOffset(0);
-                    }}
-                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
-                  >
-                    {years.map((year) => <option key={`end-${year}`} value={year}>{year}</option>)}
-                  </select>
-                </FilterField>
-
-                <FilterField label="UF">
-                  <select
-                    value={uf}
-                    onChange={(e) => { setUf(e.target.value); setOffset(0); }}
-                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
-                  >
-                    <option value="">Todas</option>
-                    {ufOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-                  </select>
-                </FilterField>
-
-                <FilterField label="Tipo de emenda">
-                  <input
-                    value={tipoEmenda}
-                    onChange={(e) => { setTipoEmenda(e.target.value); setOffset(0); }}
-                    placeholder="Ex.: Individual"
-                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/25"
-                  />
-                </FilterField>
-
-                <FilterField label="Resultados">
-                  <div className="flex h-10 items-center rounded-[1rem] border border-border/75 bg-white/88 px-3 text-sm font-medium text-foreground">
-                    {formatCountCompact(totalRanking)} autores
+            <MobileFiltersPanel
+              title="Controles do recorte"
+              helper="Escopo, periodo, UF e tipo"
+              summary={
+                rankingFilterCount
+                  ? `${rankingFilterCount} ativo${rankingFilterCount > 1 ? "s" : ""}`
+                  : activeScopeMeta.label
+              }
+              countLabel={anoInicio === anoFim ? String(anoInicio) : `${anoInicio}-${anoFim}`}
+            >
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="panel-heading">Controles do recorte</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Escolha o escopo, o periodo e refinamentos antes de comparar os dados.
+                    </p>
                   </div>
-                </FilterField>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="inline-flex items-center gap-2 rounded-[1rem] border border-border bg-white px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
+                  >
+                    <RefreshCcw className="h-3.5 w-3.5" />
+                    Limpar filtros
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto overscroll-x-contain">
+                  <div className="flex min-w-max gap-2 pb-1">
+                    {scopeTabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => { setScope(tab.id); setOffset(0); }}
+                        className={`inline-flex items-center gap-2 rounded-[1rem] border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
+                          scope === tab.id
+                            ? "border-primary/18 bg-primary/8 text-primary"
+                            : "border-border bg-white text-muted-foreground hover:border-primary/18 hover:text-foreground"
+                        }`}
+                      >
+                        <tab.icon className="h-3.5 w-3.5" />
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                  <FilterField label="Ano inicial">
+                    <select
+                      value={anoInicio}
+                      onChange={(e) => {
+                        const next = Number(e.target.value);
+                        setAnoInicio(next);
+                        if (next > anoFim) setAnoFim(next);
+                        setOffset(0);
+                      }}
+                      className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
+                    >
+                      {years.map((year) => <option key={`start-${year}`} value={year}>{year}</option>)}
+                    </select>
+                  </FilterField>
+
+                  <FilterField label="Ano final">
+                    <select
+                      value={anoFim}
+                      onChange={(e) => {
+                        const next = Number(e.target.value);
+                        setAnoFim(next);
+                        if (next < anoInicio) setAnoInicio(next);
+                        setOffset(0);
+                      }}
+                      className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
+                    >
+                      {years.map((year) => <option key={`end-${year}`} value={year}>{year}</option>)}
+                    </select>
+                  </FilterField>
+
+                  <FilterField label="UF">
+                    <select
+                      value={uf}
+                      onChange={(e) => { setUf(e.target.value); setOffset(0); }}
+                      className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
+                    >
+                      <option value="">Todas</option>
+                      {ufOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+                    </select>
+                  </FilterField>
+
+                  <FilterField label="Tipo de emenda">
+                    <input
+                      value={tipoEmenda}
+                      onChange={(e) => { setTipoEmenda(e.target.value); setOffset(0); }}
+                      placeholder="Ex.: Individual"
+                      className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/25"
+                    />
+                  </FilterField>
+
+                  <FilterField label="Resultados">
+                    <div className="flex h-10 items-center rounded-[1rem] border border-border/75 bg-white/88 px-3 text-sm font-medium text-foreground">
+                      {formatCountCompact(totalRanking)} autores
+                    </div>
+                  </FilterField>
+                </div>
               </div>
-            </div>
+            </MobileFiltersPanel>
           </EditorialSection>
 
           {/* ── KPIs ── */}
