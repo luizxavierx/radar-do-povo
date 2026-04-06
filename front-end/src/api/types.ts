@@ -89,6 +89,52 @@ export interface ResumoViagens {
   periodo?: { anoInicio?: number; anoFim?: number };
 }
 
+export interface ImpostometroCounter {
+  escopo?: string;
+  codigo?: string;
+  nome?: string;
+  valor?: number;
+  valorFormatado?: string;
+  valorCompacto?: string;
+  uf?: string;
+}
+
+export interface ImpostometroTributoItem {
+  nome?: string;
+  valor?: number;
+  valorFormatado?: string;
+  valorCompacto?: string;
+}
+
+export interface ImpostometroTributoGroup {
+  esfera?: string;
+  total?: number;
+  totalFormatado?: string;
+  totalCompacto?: string;
+  totalItens?: number;
+  itens?: ImpostometroTributoItem[];
+}
+
+export interface ImpostometroMeta {
+  coletadoEm?: string;
+  periodoInicio?: string;
+  periodoFim?: string;
+  periodoInicioIso?: string;
+  periodoFimIso?: string;
+  anoReferencia?: number;
+  fonte?: string;
+}
+
+export interface ImpostometroResumo {
+  meta?: ImpostometroMeta;
+  brasil?: ImpostometroCounter;
+  tributos?: {
+    federal?: ImpostometroTributoGroup;
+    estadual?: ImpostometroTributoGroup;
+    municipal?: ImpostometroTributoGroup;
+  };
+}
+
 // ─── Viagens ───
 export interface Passagem {
   id?: string;

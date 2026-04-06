@@ -23,10 +23,15 @@ import {
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
 } from "recharts";
+import { motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 
 import AppSidebar from "@/components/AppSidebar";
+import EditorialSection from "@/components/EditorialSection";
+import ImpostometroSpotlight from "@/components/ImpostometroSpotlight";
 import PaginationControls from "@/components/PaginationControls";
+import SeoHead from "@/components/SeoHead";
+import ShareActions from "@/components/ShareActions";
 import SearchBar from "@/components/SearchBar";
 import StatsCard from "@/components/StatsCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
@@ -35,6 +40,7 @@ import {
   useFeaturedPoliticos,
   usePoliticos,
 } from "@/hooks/usePoliticos";
+import { useImpostometroResumo } from "@/hooks/useImpostometro";
 import {
   isBancadaNome,
   useEmendaRankingResumo,
@@ -51,6 +57,13 @@ import {
   formatCountCompact,
 } from "@/lib/formatters";
 import { buildPoliticoPath } from "@/lib/politicos";
+import {
+  SEO_SITE_NAME,
+  buildBreadcrumbStructuredData,
+  buildCanonicalUrl,
+  truncateSeoDescription,
+} from "@/lib/seo";
+import { buildRevealVariants, buildStaggerVariants, editorialViewport } from "@/lib/motion";
 import type {
   Connection,
   PoliticoResumo,
@@ -99,7 +112,7 @@ const featuredFallback = [
     search: "lula",
     nomeCanonico: "lula",
     nome: "Luiz Inacio Lula da Silva",
-    foto: "https://commons.wikimedia.org/wiki/Special:FilePath/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28m%C3%A3o_pitoca%29.jpg",
+    foto: "https://imagens.ebc.com.br/f0xBJtGd9zN4rfk4F1Yt8BZBv6I=/1170x700/smart/https://agenciabrasil.ebc.com.br/sites/default/files/thumbnails/image/2025/09/06/54770136894_59403684a2_o.jpg",
   },
   {
     key: "bolsonaro",
@@ -139,6 +152,7 @@ const featuredFallback = [
 ];
 
 const Index = () => {
+  const reduceMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState<TabId>("parlamentares");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState(DEFAULT_HOME_YEAR);
@@ -148,6 +162,7 @@ const Index = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const apiHealthQuery = useApiHealth();
+  const impostometroQuery = useImpostometroResumo();
   const featuredQuery = useFeaturedPoliticos();
 
   const rankingFilter = useMemo<RankingEmendaFiltroInput>(() => {
@@ -258,6 +273,67 @@ const Index = () => {
   );
   const featuredPrimary = featuredShelf[0];
   const featuredSecondary = featuredShelf.slice(1);
+  const homeSeoDescription = truncateSeoDescription(
+    "Consulte viagens oficiais, emendas parlamentares, rankings comparativos e perfis politicos em uma leitura clara orientada por dados publicos."
+  );
+  const homeStructuredData = useMemo(
+    () => {
+      const featuredItemList = featuredShelf.slice(0, 4).map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: buildCanonicalUrl(item.profilePath),
+        name: item.nome,
+      }));
+
+      return [
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: SEO_SITE_NAME,
+          url: "https://radardopovo.com",
+          logo: "https://radardopovo.com/logo.png",
+          email: "radardopovo@proton.me",
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: SEO_SITE_NAME,
+          url: "https://radardopovo.com",
+          inLanguage: "pt-BR",
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Radar do Povo",
+          url: "https://radardopovo.com/",
+          description: homeSeoDescription,
+          inLanguage: "pt-BR",
+          isPartOf: {
+            "@type": "WebSite",
+            name: SEO_SITE_NAME,
+            url: "https://radardopovo.com",
+          },
+          about: [
+            { "@type": "Thing", name: "Transparencia politica" },
+            { "@type": "Thing", name: "Emendas parlamentares" },
+            { "@type": "Thing", name: "Viagens oficiais" },
+          ],
+        },
+        buildBreadcrumbStructuredData([{ name: "Home", path: "/" }]),
+        ...(featuredItemList.length
+          ? [
+              {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                name: "Perfis politicos em destaque",
+                itemListElement: featuredItemList,
+              },
+            ]
+          : []),
+      ];
+    },
+    [featuredShelf, homeSeoDescription]
+  );
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -340,71 +416,141 @@ const Index = () => {
 
   return (
     <div>
+      <SeoHead
+        title="Radar do Povo | Transparencia politica em dados publicos"
+        description={homeSeoDescription}
+        path="/"
+        keywords={[
+          "radar do povo",
+          "transparencia politica",
+          "emendas parlamentares",
+          "viagens oficiais",
+          "perfis politicos",
+          "gastos publicos",
+        ]}
+        structuredData={homeStructuredData}
+      />
       <AppSidebar />
 
       <main className="lg:ml-72">
         <div className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
 
           {/* ── Hero ── */}
-          <section className="animate-fade-up relative overflow-hidden rounded-3xl border border-border bg-card px-7 py-8 sm:px-10 sm:py-10">
-            <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+          <motion.section
+            initial="hidden"
+            whileInView="visible"
+            viewport={editorialViewport}
+            variants={buildRevealVariants(Boolean(reduceMotion))}
+            className="editorial-hero px-7 py-8 sm:px-10 sm:py-10"
+          >
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-y-0 left-[52%] w-px bg-gradient-to-b from-transparent via-slate-200/80 to-transparent" />
+              <div className="absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-300/80 to-transparent" />
+              <div className="animate-float-wide absolute -right-20 top-8 h-56 w-56 rounded-full bg-primary/8 blur-3xl" />
+              <div className="animate-float-slow absolute right-20 top-10 h-36 w-36 rounded-full border border-primary/10" />
+              <div className="absolute left-[10%] top-8 h-24 w-24 rounded-full border border-slate-200/90" />
+            </div>
+
+            <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] xl:items-center">
+              <motion.div variants={buildRevealVariants(Boolean(reduceMotion), { y: 14 })}>
+                <p className="editorial-eyebrow mb-3">
                   <Sparkles className="h-3 w-3" />
                   Painel de transparencia
                 </p>
-                <h1 className="text-[2rem] font-extrabold leading-[1.15] tracking-tight text-foreground sm:text-[2.5rem]">
+                <h1 className="text-[2rem] font-extrabold leading-[1.1] tracking-tight text-foreground sm:text-[2.8rem]">
                   Radar do Povo{" "}
-                  <span className="text-primary">orientado por dados</span>
+                  <span className="text-gradient-primary">orientado por dados</span>
                 </h1>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                  Emendas, gastos publicos e perfis politicos em uma leitura mais clara e direta.
+                <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground sm:text-[15px]">
+                  Leitura institucional de emendas, viagens oficiais e perfis politicos, com menos ruido e mais criterio na comparacao dos dados.
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
-                <StatusBadge
-                  status={apiHealthQuery.data?.status}
-                  loading={apiHealthQuery.isLoading}
-                />
+              <motion.div
+                variants={buildRevealVariants(Boolean(reduceMotion), { y: 14, delay: 0.03 })}
+                className="grid gap-3 xl:justify-items-end"
+              >
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <StatusBadge
+                    status={apiHealthQuery.data?.status}
+                    loading={apiHealthQuery.isLoading}
+                  />
 
-                <label className="inline-flex items-center gap-2 rounded-2xl border border-border bg-muted/50 px-3 py-2 text-xs font-semibold text-foreground">
-                  <Activity className="h-3.5 w-3.5 text-primary" />
-                  Ano
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => {
-                      setSelectedYear(Number(e.target.value));
-                      setOffset(0);
-                    }}
-                    className="bg-transparent text-xs outline-none"
-                  >
-                    {years.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+                  <label className="inline-flex items-center gap-2 rounded-2xl border border-white/80 bg-white/75 px-3 py-2 text-xs font-semibold text-foreground shadow-card backdrop-blur-sm">
+                    <Activity className="h-3.5 w-3.5 text-primary" />
+                    Ano
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => {
+                        setSelectedYear(Number(e.target.value));
+                        setOffset(0);
+                      }}
+                      className="bg-transparent text-xs outline-none"
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid w-full gap-3 sm:grid-cols-3 xl:max-w-[460px]">
+                  <HeroSignalTile
+                    icon={Banknote}
+                    label="Emendas"
+                    value={formatCentsCompact(resumo?.totalPagoCents)}
+                    helper="Volume pago no recorte"
+                  />
+                  <HeroSignalTile
+                    icon={Users}
+                    label="Perfis"
+                    value={formatCountCompact(resumo?.totalAutores)}
+                    helper="Autores distintos"
+                  />
+                  <HeroSignalTile
+                    icon={Globe}
+                    label="Paises"
+                    value={formatCountCompact(resumo?.totalPaises)}
+                    helper="Localidade registrada"
+                  />
+                </div>
+              </motion.div>
             </div>
-          </section>
+          </motion.section>
+
+          <EditorialSection tone="strong" className="mt-6 px-0 py-0" delay={0.04}>
+            <ImpostometroSpotlight
+              data={impostometroQuery.data}
+              isLoading={impostometroQuery.isLoading}
+              isError={Boolean(impostometroQuery.error)}
+            />
+          </EditorialSection>
 
           {/* ── Search ── */}
-          <section className="mt-6 animate-fade-up" style={{ animationDelay: "80ms" }}>
-            <SearchBar
-              onSearch={handleSearch}
-              isLoading={isSearching && searchQuery.isLoading}
-              placeholder="Digite nome ou partido"
-              submitLabel="Consultar"
-              autoSearch
-              debounceMs={300}
-            />
-          </section>
+          <EditorialSection tone="strong" className="mt-6 px-4 py-4 sm:px-5" delay={0.08}>
+            <div className="relative overflow-hidden">
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300/70 to-transparent" />
+              </div>
+
+              <div className="relative">
+                <SearchBar
+                  onSearch={handleSearch}
+                  isLoading={isSearching && searchQuery.isLoading}
+                  placeholder="Digite nome ou partido"
+                  submitLabel="Consultar"
+                  autoSearch
+                  debounceMs={300}
+                />
+              </div>
+            </div>
+          </EditorialSection>
 
           {/* ── Featured shelf ── */}
           {!isSearching ? (
-            <section className="mt-6 overflow-hidden rounded-3xl border border-border bg-card">
+            <EditorialSection className="mt-6 overflow-hidden px-0 py-0" delay={0.11}>
               <div className="border-b border-border px-6 py-5 sm:px-7">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -413,13 +559,26 @@ const Index = () => {
                       Perfis acessados com mais frequencia.
                     </p>
                   </div>
-                  <button
-                    onClick={() => navigate("/busca")}
-                    className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
-                  >
-                    <Search className="h-3.5 w-3.5" />
-                    Busca completa
-                  </button>
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    <button
+                      onClick={() => navigate("/busca")}
+                      className="inline-flex items-center gap-1.5 rounded-[1rem] border border-border/75 bg-white/88 px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:text-primary"
+                    >
+                      <Search className="h-3.5 w-3.5" />
+                      Busca completa
+                    </button>
+
+                    {featuredPrimary ? (
+                      <ShareActions
+                        label="Compartilhar destaque"
+                        title={`${featuredPrimary.nome} | Radar do Povo`}
+                        text={`Veja o perfil completo de ${featuredPrimary.nome} no Radar do Povo.`}
+                        url={buildPublicUrl(featuredPrimary.profilePath)}
+                        align="right"
+                        compact
+                      />
+                    ) : null}
+                  </div>
                 </div>
               </div>
 
@@ -455,12 +614,18 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-            </section>
+            </EditorialSection>
           ) : null}
 
           {/* ── Search results ── */}
           {isSearching ? (
-            <section className="mt-6 space-y-3 animate-fade-up" style={{ animationDelay: "120ms" }}>
+            <motion.section
+              initial="hidden"
+              whileInView="visible"
+              viewport={editorialViewport}
+              variants={buildStaggerVariants(Boolean(reduceMotion))}
+              className="mt-6 space-y-3"
+            >
               {searchQuery.isLoading ? <LoadingState message="Buscando politicos na API..." /> : null}
               {searchQuery.error ? <ErrorState error={searchQuery.error as Error} /> : null}
               {!searchQuery.isLoading && !searchQuery.error && searchQuery.data?.nodes.length === 0 ? (
@@ -468,22 +633,23 @@ const Index = () => {
               ) : null}
 
               {searchQuery.data?.nodes.map((politico) => (
-                <button
+                <motion.button
                   key={politico.id}
                   onClick={() => navigate(buildPoliticoPath(politico))}
+                  variants={buildRevealVariants(Boolean(reduceMotion), { y: 10 })}
                   className="w-full text-left"
                 >
                   <PoliticianSearchCard politico={politico} />
-                </button>
+                </motion.button>
               ))}
-            </section>
+            </motion.section>
           ) : (
             <>
               {/* ── Ranking header ── */}
-              <section className="mt-6 rounded-3xl border border-border bg-card p-6 sm:p-7">
+              <EditorialSection className="mt-6 p-6 sm:p-7" delay={0.12}>
                 <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                   <div className="max-w-2xl">
-                    <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                    <p className="editorial-eyebrow">
                       <Sparkles className="h-3 w-3" />
                       Leitura anual de emendas
                     </p>
@@ -528,7 +694,7 @@ const Index = () => {
                         className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                           tab.id === activeTab
                             ? "border-primary bg-primary text-white"
-                            : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                            : "border-border/75 bg-white/88 text-muted-foreground hover:border-primary/18 hover:text-foreground"
                         }`}
                       >
                         <tab.icon className="h-3.5 w-3.5" />
@@ -537,7 +703,7 @@ const Index = () => {
                     ))}
                   </div>
                 </div>
-              </section>
+              </EditorialSection>
 
               {/* ── Stats row ── */}
               <section className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -585,7 +751,7 @@ const Index = () => {
 
                   {/* Leader card */}
                   {leader ? (
-                    <section className="overflow-hidden rounded-3xl border border-border bg-card">
+                    <section className="editorial-panel overflow-hidden px-0 py-0">
                       <div className="border-b border-border px-5 py-5 sm:px-6">
                         <p className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
                           <Crown className="h-3 w-3" />
@@ -667,7 +833,7 @@ const Index = () => {
                                 {leaderRunnersUp.map((node, index) => (
                                   <div
                                     key={`${node.codigoAutorEmenda || node.nomeAutorEmenda}-${index}`}
-                                    className="inline-flex min-w-[180px] items-center justify-between gap-3 rounded-2xl border border-border bg-muted/40 px-3 py-2.5 text-xs"
+                                    className="inline-flex min-w-[180px] items-center justify-between gap-3 rounded-[1rem] border border-border/70 bg-white/85 px-3 py-2.5 text-xs shadow-[0_10px_24px_-26px_rgba(15,23,42,0.4)]"
                                   >
                                     <div className="min-w-0">
                                       <p className="truncate font-semibold text-foreground">
@@ -709,7 +875,7 @@ const Index = () => {
                   ) : null}
 
                   {/* Ranking list */}
-                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                  <section className="editorial-panel p-5 sm:p-6">
                     <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h2 className="text-base font-bold text-foreground">Principais autores do ano</h2>
@@ -717,14 +883,14 @@ const Index = () => {
                           Clique no nome quando houver perfil individual identificado.
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                      <div className="surface-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
                         {formatCountCompact(total)} autores no ranking
                       </div>
                     </div>
 
                     <div className="space-y-2.5">
                       {activeQuery.isLoading ? <LoadingState message="Carregando ranking da API..." /> : null}
-                      {activeQuery.error ? <ErrorState error={activeQuery.error as Error} /> : null}
+                      {activeQuery.error && rankingNodes.length === 0 ? <ErrorState error={activeQuery.error as Error} /> : null}
                       {!activeQuery.isLoading && !activeQuery.error && rankingNodes.length === 0 ? (
                         <EmptyState message="A API nao retornou ranking para este ano." />
                       ) : null}
@@ -760,7 +926,7 @@ const Index = () => {
                 <div className="space-y-4">
 
                   {/* Tipo chart */}
-                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                  <section className="editorial-panel-soft p-5 sm:p-6">
                     <div className="mb-5 flex items-center gap-2">
                       <PieChartIcon className="h-4 w-4 text-primary" />
                       <div>
@@ -772,7 +938,7 @@ const Index = () => {
                     </div>
 
                     {tiposQuery.isLoading ? <LoadingState message="Carregando tipos..." /> : null}
-                    {tiposQuery.error ? <ErrorState error={tiposQuery.error as Error} /> : null}
+                    {tiposQuery.error && !typeChartData.length ? <ErrorState error={tiposQuery.error as Error} /> : null}
                     {!tiposQuery.isLoading && !tiposQuery.error && !typeChartData.length ? (
                       <EmptyState message="Sem tipos suficientes para montar a leitura." />
                     ) : null}
@@ -819,7 +985,7 @@ const Index = () => {
                         </div>
 
                         {/* Bar summary */}
-                        <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                        <div className="surface-muted p-4">
                           <div className="mb-2 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
                             <span>Distribuicao por valor pago</span>
                             <span>100%</span>
@@ -842,7 +1008,7 @@ const Index = () => {
                           {typeChartData.map((item, index) => (
                             <div
                               key={item.nome}
-                              className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3"
+                              className="flex items-center justify-between gap-3 rounded-[1rem] border border-border/70 bg-white/85 px-4 py-3"
                             >
                               <div className="flex min-w-0 items-center gap-2.5">
                                 <span
@@ -874,7 +1040,7 @@ const Index = () => {
                   </section>
 
                   {/* Paises */}
-                  <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+                  <section className="editorial-panel-soft p-5 sm:p-6">
                     <div className="mb-5 flex items-center gap-2">
                       <Globe className="h-4 w-4 text-primary" />
                       <div>
@@ -886,7 +1052,7 @@ const Index = () => {
                     </div>
 
                     {paisesQuery.isLoading ? <LoadingState message="Carregando recorte por pais..." /> : null}
-                    {paisesQuery.error ? <ErrorState error={paisesQuery.error as Error} /> : null}
+                    {paisesQuery.error && !(paisesQuery.data?.nodes?.length) ? <ErrorState error={paisesQuery.error as Error} /> : null}
                     {!paisesQuery.isLoading && !paisesQuery.error && !paisesQuery.data?.nodes.length ? (
                       <EmptyState message="Sem dados por pais no ano selecionado." />
                     ) : null}
@@ -895,7 +1061,7 @@ const Index = () => {
                       {paisesQuery.data?.nodes.slice(0, 5).map((pais, index) => (
                         <div
                           key={`${pais.pais}-${index}`}
-                          className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3"
+                          className="flex items-center justify-between gap-3 rounded-[1rem] border border-border/70 bg-white/85 px-4 py-3"
                         >
                           <div className="min-w-0">
                             <p className="truncate text-xs font-semibold text-foreground">
@@ -982,12 +1148,40 @@ const HomeBriefCard = ({
   value: string;
   helper: string;
 }) => (
-  <div className="rounded-2xl border border-border bg-muted/30 p-4">
+  <div className="surface-muted p-4">
     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
       {label}
     </p>
     <p className="mt-2 text-sm font-bold text-foreground">{value}</p>
     <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">{helper}</p>
+  </div>
+);
+
+const HeroSignalTile = ({
+  icon: Icon,
+  label,
+  value,
+  helper,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: string;
+  helper: string;
+}) => (
+  <div className="group relative overflow-hidden rounded-[1.35rem] border border-white/80 bg-white/76 px-4 py-4 shadow-[0_16px_30px_-28px_rgba(15,23,42,0.28)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/18">
+    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300/70 to-transparent" />
+    <div className="relative">
+      <div className="flex items-center gap-2 text-primary">
+        <span className="rounded-[0.9rem] bg-primary/10 p-2">
+          <Icon className="h-4 w-4" />
+        </span>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          {label}
+        </p>
+      </div>
+      <p className="mt-3 text-base font-bold tracking-tight text-foreground">{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p>
+    </div>
   </div>
 );
 
@@ -1007,9 +1201,9 @@ const RankingRow = ({
   const Icon = rank <= 3 ? rankIcons[rank - 1] : null;
 
   return (
-    <article className="rounded-2xl border border-border bg-background px-4 py-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20">
+    <article className="rounded-[1.15rem] border border-border/75 bg-white/88 px-4 py-4 shadow-[0_18px_34px_-32px_rgba(15,23,42,0.35)] transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.03]">
       <div className="flex min-w-0 items-start gap-3">
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[0.9rem] bg-muted/75 text-muted-foreground">
           {Icon ? <Icon className="h-4 w-4 text-primary" /> : (
             <span className="text-[11px] font-bold">#{rank}</span>
           )}
@@ -1033,7 +1227,7 @@ const RankingRow = ({
           )}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+            <span className="rounded-full bg-muted/75 px-2 py-0.5 font-medium text-muted-foreground">
               {formatCountCompact(node.totalEmendas ?? 0)} emendas
             </span>
             {canOpenProfile ? (
@@ -1041,7 +1235,7 @@ const RankingRow = ({
                 {openingProfile ? "Abrindo..." : "Perfil disponivel"}
               </span>
             ) : (
-              <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+              <span className="rounded-full bg-muted/80 px-2 py-0.5 font-medium text-muted-foreground">
                 Sem perfil
               </span>
             )}
@@ -1086,7 +1280,7 @@ const RankingRow = ({
 };
 
 const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
-  <article className="group rounded-2xl border border-border bg-card p-4 transition-all duration-150 hover:border-primary/30 hover:bg-muted/20">
+  <article className="group rounded-[1.35rem] border border-border/75 bg-white/90 p-4 shadow-[0_18px_32px_-30px_rgba(15,23,42,0.28)] transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.03]">
     <div className="flex items-center gap-3">
       {politico.fotoUrl ? (
         <img
@@ -1095,7 +1289,7 @@ const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
           className="h-11 w-11 rounded-xl object-cover"
         />
       ) : (
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted">
+        <div className="flex h-11 w-11 items-center justify-center rounded-[0.9rem] bg-muted/80">
           <Users className="h-5 w-5 text-muted-foreground" />
         </div>
       )}
@@ -1111,12 +1305,12 @@ const PoliticianSearchCard = ({ politico }: { politico: PoliticoResumo }) => (
             </span>
           ) : null}
           {politico.uf ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+            <span className="rounded-full bg-muted/80 px-2 py-0.5 font-semibold text-muted-foreground">
               {politico.uf}
             </span>
           ) : null}
           {politico.cargoAtual ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+            <span className="rounded-full bg-muted/80 px-2 py-0.5 font-semibold text-muted-foreground">
               {politico.cargoAtual}
             </span>
           ) : null}
@@ -1166,11 +1360,11 @@ const FeaturedPoliticoLeadCard = ({
 }) => (
   <button
     onClick={onClick}
-    className="group relative flex min-h-[172px] flex-col justify-between overflow-hidden rounded-2xl border border-border bg-background px-5 py-5 text-left transition-all duration-150 hover:border-primary/30 hover:bg-muted/20 sm:px-6 sm:py-6"
+    className="group relative flex min-h-[172px] flex-col justify-between overflow-hidden rounded-[1.5rem] border border-border/75 bg-white/92 px-5 py-5 text-left shadow-[0_24px_48px_-38px_rgba(15,23,42,0.35)] transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.025] sm:px-6 sm:py-6"
   >
     <div className="relative flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <p className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           <Crown className="h-3 w-3 text-primary" />
           Perfil mais acessado
         </p>
@@ -1185,7 +1379,7 @@ const FeaturedPoliticoLeadCard = ({
       <FeaturedPoliticoImage
         nome={nome}
         imageCandidates={imageCandidates}
-        className="h-20 w-20 flex-shrink-0 rounded-2xl border border-border object-cover sm:h-24 sm:w-24"
+        className="h-20 w-20 flex-shrink-0 rounded-[1.25rem] border border-border/70 object-cover sm:h-24 sm:w-24"
       />
     </div>
 
@@ -1193,7 +1387,7 @@ const FeaturedPoliticoLeadCard = ({
       <p className="text-xs text-muted-foreground">
         <span className="font-semibold text-foreground">Top buscas</span> da home neste momento
       </p>
-      <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-semibold text-primary">
+      <span className="inline-flex items-center gap-1 rounded-full border border-primary/18 bg-primary/7 px-3 py-1 text-[11px] font-semibold text-primary">
         Abrir perfil
         <ArrowUpRight className="h-3 w-3" />
       </span>
@@ -1212,18 +1406,18 @@ const FeaturedPoliticoCard = ({
 }) => (
   <button
     onClick={onClick}
-    className="group flex min-w-[220px] snap-start items-center gap-3 rounded-2xl border border-border bg-background px-3.5 py-3 text-left transition-all duration-150 hover:border-primary/30 hover:bg-muted/20 sm:min-w-[240px] lg:min-w-0"
+    className="group flex min-w-[220px] snap-start items-center gap-3 rounded-[1.15rem] border border-border/75 bg-white/88 px-3.5 py-3 text-left shadow-[0_14px_28px_-28px_rgba(15,23,42,0.3)] transition-all duration-150 hover:border-primary/18 hover:bg-primary/[0.025] sm:min-w-[240px] lg:min-w-0"
   >
     <FeaturedPoliticoImage
       nome={nome}
       imageCandidates={imageCandidates}
-      className="h-12 w-12 flex-shrink-0 rounded-xl border border-border object-cover"
+      className="h-12 w-12 flex-shrink-0 rounded-[0.9rem] border border-border/70 object-cover"
     />
     <div className="min-w-0 flex-1">
       <p className="truncate text-xs font-bold text-foreground">{nome}</p>
       <p className="mt-0.5 text-[11px] text-muted-foreground">Abrir perfil</p>
     </div>
-    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[0.9rem] bg-muted/75 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
       <ArrowUpRight className="h-3.5 w-3.5" />
     </div>
   </button>
@@ -1284,6 +1478,22 @@ function buildAvatarUrl(value: string): string {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     value
   )}&background=e6f7f7&color=0f766e&size=128&format=png`;
+}
+
+function buildPublicUrl(path: string): string {
+  if (!path) {
+    return typeof window !== "undefined" ? window.location.href : "";
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  if (typeof window === "undefined") {
+    return path;
+  }
+
+  return new URL(path, window.location.origin).toString();
 }
 
 function buildImageCandidates(...values: Array<string | undefined>) {

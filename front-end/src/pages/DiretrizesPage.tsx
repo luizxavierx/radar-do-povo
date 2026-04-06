@@ -42,6 +42,9 @@ const DiretrizesPage = () => (
     title="Diretrizes editoriais do projeto"
     intro="Principios usados para organizar os dados, definir destaques visuais e manter uma leitura publica responsavel."
     sections={sections}
+    seoTitle="Diretrizes editoriais | Radar do Povo"
+    seoDescription="Conheca os principios editoriais usados pelo Radar do Povo para contextualizar dados publicos, destaques visuais e comparacoes."
+    seoPath="/diretrizes-editoriais"
   />
 );
 

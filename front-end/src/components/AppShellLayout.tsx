@@ -10,7 +10,7 @@ const AppShellLayout = () => {
       </div>
 
       <div className="lg:ml-72">
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-6 sm:px-6 lg:pb-8">
+        <div className="mx-auto w-full max-w-[1240px] px-4 pb-6 sm:px-6 lg:pb-10">
           <AppFooter />
         </div>
       </div>

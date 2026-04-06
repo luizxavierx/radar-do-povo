@@ -107,10 +107,7 @@ const ViagensAnalyticsDeck = ({
   ];
 
   return (
-    <section
-      id="viagens-analises"
-      className="rounded-[32px] border border-border/75 bg-card/90 p-4 shadow-card sm:p-6"
-    >
+    <section id="viagens-analises" className="editorial-panel">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -126,7 +123,7 @@ const ViagensAnalyticsDeck = ({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <article className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
+          <article className="surface-muted px-4 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Gasto bruto
             </p>
@@ -134,7 +131,7 @@ const ViagensAnalyticsDeck = ({
               {formatCentsCompact(summary?.totalGastoBrutoCents)}
             </p>
           </article>
-          <article className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
+          <article className="surface-muted px-4 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Devolucoes
             </p>
@@ -146,22 +143,22 @@ const ViagensAnalyticsDeck = ({
       </div>
 
       <Tabs defaultValue="pessoas" className="mt-6">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-2xl border border-border/70 bg-background/70 p-1">
+        <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-[1.2rem] border border-border/70 bg-background/70 p-1">
           <TabsTrigger
             value="pessoas"
-            className="shrink-0 rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
+            className="shrink-0 rounded-[1rem] px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
           >
             Pessoas
           </TabsTrigger>
           <TabsTrigger
             value="orgaos"
-            className="shrink-0 rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
+            className="shrink-0 rounded-[1rem] px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
           >
             Orgaos
           </TabsTrigger>
           <TabsTrigger
             value="composicao"
-            className="shrink-0 rounded-2xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
+            className="shrink-0 rounded-[1rem] px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-foreground"
           >
             Composicao
           </TabsTrigger>
@@ -196,7 +193,7 @@ const ViagensAnalyticsDeck = ({
 
           {summary ? (
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-              <section className="rounded-[30px] border border-border/75 bg-card/88 p-5 shadow-card sm:p-6">
+              <section className="editorial-panel-soft">
                 <div className="mb-5 flex items-start gap-3">
                   <div className="rounded-2xl bg-gradient-soft p-3 text-primary">
                     <Banknote className="h-5 w-5" />

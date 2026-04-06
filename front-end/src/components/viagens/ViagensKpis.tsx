@@ -146,7 +146,7 @@ const ViagensKpis = ({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-        <section className="rounded-[30px] border border-primary/15 bg-gradient-to-br from-white via-slate-50 to-cyan-50 p-4 shadow-card sm:p-6">
+        <section className="editorial-panel-strong bg-[linear-gradient(145deg,rgba(255,255,255,0.97),rgba(245,248,250,0.94)_58%,rgba(232,245,243,0.82)_100%)] p-4 sm:p-6">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
               <div className="min-w-0 flex-1">
@@ -179,7 +179,7 @@ const ViagensKpis = ({
                 {headlineMetrics.map((metric) => (
                   <article
                     key={metric.label}
-                    className="rounded-[22px] border border-border/70 bg-white/95 p-3.5 shadow-sm"
+                    className="surface-muted bg-white/94 p-3.5"
                   >
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                       {metric.label}
@@ -193,7 +193,7 @@ const ViagensKpis = ({
               </div>
             </div>
 
-            <div className="rounded-[26px] border border-border/70 bg-white/90 p-4 sm:p-5">
+            <div className="surface-muted bg-white/92 p-4 sm:p-5">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -276,7 +276,7 @@ const CompactMetricCard = ({
   iconTint: string;
   icon: typeof Plane;
 }) => (
-  <article className="relative overflow-hidden rounded-[24px] border border-border/70 bg-white/95 p-4 shadow-card sm:p-5">
+  <article className="relative overflow-hidden rounded-[1.5rem] border border-border/70 bg-white/95 p-4 shadow-card sm:p-5">
     <div className={`absolute inset-x-0 top-0 h-16 bg-gradient-to-br ${accent}`} />
     <div className="relative flex h-full flex-col">
       <div className="flex items-start justify-between gap-3">

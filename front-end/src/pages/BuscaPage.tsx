@@ -2,14 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Filter, MapPin, Search, Users } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion, useReducedMotion } from "framer-motion";
 
 import AppSidebar from "@/components/AppSidebar";
+import EditorialPageHeader from "@/components/EditorialPageHeader";
+import EditorialSection from "@/components/EditorialSection";
+import SeoHead from "@/components/SeoHead";
 import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { usePoliticos } from "@/hooks/usePoliticos";
 import { graphqlRequest } from "@/api/graphqlClient";
 import { POLITICO_BASICO_QUERY, POLITICOS_LIST_QUERY } from "@/api/queries";
 import { buildPoliticoPath } from "@/lib/politicos";
+import { buildBreadcrumbStructuredData } from "@/lib/seo";
+import { buildHoverLift, buildRevealVariants, buildStaggerVariants, editorialViewport } from "@/lib/motion";
 import type { Connection, PoliticoResumo } from "@/api/types";
 
 const PAGE_SIZE = 24;
@@ -47,6 +53,9 @@ const BuscaPage = () => {
   const total = data?.total ?? 0;
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
+  const seoDescription =
+    "Busque politicos por nome, partido, UF ou cargo atual e acesse perfis consolidados com filtros institucionais.";
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!filter || !data) return;
@@ -123,17 +132,93 @@ const BuscaPage = () => {
 
   return (
     <div>
+      <SeoHead
+        title="Busca de politicos | Radar do Povo"
+        description={seoDescription}
+        path="/busca"
+        keywords={[
+          "buscar politicos",
+          "perfil politico",
+          "politicos por partido",
+          "politicos por uf",
+          "radar do povo busca",
+        ]}
+        structuredData={[
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: "Busca de politicos",
+            description: seoDescription,
+            url: "https://radardopovo.com/busca",
+            inLanguage: "pt-BR",
+            isPartOf: {
+              "@type": "WebSite",
+              name: "Radar do Povo",
+              url: "https://radardopovo.com",
+            },
+          },
+          buildBreadcrumbStructuredData([
+            { name: "Home", path: "/" },
+            { name: "Busca", path: "/busca" },
+          ]),
+        ]}
+      />
       <AppSidebar />
 
       <main className="lg:ml-72">
         <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
-          <section className="animate-fade-up rounded-3xl border border-white/60 bg-card/85 p-7 shadow-elevated backdrop-blur-sm sm:p-8">
-            <h1 className="text-3xl font-extrabold leading-tight">
-              Busca inteligente de <span className="text-gradient-primary">politicos</span>
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-              Encontre perfis por nome, partido, UF ou cargo.
-            </p>
+          <EditorialPageHeader
+            eyebrow="Busca editorial"
+            icon={Search}
+            title={
+              <>
+                Busca de <span className="text-gradient-primary">politicos</span>
+              </>
+            }
+            description="Encontre perfis por nome, partido, UF ou cargo atual, com uma leitura mais institucional e organizada."
+            aside={
+              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                <SearchPageHeaderMetric
+                  label="Recorte"
+                  value={hasFilter ? "Filtrado" : "Aberto"}
+                  helper={hasFilter ? "Busca ativa na base" : "Aguardando filtros"}
+                />
+                <SearchPageHeaderMetric
+                  label="Resultados"
+                  value={formatCount(total)}
+                  helper="Contagem atual"
+                />
+                <SearchPageHeaderMetric
+                  label="Pagina"
+                  value={`${currentPage}/${totalPages}`}
+                  helper="Navegacao da consulta"
+                />
+              </div>
+            }
+            meta={
+              hasFilter ? (
+                <>
+                  {search ? <span className="editorial-chip">Nome: {search}</span> : null}
+                  {partido ? <span className="editorial-chip">Partido: {partido}</span> : null}
+                  {uf ? <span className="editorial-chip">UF: {uf}</span> : null}
+                  {cargoAtual ? <span className="editorial-chip">Cargo: {cargoAtual}</span> : null}
+                </>
+              ) : (
+                <span className="editorial-chip">Use a busca e os filtros para iniciar</span>
+              )
+            }
+          />
+
+          <EditorialSection tone="strong" className="mt-4">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Consulta principal
+              </p>
+              <h2 className="mt-2 panel-heading">Encontre perfis por nome ou partido</h2>
+              <p className="mt-2 panel-copy">
+                O campo principal conduz a busca, enquanto os filtros refinam a leitura sem poluir a página.
+              </p>
+            </div>
 
             <div className="mt-5">
               <SearchBar
@@ -150,9 +235,11 @@ const BuscaPage = () => {
               />
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
-              <label className="rounded-xl border border-border bg-card p-3 text-xs shadow-card">
-                <span className="mb-2 block font-semibold text-muted-foreground">Partido</span>
+            <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-4">
+              <label className="surface-muted px-4 py-3 text-xs">
+                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Partido
+                </span>
                 <input
                   value={partido}
                   onChange={(e) => {
@@ -160,12 +247,14 @@ const BuscaPage = () => {
                     setOffset(0);
                   }}
                   placeholder="PL, PT, PSD..."
-                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs outline-none focus:border-primary/50"
+                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
                 />
               </label>
 
-              <label className="rounded-xl border border-border bg-card p-3 text-xs shadow-card">
-                <span className="mb-2 block font-semibold text-muted-foreground">UF</span>
+              <label className="surface-muted px-4 py-3 text-xs">
+                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  UF
+                </span>
                 <input
                   value={uf}
                   onChange={(e) => {
@@ -173,19 +262,21 @@ const BuscaPage = () => {
                     setOffset(0);
                   }}
                   placeholder="SP, PR, BA..."
-                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs uppercase outline-none focus:border-primary/50"
+                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium uppercase outline-none transition-colors focus:border-primary/25"
                 />
               </label>
 
-              <label className="rounded-xl border border-border bg-card p-3 text-xs shadow-card">
-                <span className="mb-2 block font-semibold text-muted-foreground">Cargo atual</span>
+              <label className="surface-muted px-4 py-3 text-xs">
+                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Cargo atual
+                </span>
                 <select
                   value={cargoAtual}
                   onChange={(e) => {
                     setCargoAtual(e.target.value);
                     setOffset(0);
                   }}
-                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs outline-none focus:border-primary/50"
+                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
                 >
                   {cargoOptions.map((option) => (
                     <option key={option || "todos"} value={option}>
@@ -198,24 +289,22 @@ const BuscaPage = () => {
               <div className="flex items-end">
                 <button
                   onClick={resetFilters}
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card text-xs font-semibold text-muted-foreground shadow-card transition-colors hover:bg-muted"
+                  className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-[1rem] border border-border bg-white text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
                 >
                   <Filter className="h-3.5 w-3.5" />
                   Limpar filtros
                 </button>
               </div>
             </div>
+          </EditorialSection>
 
-            {hasFilter ? (
-              <div className="mt-5 text-xs">
-                <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-primary">
-                  {total} resultado(s)
-                </span>
-              </div>
-            ) : null}
-          </section>
-
-          <section className="mt-8 space-y-3">
+          <motion.section
+            initial="hidden"
+            whileInView="visible"
+            viewport={editorialViewport}
+            variants={buildStaggerVariants(Boolean(reduceMotion))}
+            className="mt-8 space-y-3"
+          >
             {!hasFilter ? <EmptyState message="Use ao menos um filtro para iniciar a consulta." /> : null}
             {isLoading ? <LoadingState message="Consultando lista de politicos..." /> : null}
             {error ? <ErrorState error={error as Error} /> : null}
@@ -224,36 +313,38 @@ const BuscaPage = () => {
             ) : null}
 
             {data?.nodes.map((politico) => (
-              <button
+              <motion.button
                 key={politico.id}
+                variants={buildRevealVariants(Boolean(reduceMotion), { y: 12 })}
+                whileHover={buildHoverLift(Boolean(reduceMotion), -2)}
                 onClick={() => {
                   void handleOpenPolitico(politico);
                 }}
                 className="w-full text-left"
               >
                 <PoliticianResultCard politico={politico} />
-              </button>
+              </motion.button>
             ))}
-          </section>
+          </motion.section>
 
           {total > PAGE_SIZE ? (
             <section className="mt-8 flex items-center justify-center gap-3">
               <button
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}
-                className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-[1rem] border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Anterior
               </button>
 
-              <span className="rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+              <span className="rounded-[1rem] border border-border bg-white px-3 py-2 text-xs text-muted-foreground">
                 Pagina {currentPage} de {totalPages}
               </span>
 
               <button
                 onClick={() => setOffset(offset + PAGE_SIZE)}
                 disabled={offset + PAGE_SIZE >= total}
-                className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-[1rem] border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Proxima
               </button>
@@ -266,7 +357,7 @@ const BuscaPage = () => {
 };
 
 const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
-  <article className="group rounded-2xl border border-border/75 bg-card/80 p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
+  <article className="group overflow-hidden rounded-[1.6rem] border border-border/70 bg-card/94 p-4 shadow-card transition-all duration-200 hover:border-primary/16 hover:shadow-elevated">
     <div className="flex items-center gap-3">
       {politico.fotoUrl ? (
         <img src={politico.fotoUrl} alt={politico.nomeCanonico} className="h-12 w-12 rounded-xl object-cover" />
@@ -277,12 +368,12 @@ const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
       )}
 
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-bold uppercase tracking-wide text-foreground group-hover:text-primary">
+        <h3 className="truncate text-sm font-bold tracking-tight text-foreground group-hover:text-primary">
           {politico.nomeCompleto || politico.nomeCanonico}
         </h3>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
           {politico.partido ? (
-            <span className="rounded-full bg-primary/15 px-2 py-0.5 font-semibold text-primary">{politico.partido}</span>
+            <span className="rounded-full bg-primary/12 px-2 py-0.5 font-semibold text-primary">{politico.partido}</span>
           ) : null}
           {politico.uf ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
@@ -303,5 +394,27 @@ const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
     </div>
   </article>
 );
+
+const SearchPageHeaderMetric = ({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+}) => (
+  <div className="surface-muted px-4 py-3">
+    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      {label}
+    </p>
+    <p className="mt-2 text-lg font-bold tracking-tight text-foreground">{value}</p>
+    <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p>
+  </div>
+);
+
+function formatCount(value: number) {
+  return value > 0 ? value.toLocaleString("pt-BR") : "0";
+}
 
 export default BuscaPage;

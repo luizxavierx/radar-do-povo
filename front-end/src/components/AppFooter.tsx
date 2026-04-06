@@ -40,15 +40,15 @@ const AppFooter = ({ className }: AppFooterProps) => {
 
   return (
     <footer className={cn("border-t border-border/70 pt-6", className)}>
-      <div className="rounded-[28px] border border-white/70 bg-card/92 p-5 shadow-card backdrop-blur-sm sm:p-6">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(180px,0.7fr)_minmax(220px,0.8fr)]">
+      <div className="rounded-[2rem] border border-white/75 bg-card/94 p-5 shadow-card sm:p-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(200px,0.7fr)_minmax(220px,0.85fr)]">
           <section className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            <div className="editorial-eyebrow">
               <Landmark className="h-3.5 w-3.5" />
               Rodape institucional
             </div>
 
-            <img src={logo} alt="Radar do Povo" className="mt-4 h-11 w-auto" />
+            <img src={logo} alt="Radar do Povo" className="mt-5 h-11 w-auto" />
 
             <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">
               Plataforma de leitura analitica sobre dados publicos, com foco em rastreabilidade,
@@ -70,10 +70,10 @@ const AppFooter = ({ className }: AppFooterProps) => {
                     key={item.path}
                     to={item.path}
                     className={cn(
-                      "inline-flex items-center justify-between rounded-2xl border px-3 py-2.5 text-sm font-semibold transition-colors",
+                      "inline-flex items-center justify-between rounded-[1.2rem] border px-3 py-2.5 text-sm font-semibold transition-colors",
                       active
-                        ? "border-primary/20 bg-primary/10 text-primary"
-                        : "border-border/70 bg-background text-foreground hover:border-primary/20 hover:bg-muted/60"
+                        ? "border-primary/18 bg-primary/8 text-primary"
+                        : "border-border/70 bg-background/72 text-foreground hover:border-primary/20 hover:bg-white"
                     )}
                   >
                     <span className="inline-flex items-center gap-2">
@@ -98,17 +98,17 @@ const AppFooter = ({ className }: AppFooterProps) => {
                   const Icon = item.icon;
 
                   return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={cn(
-                        "inline-flex items-center justify-between rounded-2xl border px-3 py-2.5 text-sm font-semibold transition-colors",
-                        active
-                          ? "border-primary/20 bg-primary/10 text-primary"
-                          : "border-border/70 bg-background text-foreground hover:border-primary/20 hover:bg-muted/60"
-                      )}
-                    >
-                      <span className="inline-flex items-center gap-2">
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      "inline-flex items-center justify-between rounded-[1.2rem] border px-3 py-2.5 text-sm font-semibold transition-colors",
+                      active
+                        ? "border-primary/18 bg-primary/8 text-primary"
+                        : "border-border/70 bg-background/72 text-foreground hover:border-primary/20 hover:bg-white"
+                    )}
+                  >
+                    <span className="inline-flex items-center gap-2">
                         <Icon className="h-4 w-4" />
                         <span>{item.label}</span>
                       </span>
@@ -119,13 +119,13 @@ const AppFooter = ({ className }: AppFooterProps) => {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-4">
+            <section className="rounded-[1.5rem] border border-primary/12 bg-[linear-gradient(145deg,rgba(15,118,110,0.06),rgba(255,255,255,0.95)_62%)] p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
                 Contato
               </p>
               <a
                 href="mailto:radardopovo@proton.me"
-                className="mt-3 inline-flex w-full items-center justify-between rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-50"
+                className="mt-3 inline-flex w-full items-center justify-between rounded-[1.2rem] border border-primary/15 bg-white px-3 py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary/20 hover:bg-primary/5"
               >
                 <span className="inline-flex min-w-0 items-center gap-2 truncate">
                   <Mail className="h-4 w-4 flex-shrink-0" />

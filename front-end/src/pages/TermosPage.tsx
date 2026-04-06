@@ -41,6 +41,9 @@ const TermosPage = () => (
     title="Termos de uso"
     intro="Regras gerais para consulta, reutilizacao e interpretacao das informacoes organizadas no Radar do Povo."
     sections={sections}
+    seoTitle="Termos de uso | Radar do Povo"
+    seoDescription="Consulte os termos de uso do Radar do Povo para entender o escopo da plataforma, limites de interpretacao e boas praticas de citacao."
+    seoPath="/termos"
   />
 );
 

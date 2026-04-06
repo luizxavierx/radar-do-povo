@@ -153,6 +153,12 @@ export interface PoliticoDossieQueryOptions {
   includeTrechos?: boolean;
   includeConvenios?: boolean;
   includeFavorecidos?: boolean;
+  includeCamara?: boolean;
+  includeSenado?: boolean;
+  includeLexml?: boolean;
+  includeBrasilIo?: boolean;
+  includeWikipedia?: boolean;
+  includeTse?: boolean;
 }
 
 export function usePoliticoDossieCompleto(
@@ -184,6 +190,12 @@ export function usePoliticoDossieCompleto(
     includeTrechos: options.includeTrechos ?? true,
     includeConvenios: options.includeConvenios ?? true,
     includeFavorecidos: options.includeFavorecidos ?? true,
+    includeCamara: options.includeCamara ?? true,
+    includeSenado: options.includeSenado ?? true,
+    includeLexml: options.includeLexml ?? true,
+    includeBrasilIo: options.includeBrasilIo ?? true,
+    includeWikipedia: options.includeWikipedia ?? true,
+    includeTse: options.includeTse ?? false,
   };
 
   return useQuery({
@@ -199,7 +211,7 @@ export function usePoliticoDossieCompleto(
         }
       ),
     enabled: Boolean(search),
-    staleTime: QUERY_STALE_TIME,
+    staleTime: 10 * 60_000,
     gcTime: QUERY_GC_TIME,
   });
 }
@@ -227,7 +239,7 @@ export function usePoliticoPerfilExterno(
         { signal, timeoutMs: 12_000 }
       ).then((d) => d.politico?.perfilExterno),
     enabled: Boolean(politicoId),
-    staleTime: QUERY_STALE_TIME,
+    staleTime: 15 * 60_000,
     gcTime: QUERY_GC_TIME,
   });
 }
@@ -259,6 +271,8 @@ export function usePoliticoNoticias(nome?: string, limit = 6) {
     queryKey: ["politico-noticias", search, limit],
     queryFn: ({ signal }) => fetchPoliticoNews(search, signal, limit),
     enabled: Boolean(search),
+    retry: 1,
+    placeholderData: (previousData) => previousData,
     staleTime: 10 * 60_000,
     gcTime: QUERY_GC_TIME,
   });

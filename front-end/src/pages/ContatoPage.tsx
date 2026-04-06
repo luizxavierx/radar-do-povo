@@ -35,6 +35,9 @@ const ContatoPage = () => (
     title="Fale com o Radar do Povo"
     intro="Canal dedicado para correcoes, observacoes sobre o painel e comunicacao institucional relacionada ao projeto."
     sections={sections}
+    seoTitle="Contato | Radar do Povo"
+    seoDescription="Entre em contato com o Radar do Povo para relatar correcoes, sugerir melhorias e tratar comunicacao institucional sobre a plataforma."
+    seoPath="/contato"
   />
 );
 

@@ -42,6 +42,9 @@ const MetodologiaPage = () => (
     title="Como os dados sao organizados"
     intro="Explicacao resumida sobre origem, agregacao e leitura dos indicadores exibidos na plataforma."
     sections={sections}
+    seoTitle="Metodologia | Radar do Povo"
+    seoDescription="Entenda como o Radar do Povo organiza dados publicos, aplica filtros, agrega indicadores e preserva a rastreabilidade das informacoes."
+    seoPath="/metodologia"
   />
 );
 

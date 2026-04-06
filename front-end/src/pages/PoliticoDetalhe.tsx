@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Banknote,
@@ -22,9 +22,12 @@ import {
   User,
 } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
+import { motion, useReducedMotion } from "framer-motion";
 
 import AppSidebar from "@/components/AppSidebar";
 import PaginationControls from "@/components/PaginationControls";
+import SeoHead from "@/components/SeoHead";
+import ShareActions from "@/components/ShareActions";
 import { EmptyState, ErrorState } from "@/components/StateViews";
 import { PoliticoNewsSection } from "@/components/politicos/PoliticoNewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +43,9 @@ import {
   formatDate,
   toBigInt,
 } from "@/lib/formatters";
+import { buildRevealVariants, buildStaggerVariants, editorialViewport } from "@/lib/motion";
+import { buildPoliticoPath, getPoliticoLookupValue } from "@/lib/politicos";
+import { buildBreadcrumbStructuredData, truncateSeoDescription } from "@/lib/seo";
 import type { Emenda, PerfilExterno, Viagem } from "@/api/types";
 
 const PAGE_SIZE = 10;
@@ -50,7 +56,9 @@ const years = Array.from({ length: Math.max(CURRENT_YEAR - 2018, 1) }, (_, i) =>
 const pieColors = ["#0f766e", "#2563eb", "#f59e0b", "#ef4444"];
 
 const PoliticoDetalhe = () => {
+  const reduceMotion = useReducedMotion();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [anoInicio, setAnoInicio] = useState(2019);
@@ -59,7 +67,8 @@ const PoliticoDetalhe = () => {
   const [emendasOffset, setEmendasOffset] = useState(0);
   const [lexmlOffset, setLexmlOffset] = useState(0);
 
-  const nomeBusca = decodeURIComponent(id || "").trim();
+  const routeLookup = decodeURIComponent(id || "").trim();
+  const nomeBusca = getPoliticoLookupValue(routeLookup);
   const { data: politico, isLoading, error } = usePoliticoDossieCompleto(nomeBusca, {
     anoInicio,
     anoFim,
@@ -96,6 +105,7 @@ const PoliticoDetalhe = () => {
       includeTrechos: false,
       includeConvenios: false,
       includeFavorecidos: false,
+      includeTse: true,
     }
   );
   const nomePoliticoNoticias = politico
@@ -111,6 +121,17 @@ const PoliticoDetalhe = () => {
   useEffect(() => {
     setLexmlOffset(0);
   }, [nomeBusca]);
+
+  useEffect(() => {
+    if (!routeLookup) {
+      return;
+    }
+
+    const canonicalPath = buildPoliticoPath(routeLookup);
+    if (canonicalPath !== location.pathname) {
+      navigate(canonicalPath, { replace: true });
+    }
+  }, [location.pathname, navigate, routeLookup]);
 
   const gastos = politico?.gastos;
   const totalDiariasCents = toBigInt(gastos?.totalDiariasCents);
@@ -143,6 +164,61 @@ const PoliticoDetalhe = () => {
     politico?.fotoUrl ||
     perfilExterno?.camara?.urlFoto ||
     perfilExterno?.senado?.urlFoto;
+  const politicoDisplayName =
+    politico?.nomeCompleto ||
+    politico?.nomeCanonico ||
+    nomeBusca.replace(/-/g, " ");
+  const politicoShareUrl =
+    typeof window !== "undefined" ? window.location.href : "";
+  const politicoCanonicalPath = buildPoliticoPath({
+    nomeCompleto: politico?.nomeCompleto || politicoDisplayName || routeLookup,
+    nomeCanonico: politico?.nomeCanonico,
+    id: politico?.id,
+  });
+  const politicoSeoDescription = truncateSeoDescription(
+    perfilExterno?.wikipedia?.resumo ||
+      `Veja o perfil completo de ${politicoDisplayName}, com viagens oficiais, emendas parlamentares e referencias externas organizadas pelo Radar do Povo.`
+  );
+  const politicoSameAs = [
+    perfilExterno?.wikipedia?.url,
+    perfilExterno?.camara?.uri,
+    perfilExterno?.senado?.urlPagina,
+    perfilExterno?.tse?.divulgaCandContasUrl,
+  ].filter((value): value is string => Boolean(value));
+  const politicoStructuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      name: `${politicoDisplayName} | Radar do Povo`,
+      description: politicoSeoDescription,
+      url: `https://radardopovo.com${politicoCanonicalPath}`,
+      inLanguage: "pt-BR",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "Radar do Povo",
+        url: "https://radardopovo.com",
+      },
+      mainEntity: {
+        "@type": "Person",
+        name: politicoDisplayName,
+        description: politicoSeoDescription,
+        image: fotoUrl || "https://radardopovo.com/logo.png",
+        jobTitle: politico?.cargoAtual,
+        affiliation: politico?.partido
+          ? {
+              "@type": "Organization",
+              name: politico.partido,
+            }
+          : undefined,
+        sameAs: politicoSameAs.length ? politicoSameAs : undefined,
+      },
+    },
+    buildBreadcrumbStructuredData([
+      { name: "Home", path: "/" },
+      { name: "Busca", path: "/busca" },
+      { name: politicoDisplayName, path: politicoCanonicalPath },
+    ]),
+  ];
 
   const pieData = useMemo(() => {
     if (!gastos) return [];
@@ -178,13 +254,30 @@ const PoliticoDetalhe = () => {
 
   return (
     <div className="min-h-screen bg-grid-pattern">
+      <SeoHead
+        title={`${politicoDisplayName} | Perfil politico no Radar do Povo`}
+        description={politicoSeoDescription}
+        path={politicoCanonicalPath}
+        image={fotoUrl || "/logo.png"}
+        imageAlt={politicoDisplayName}
+        type="profile"
+        robots={!isLoading && (!politico || Boolean(error)) ? "noindex,nofollow" : undefined}
+        keywords={[
+          politicoDisplayName,
+          "perfil politico",
+          "viagens oficiais",
+          "emendas parlamentares",
+          "radar do povo",
+        ]}
+        structuredData={politicoStructuredData}
+      />
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">
         <div className="mx-auto w-full max-w-[1180px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
           <button
             onClick={() => navigate(-1)}
-            className="mb-6 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground shadow-card transition-colors hover:bg-muted"
+            className="mb-6 inline-flex items-center gap-2 rounded-[0.95rem] border border-border/75 bg-white/92 px-3 py-2 text-xs font-semibold text-muted-foreground shadow-[0_16px_28px_-28px_rgba(15,23,42,0.3)] transition-colors hover:border-primary/18 hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Voltar
@@ -198,23 +291,29 @@ const PoliticoDetalhe = () => {
 
           {politico ? (
             <div className="space-y-6">
-              <section className="animate-fade-up rounded-[32px] border border-white/60 bg-card/85 p-5 shadow-elevated backdrop-blur-sm sm:p-6">
+              <motion.section
+                initial="hidden"
+                whileInView="visible"
+                viewport={editorialViewport}
+                variants={buildRevealVariants(Boolean(reduceMotion))}
+                className="editorial-hero p-5 sm:p-6"
+              >
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
                   <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
                     {fotoUrl ? (
                       <img
                         src={fotoUrl}
                         alt={politico.nomeCanonico}
-                        className="h-24 w-24 rounded-[24px] object-cover shadow-card sm:h-28 sm:w-28"
+                        className="h-24 w-24 rounded-[1.5rem] object-cover shadow-[0_18px_36px_-30px_rgba(15,23,42,0.35)] sm:h-28 sm:w-28"
                       />
                     ) : (
-                      <div className="flex h-24 w-24 items-center justify-center rounded-[24px] bg-muted sm:h-28 sm:w-28">
+                      <div className="flex h-24 w-24 items-center justify-center rounded-[1.5rem] bg-muted sm:h-28 sm:w-28">
                         <User className="h-10 w-10 text-muted-foreground" />
                       </div>
                     )}
 
                     <div className="min-w-0">
-                      <p className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                      <p className="editorial-eyebrow">
                         <User className="h-3.5 w-3.5" />
                         Perfil completo
                       </p>
@@ -223,12 +322,12 @@ const PoliticoDetalhe = () => {
                       </h1>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                         {politico.partido ? (
-                          <span className="rounded-full bg-primary/15 px-2.5 py-1 font-semibold text-primary">
+                          <span className="rounded-full bg-primary/12 px-2.5 py-1 font-semibold text-primary">
                             {politico.partido}
                           </span>
                         ) : null}
                         {politico.uf ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 font-semibold text-muted-foreground">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted/80 px-2.5 py-1 font-semibold text-muted-foreground">
                             <MapPin className="h-3 w-3" />
                             {politico.uf}
                           </span>
@@ -247,6 +346,14 @@ const PoliticoDetalhe = () => {
                         </strong>.
                       </p>
 
+                      <ShareActions
+                        label="Compartilhar perfil"
+                        title={`${politicoDisplayName} | Radar do Povo`}
+                        text={`Veja o perfil completo de ${politicoDisplayName} no Radar do Povo, com viagens e emendas no recorte de ${anoInicio} a ${anoFim}.`}
+                        url={politicoShareUrl}
+                        className="mt-4"
+                      />
+
                       <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
                         {politico.dataNascimento ? (
                           <span>Nascimento: {formatDate(politico.dataNascimento)}</span>
@@ -263,7 +370,7 @@ const PoliticoDetalhe = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-[28px] border border-border/70 bg-white/80 p-4 shadow-card">
+                  <div className="surface-muted p-4">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       Recorte do dossie
                     </p>
@@ -275,7 +382,7 @@ const PoliticoDetalhe = () => {
                     </p>
 
                     <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                      <label className="rounded-2xl border border-border bg-background/90 px-3 py-2 font-semibold shadow-sm">
+                      <label className="rounded-[1rem] border border-border/75 bg-white/85 px-3 py-2 font-semibold shadow-[0_10px_24px_-26px_rgba(15,23,42,0.3)]">
                         <span className="mb-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                           <Calendar className="h-3.5 w-3.5 text-primary" />
                           Inicio
@@ -293,7 +400,7 @@ const PoliticoDetalhe = () => {
                         </select>
                       </label>
 
-                      <label className="rounded-2xl border border-border bg-background/90 px-3 py-2 font-semibold shadow-sm">
+                      <label className="rounded-[1rem] border border-border/75 bg-white/85 px-3 py-2 font-semibold shadow-[0_10px_24px_-26px_rgba(15,23,42,0.3)]">
                         <span className="mb-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                           <Calendar className="h-3.5 w-3.5 text-primary" />
                           Fim
@@ -313,9 +420,15 @@ const PoliticoDetalhe = () => {
                     </div>
                   </div>
                 </div>
-              </section>
+              </motion.section>
 
-              <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+              <motion.section
+                initial="hidden"
+                whileInView="visible"
+                viewport={editorialViewport}
+                variants={buildStaggerVariants(Boolean(reduceMotion))}
+                className="grid grid-cols-2 gap-3 xl:grid-cols-4"
+              >
                 <MetricCard
                   label="Gasto liquido em viagens"
                   value={formatCentsCompact(totalGastoLiquidoCents.toString())}
@@ -340,7 +453,7 @@ const PoliticoDetalhe = () => {
                   helper={formatCents(emendasResumo.totalPagoCents)}
                   icon={Landmark}
                 />
-              </section>
+              </motion.section>
 
               <PoliticoNewsSection
                 politico={nomePoliticoNoticias}
@@ -354,7 +467,7 @@ const PoliticoDetalhe = () => {
               />
 
               <section className="flex flex-col gap-6 xl:flex-row xl:items-start">
-                <div className="min-w-0 rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6 xl:flex-1">
+                <div className="editorial-panel min-w-0 p-5 sm:p-6 xl:flex-1">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <h2 className="text-base font-bold text-foreground sm:text-lg">
@@ -364,7 +477,7 @@ const PoliticoDetalhe = () => {
                         Peso relativo de diarias, passagens e outros gastos no periodo.
                       </p>
                     </div>
-                    <div className="rounded-full bg-muted px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+                    <div className="editorial-chip">
                       {anoInicio}-{anoFim}
                     </div>
                   </div>
@@ -375,7 +488,7 @@ const PoliticoDetalhe = () => {
                     </div>
                   ) : (
                     <div className="mt-4 grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-                      <div className="rounded-[28px] bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-4 ring-1 ring-border/60">
+                      <div className="surface-muted p-4">
                         <div className="relative mx-auto h-[200px] w-[200px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -424,7 +537,7 @@ const PoliticoDetalhe = () => {
                         {pieData.map((item) => (
                           <div
                             key={item.name}
-                            className="rounded-[22px] border border-border/70 bg-background/85 px-4 py-4"
+                            className="rounded-[1.25rem] border border-border/75 bg-white/88 px-4 py-4 shadow-[0_16px_32px_-30px_rgba(15,23,42,0.24)]"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -462,7 +575,7 @@ const PoliticoDetalhe = () => {
                 </div>
 
                 <div className="w-full space-y-4 xl:w-[320px] xl:flex-none">
-                  <section className="rounded-[24px] border border-border/70 bg-card/85 p-4 shadow-card">
+                  <section className="surface-muted p-4">
                     <h2 className="mb-3 text-sm font-bold">Painel financeiro</h2>
                     <div className="space-y-2 text-xs">
                       <SummaryRow
@@ -483,7 +596,7 @@ const PoliticoDetalhe = () => {
                     </div>
                   </section>
 
-                  <section className="rounded-[24px] border border-border/70 bg-card/85 p-4 shadow-card">
+                  <section className="surface-muted p-4">
                     <h2 className="mb-3 text-sm font-bold">Resumo de emendas</h2>
                     <div className="space-y-2 text-xs">
                       <SummaryRow
@@ -516,7 +629,7 @@ const PoliticoDetalhe = () => {
                 </div>
               </section>
 
-              <section className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
+              <section className="editorial-panel p-5 sm:p-6">
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <h2 className="flex items-center gap-2 text-base font-bold sm:text-lg">
@@ -527,7 +640,7 @@ const PoliticoDetalhe = () => {
                       Registros paginados de deslocamento no recorte selecionado.
                     </p>
                   </div>
-                  <div className="rounded-full bg-muted px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+                  <div className="editorial-chip">
                     {formatCountCompact(viagensTotalView)} viagens
                   </div>
                 </div>
@@ -590,7 +703,7 @@ const PoliticoDetalhe = () => {
                 )}
               </section>
 
-              <section className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
+              <section className="editorial-panel p-5 sm:p-6">
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <h2 className="flex items-center gap-2 text-base font-bold sm:text-lg">
@@ -601,7 +714,7 @@ const PoliticoDetalhe = () => {
                       Itens paginados com valores de empenho, liquidacao e pagamento.
                     </p>
                   </div>
-                  <div className="rounded-full bg-muted px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+                  <div className="editorial-chip">
                     {formatCountCompact(emendasTotalView)} emendas
                   </div>
                 </div>
@@ -696,12 +809,12 @@ const MetricCard = ({
   helper?: string;
   icon: typeof Banknote;
 }) => (
-  <article className="rounded-[22px] border border-border/70 bg-card/85 p-4 shadow-card">
+  <article className="surface-muted p-4">
     <div className="flex items-center justify-between gap-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <div className="rounded-2xl bg-primary/10 p-2 text-primary">
+      <div className="rounded-[0.95rem] bg-primary/10 p-2 text-primary">
         <Icon className="h-4 w-4" />
       </div>
     </div>
@@ -719,7 +832,7 @@ const SummaryRow = ({
   value: string;
   helper?: string;
 }) => (
-  <div className="flex flex-col gap-1 rounded-xl border border-border/70 bg-background/80 px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+  <div className="flex flex-col gap-1 rounded-[0.95rem] border border-border/75 bg-white/88 px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
     <span className="text-muted-foreground">{label}</span>
     <span className="sm:text-right">
       <span className="block font-semibold text-foreground">{value}</span>
@@ -737,7 +850,7 @@ const ExternalSubcard = ({
   helper?: string;
   children: ReactNode;
 }) => (
-  <div className="rounded-2xl border border-border/70 bg-background/80 p-3">
+  <div className="rounded-[1rem] border border-border/75 bg-white/88 p-3">
     <div className="mb-2 flex items-start justify-between gap-3">
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
         {title}
@@ -749,7 +862,7 @@ const ExternalSubcard = ({
 );
 
 const MobileViagemCard = ({ viagem }: { viagem: Viagem }) => (
-  <article className="rounded-[22px] border border-border/70 bg-background/85 p-4 shadow-sm">
+  <article className="rounded-[1.25rem] border border-border/75 bg-white/88 p-4 shadow-[0_16px_28px_-30px_rgba(15,23,42,0.28)]">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <p className="text-sm font-bold leading-6 text-foreground">
@@ -769,7 +882,7 @@ const MobileViagemCard = ({ viagem }: { viagem: Viagem }) => (
 
     <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
       {viagem.orgaoSolicitanteNome ? (
-        <span className="rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
+        <span className="rounded-full bg-muted/80 px-2.5 py-1 font-medium text-muted-foreground">
           {viagem.orgaoSolicitanteNome}
         </span>
       ) : null}
@@ -798,7 +911,7 @@ const MobileViagemCard = ({ viagem }: { viagem: Viagem }) => (
 );
 
 const MobileEmendaCard = ({ emenda }: { emenda: Emenda }) => (
-  <article className="rounded-[22px] border border-border/70 bg-background/85 p-4 shadow-sm">
+  <article className="rounded-[1.25rem] border border-border/75 bg-white/88 p-4 shadow-[0_16px_28px_-30px_rgba(15,23,42,0.28)]">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <p className="text-sm font-bold text-foreground">
@@ -835,7 +948,7 @@ const MobileEmendaCard = ({ emenda }: { emenda: Emenda }) => (
 
 const DossieSkeleton = () => (
   <div className="space-y-6">
-    <section className="rounded-[32px] border border-border/70 bg-card/80 p-6 shadow-card">
+    <section className="editorial-panel p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <Skeleton className="h-24 w-24 rounded-[24px]" />
         <div className="flex-1 space-y-3">
@@ -907,7 +1020,7 @@ const PerfilExternoSection = ({
                 </span>
               ) : null}
               {perfil.camara?.condicaoEleitoral ? (
-                <span className="rounded-full bg-muted px-2.5 py-1 font-semibold text-muted-foreground">
+                  <span className="rounded-full bg-muted/80 px-2.5 py-1 font-semibold text-muted-foreground">
                   {perfil.camara.condicaoEleitoral}
                 </span>
               ) : null}
@@ -927,7 +1040,7 @@ const PerfilExternoSection = ({
             perfil.camara?.gabinete?.andar ||
             perfil.camara?.gabinete?.telefone ||
             perfil.camara?.gabinete?.email ? (
-              <div className="rounded-2xl border border-border/70 bg-background/80 p-3">
+              <div className="rounded-[1rem] border border-border/75 bg-white/88 p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   Gabinete
                 </p>
@@ -1023,7 +1136,7 @@ const PerfilExternoSection = ({
                   {perfil.camara.despesasRecentes.slice(0, 3).map((despesa, index) => (
                     <div
                       key={`${despesa.dataDocumento || despesa.tipoDespesa || "despesa"}-${index}`}
-                      className="rounded-xl border border-border/60 bg-card/70 px-3 py-2"
+                      className="rounded-xl border border-border/60 bg-white/88 px-3 py-2"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -1057,7 +1170,7 @@ const PerfilExternoSection = ({
               <ExternalSubcard title="Mandatos anteriores">
                 <div className="space-y-2">
                   {perfil.camara.mandatosExternos.slice(0, 3).map((mandato, index) => (
-                    <div key={`${mandato.cargo || "mandato"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                    <div key={`${mandato.cargo || "mandato"}-${index}`} className="rounded-xl border border-border/60 bg-white/88 px-3 py-2">
                       <p className="font-semibold text-foreground">
                         {mandato.cargo || "Cargo eletivo"}
                       </p>
@@ -1078,7 +1191,7 @@ const PerfilExternoSection = ({
               <ExternalSubcard title="Atuacao institucional">
                 <div className="space-y-2">
                   {perfil.camara?.orgaos?.slice(0, 3).map((orgao, index) => (
-                    <div key={`${orgao.idOrgao || orgao.siglaOrgao || "orgao"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                    <div key={`${orgao.idOrgao || orgao.siglaOrgao || "orgao"}-${index}`} className="rounded-xl border border-border/60 bg-white/88 px-3 py-2">
                       <p className="font-semibold text-foreground">
                         {orgao.titulo || "Membro"}{orgao.siglaOrgao ? ` - ${orgao.siglaOrgao}` : ""}
                       </p>
@@ -1088,7 +1201,7 @@ const PerfilExternoSection = ({
                     </div>
                   ))}
                   {perfil.camara?.frentes?.slice(0, 2).map((frente, index) => (
-                    <div key={`${frente.id || "frente"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                    <div key={`${frente.id || "frente"}-${index}`} className="rounded-xl border border-border/60 bg-white/88 px-3 py-2">
                       <p className="font-semibold text-foreground">{frente.titulo}</p>
                       {frente.idLegislatura ? (
                         <p className="text-[11px] text-muted-foreground">Legislatura {frente.idLegislatura}</p>
@@ -1114,7 +1227,7 @@ const PerfilExternoSection = ({
                   )}
                 </div>
                 {perfil.camara?.ocupacoes?.slice(0, 2).map((ocupacao, index) => (
-                  <div key={`${ocupacao.titulo || ocupacao.entidade || "ocupacao"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                  <div key={`${ocupacao.titulo || ocupacao.entidade || "ocupacao"}-${index}`} className="rounded-xl border border-border/60 bg-white/88 px-3 py-2">
                     <p className="font-semibold text-foreground">
                       {ocupacao.titulo || ocupacao.entidade || "Ocupacao registrada"}
                     </p>
@@ -1130,7 +1243,7 @@ const PerfilExternoSection = ({
               <ExternalSubcard title="Historico recente">
                 <div className="space-y-2">
                   {perfil.camara.historico.slice(0, 3).map((item, index) => (
-                    <div key={`${item.dataHora || "historico"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                    <div key={`${item.dataHora || "historico"}-${index}`} className="rounded-xl border border-border/60 bg-white/88 px-3 py-2">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-semibold text-foreground">
@@ -1154,7 +1267,7 @@ const PerfilExternoSection = ({
               <ExternalSubcard title="Atividade recente na Camara">
                 <div className="space-y-2">
                   {perfil.camara?.discursosRecentes?.slice(0, 2).map((discurso, index) => (
-                    <div key={`${discurso.dataHoraInicio || "discurso"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                    <div key={`${discurso.dataHoraInicio || "discurso"}-${index}`} className="rounded-xl border border-border/60 bg-white/88 px-3 py-2">
                       <p className="font-semibold text-foreground">
                         {discurso.tipoDiscurso || "Discurso registrado"}
                       </p>
@@ -1164,7 +1277,7 @@ const PerfilExternoSection = ({
                     </div>
                   ))}
                   {perfil.camara?.eventosRecentes?.slice(0, 2).map((evento, index) => (
-                    <div key={`${evento.id || evento.dataHoraInicio || "evento"}-${index}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                    <div key={`${evento.id || evento.dataHoraInicio || "evento"}-${index}`} className="rounded-xl border border-border/60 bg-white/88 px-3 py-2">
                       <p className="font-semibold text-foreground">
                         {evento.descricao || evento.descricaoTipo || "Evento parlamentar"}
                       </p>
@@ -1221,6 +1334,64 @@ const PerfilExternoSection = ({
       ),
     },
     {
+      key: "tse",
+      icon: FileText,
+      label: "TSE",
+      visible: Boolean(
+        perfil.tse?.datasetCandidatosUrl ||
+          perfil.tse?.datasetResultadosUrl ||
+          perfil.tse?.divulgaCandContasUrl
+      ),
+      content: (
+        <>
+          <p className="font-semibold text-foreground">
+            Referencias oficiais do TSE para consulta eleitoral
+          </p>
+          {perfil.tse?.termoBusca ? (
+            <p className="text-[11px] text-muted-foreground">
+              Baseado na busca por <strong className="text-foreground">{perfil.tse.termoBusca}</strong>
+            </p>
+          ) : null}
+
+          <div className="space-y-2">
+            {perfil.tse?.divulgaCandContasUrl ? (
+              <a
+                href={perfil.tse.divulgaCandContasUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-white/88 px-3 py-2 text-sm transition-colors hover:border-primary/20 hover:bg-primary/5"
+              >
+                <span className="font-medium text-foreground">DivulgaCandContas</span>
+                <ExternalLink className="h-3.5 w-3.5 text-primary" />
+              </a>
+            ) : null}
+            {perfil.tse?.datasetCandidatosUrl ? (
+              <a
+                href={perfil.tse.datasetCandidatosUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-white/88 px-3 py-2 text-sm transition-colors hover:border-primary/20 hover:bg-primary/5"
+              >
+                <span className="font-medium text-foreground">Dataset de candidatos</span>
+                <ExternalLink className="h-3.5 w-3.5 text-primary" />
+              </a>
+            ) : null}
+            {perfil.tse?.datasetResultadosUrl ? (
+              <a
+                href={perfil.tse.datasetResultadosUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-white/88 px-3 py-2 text-sm transition-colors hover:border-primary/20 hover:bg-primary/5"
+              >
+                <span className="font-medium text-foreground">Dataset de resultados</span>
+                <ExternalLink className="h-3.5 w-3.5 text-primary" />
+              </a>
+            ) : null}
+          </div>
+        </>
+      ),
+    },
+    {
       key: "brasilio",
       icon: Database,
       label: "Brasil.IO",
@@ -1262,7 +1433,7 @@ const PerfilExternoSection = ({
                 href={doc.url || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-xl border border-border/60 bg-card/70 px-3 py-2 transition-colors hover:border-primary/20 hover:bg-primary/5"
+                className="block rounded-xl border border-border/60 bg-white/88 px-3 py-2 transition-colors hover:border-primary/20 hover:bg-primary/5"
               >
                 <p className="line-clamp-2 font-semibold text-foreground">{doc.titulo}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
@@ -1273,7 +1444,7 @@ const PerfilExternoSection = ({
           </div>
 
           {lexmlTotal > lexmlLimit ? (
-            <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-white/88 px-3 py-2">
               <button
                 type="button"
                 onClick={() => onLexmlPageChange(Math.max(0, lexmlOffset - lexmlLimit))}
@@ -1328,7 +1499,7 @@ const PerfilExternoSection = ({
   if (!cards.length) return null;
 
   return (
-    <section className="rounded-[28px] border border-border/70 bg-card/85 p-5 shadow-card sm:p-6">
+    <section className="editorial-panel p-5 sm:p-6">
       <h2 className="mb-3 flex items-center gap-2 text-base font-bold">
         <Globe className="h-4.5 w-4.5 text-accent" />
         Perfil em fontes externas
@@ -1338,7 +1509,7 @@ const PerfilExternoSection = ({
         {cards.map((card) => (
           <article
             key={card.key}
-            className="rounded-[22px] border border-border/70 bg-background/85 p-4 text-xs leading-5 text-muted-foreground"
+            className="rounded-[1.25rem] border border-border/75 bg-white/88 p-4 text-xs leading-5 text-muted-foreground shadow-[0_16px_28px_-32px_rgba(15,23,42,0.26)]"
           >
             <h3 className="mb-3 flex items-center gap-2 text-xs font-bold text-foreground">
               <card.icon className="h-4 w-4 text-primary" />

@@ -1,6 +1,10 @@
 import { ShieldCheck } from "lucide-react";
 
 import AppSidebar from "@/components/AppSidebar";
+import EditorialPageHeader from "@/components/EditorialPageHeader";
+import EditorialSection from "@/components/EditorialSection";
+import SeoHead from "@/components/SeoHead";
+import { buildBreadcrumbStructuredData, buildCanonicalUrl } from "@/lib/seo";
 
 type InstitutionalSection = {
   title: string;
@@ -13,6 +17,9 @@ type InstitutionalPageShellProps = {
   title: string;
   intro: string;
   sections: InstitutionalSection[];
+  seoTitle: string;
+  seoDescription: string;
+  seoPath: string;
 };
 
 const InstitutionalPageShell = ({
@@ -20,32 +27,50 @@ const InstitutionalPageShell = ({
   title,
   intro,
   sections,
+  seoTitle,
+  seoDescription,
+  seoPath,
 }: InstitutionalPageShellProps) => {
   return (
     <div>
+      <SeoHead
+        title={seoTitle}
+        description={seoDescription}
+        path={seoPath}
+        structuredData={[
+          {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: seoTitle,
+            description: seoDescription,
+            url: buildCanonicalUrl(seoPath),
+            inLanguage: "pt-BR",
+            isPartOf: {
+              "@type": "WebSite",
+              name: "Radar do Povo",
+              url: "https://radardopovo.com",
+            },
+          },
+          buildBreadcrumbStructuredData([
+            { name: "Home", path: "/" },
+            { name: title, path: seoPath },
+          ]),
+        ]}
+      />
       <AppSidebar />
 
       <main className="lg:ml-72">
         <div className="mx-auto w-full max-w-[920px] px-4 pb-10 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
-          <section className="rounded-[32px] border border-white/70 bg-card/92 p-6 shadow-elevated backdrop-blur-sm sm:p-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              {eyebrow}
-            </div>
-            <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-              {title}
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
-              {intro}
-            </p>
-          </section>
+          <EditorialPageHeader
+            eyebrow={eyebrow}
+            icon={ShieldCheck}
+            title={title}
+            description={intro}
+          />
 
           <section className="mt-6 space-y-4">
             {sections.map((section) => (
-              <article
-                key={section.title}
-                className="rounded-[28px] border border-border/70 bg-card/88 p-5 shadow-card sm:p-6"
-              >
+              <EditorialSection key={section.title} tone="muted">
                 <h2 className="text-lg font-bold text-foreground">{section.title}</h2>
                 <div className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
                   {section.paragraphs.map((paragraph) => (
@@ -55,13 +80,13 @@ const InstitutionalPageShell = ({
                 {section.bullets?.length ? (
                   <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                     {section.bullets.map((bullet) => (
-                      <li key={bullet} className="rounded-2xl border border-border/70 bg-background/85 px-4 py-3">
+                      <li key={bullet} className="surface-muted px-4 py-3">
                         {bullet}
                       </li>
                     ))}
                   </ul>
                 ) : null}
-              </article>
+              </EditorialSection>
             ))}
           </section>
         </div>
