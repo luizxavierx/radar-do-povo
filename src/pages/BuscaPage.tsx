@@ -58,6 +58,7 @@ const BuscaPage = () => {
     "Busque politicos por nome, partido, UF ou cargo atual e acesse perfis consolidados com filtros institucionais.";
   const reduceMotion = useReducedMotion();
   const secondaryFilterCount = [partido, uf, cargoAtual].filter(Boolean).length;
+  const activeFilterCount = [search, partido, uf, cargoAtual].filter(Boolean).length;
 
   useEffect(() => {
     if (!filter || !data) return;
@@ -180,7 +181,7 @@ const BuscaPage = () => {
             }
             description="Encontre perfis por nome, partido, UF ou cargo atual, com uma leitura mais institucional e organizada."
             aside={
-              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="hidden gap-3 md:grid md:grid-cols-1">
                 <SearchPageHeaderMetric
                   label="Recorte"
                   value={hasFilter ? "Filtrado" : "Aberto"}
@@ -301,6 +302,16 @@ const BuscaPage = () => {
                 </div>
               </div>
             </MobileFiltersPanel>
+
+            {hasFilter ? (
+              <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border/70 pt-4">
+                <span className="editorial-chip">{formatCount(total)} resultado{total === 1 ? "" : "s"}</span>
+                <span className="editorial-chip">{activeFilterCount} filtro{activeFilterCount === 1 ? "" : "s"} ativo{activeFilterCount === 1 ? "" : "s"}</span>
+                {total > PAGE_SIZE ? (
+                  <span className="editorial-chip">Pagina {currentPage} de {totalPages}</span>
+                ) : null}
+              </div>
+            ) : null}
           </EditorialSection>
 
           <motion.section
@@ -333,7 +344,7 @@ const BuscaPage = () => {
           </motion.section>
 
           {total > PAGE_SIZE ? (
-            <section className="mt-8 flex items-center justify-center gap-3">
+            <section className="mt-8 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
               <button
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}
@@ -363,39 +374,43 @@ const BuscaPage = () => {
 
 const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
   <article className="group overflow-hidden rounded-[1.6rem] border border-border/70 bg-card/94 p-4 shadow-card transition-all duration-200 hover:border-primary/16 hover:shadow-elevated">
-    <div className="flex items-center gap-3">
+    <div className="flex items-start gap-3">
       {politico.fotoUrl ? (
-        <img src={politico.fotoUrl} alt={politico.nomeCanonico} className="h-12 w-12 rounded-xl object-cover" />
+        <img src={politico.fotoUrl} alt={politico.nomeCanonico} className="h-12 w-12 rounded-xl object-cover sm:h-14 sm:w-14" />
       ) : (
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted sm:h-14 sm:w-14">
           <Users className="h-5 w-5 text-muted-foreground" />
         </div>
       )}
 
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-bold tracking-tight text-foreground group-hover:text-primary">
-          {politico.nomeCompleto || politico.nomeCanonico}
-        </h3>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
-          {politico.partido ? (
-            <span className="rounded-full bg-primary/12 px-2 py-0.5 font-semibold text-primary">{politico.partido}</span>
-          ) : null}
-          {politico.uf ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
-              <MapPin className="h-2.5 w-2.5" />
-              {politico.uf}
-            </span>
-          ) : null}
-          {politico.cargoAtual ? (
-            <span className="rounded-full bg-accent/10 px-2 py-0.5 font-semibold text-accent">{politico.cargoAtual}</span>
-          ) : null}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h3 className="break-words text-sm font-bold leading-5 tracking-tight text-foreground group-hover:text-primary sm:text-[15px]">
+              {politico.nomeCompleto || politico.nomeCanonico}
+            </h3>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+              {politico.partido ? (
+                <span className="rounded-full bg-primary/12 px-2 py-0.5 font-semibold text-primary">{politico.partido}</span>
+              ) : null}
+              {politico.uf ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+                  <MapPin className="h-2.5 w-2.5" />
+                  {politico.uf}
+                </span>
+              ) : null}
+              {politico.cargoAtual ? (
+                <span className="rounded-full bg-accent/10 px-2 py-0.5 font-semibold text-accent">{politico.cargoAtual}</span>
+              ) : null}
+            </div>
+          </div>
+
+          <span className="inline-flex self-start items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground sm:ml-3">
+            <Search className="h-3 w-3" />
+            Ver perfil
+          </span>
         </div>
       </div>
-
-      <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
-        <Search className="h-3 w-3" />
-        Ver perfil
-      </span>
     </div>
   </article>
 );
@@ -417,5 +432,9 @@ const SearchPageHeaderMetric = ({
     <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p>
   </div>
 );
+
+function formatCount(value: number) {
+  return value > 0 ? value.toLocaleString("pt-BR") : "0";
+}
 
 export default BuscaPage;
