@@ -170,6 +170,7 @@ const BuscaPage = () => {
           <EditorialPageHeader
             eyebrow="Busca editorial"
             icon={Search}
+            align="start"
             title={
               <>
                 Busca de <span className="text-gradient-primary">politicos</span>

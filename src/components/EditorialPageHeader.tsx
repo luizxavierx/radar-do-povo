@@ -13,6 +13,7 @@ type EditorialPageHeaderProps = {
   aside?: ReactNode;
   meta?: ReactNode;
   className?: string;
+  align?: "start" | "end";
 };
 
 const EditorialPageHeader = ({
@@ -23,6 +24,7 @@ const EditorialPageHeader = ({
   aside,
   meta,
   className,
+  align = "end",
 }: EditorialPageHeaderProps) => {
   const reduceMotion = useReducedMotion();
 
@@ -34,7 +36,12 @@ const EditorialPageHeader = ({
       variants={buildRevealVariants(Boolean(reduceMotion))}
       className={cn("editorial-hero", className)}
     >
-      <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+      <div
+        className={cn(
+          "relative z-10 flex flex-col gap-6 xl:flex-row xl:justify-between",
+          align === "start" ? "xl:items-start" : "xl:items-end"
+        )}
+      >
         <div className="max-w-3xl">
           <div className="editorial-eyebrow">
             {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
