@@ -10,8 +10,6 @@ const AppRouteFallback = () => {
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-6">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(14,112,118,0.05),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(227,161,44,0.05),transparent_28%)]" />
-        <div className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200/70" />
-        <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/6 blur-3xl" />
       </div>
 
       <motion.div
@@ -35,20 +33,6 @@ const AppRouteFallback = () => {
             transition={reduceMotion ? { duration: 0.01 } : { duration: 0.24, ease: editorialEase }}
           />
         </motion.div>
-
-        <div className="mt-6 h-1 w-24 overflow-hidden rounded-full bg-slate-200/80">
-          <motion.div
-            className="h-full rounded-full bg-gradient-hero"
-            initial={{ x: "-100%" }}
-            animate={{ x: "110%" }}
-            transition={
-              reduceMotion
-                ? { duration: 0.01 }
-                : { duration: 1.15, ease: [0.4, 0, 0.2, 1], repeat: Number.POSITIVE_INFINITY, repeatDelay: 0.12 }
-            }
-            style={{ width: "48%" }}
-          />
-        </div>
       </motion.div>
     </div>
   );

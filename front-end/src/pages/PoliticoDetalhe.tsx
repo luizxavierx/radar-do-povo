@@ -297,9 +297,6 @@ const PoliticoDetalhe = () => {
                 variants={buildRevealVariants(Boolean(reduceMotion))}
                 className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/40 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur-xl sm:p-8"
               >
-                {/* Glow effects behind profile */}
-                <div className="absolute -left-10 -top-10 h-64 w-64 pointer-events-none rounded-full bg-primary/10 blur-[60px]" />
-
                 <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
                   <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-start">
                     {fotoUrl ? (
@@ -823,7 +820,6 @@ const MetricCard = ({
   icon: typeof Banknote;
 }) => (
   <article className="group relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/40 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/80 hover:bg-white/60 hover:shadow-xl">
-    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-50" />
     <div className="relative">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground transition-colors group-hover:text-foreground">

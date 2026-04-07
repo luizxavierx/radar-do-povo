@@ -20,12 +20,6 @@ const NotFound = () => {
         robots="noindex,nofollow"
       />
       <section className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/60 bg-white/40 p-10 text-center shadow-2xl ring-1 ring-black/5 backdrop-blur-xl">
-        {/* Glow Effects */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-primary/10 blur-[50px]" />
-          <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-blue-500/10 blur-[50px]" />
-        </div>
-
         <div className="relative">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/60 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-primary shadow-sm backdrop-blur-md">
             <Compass className="h-4 w-4" />

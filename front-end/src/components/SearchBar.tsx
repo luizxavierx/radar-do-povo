@@ -76,7 +76,6 @@ const SearchBar = ({
       >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 rounded-[1.65rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(243,248,250,0.82)_55%,rgba(255,248,236,0.62)_100%)]" />
-          <div className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/18 to-transparent" />
         </div>
 
         <div className="relative z-10 flex flex-col gap-2 sm:flex-row sm:items-center">

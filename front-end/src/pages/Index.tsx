@@ -443,15 +443,6 @@ const Index = () => {
             variants={buildRevealVariants(Boolean(reduceMotion))}
             className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/30 px-7 py-10 shadow-xl backdrop-blur-xl ring-1 ring-black/5 sm:px-12 sm:py-14"
           >
-            <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <div className="absolute inset-y-0 left-[52%] w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent" />
-              <div className="absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-              {/* Glows mais sofisticados */}
-              <div className="animate-float-wide absolute -right-20 -top-10 h-72 w-72 rounded-full bg-primary/10 blur-[80px]" />
-              <div className="animate-float-wide absolute -left-10 top-20 h-56 w-56 rounded-full bg-blue-500/5 blur-[60px]" style={{ animationDelay: '2s' }} />
-              <div className="absolute left-[12%] top-12 h-20 w-20 rounded-full border border-white/60 bg-white/20 shadow-sm backdrop-blur-md" />
-            </div>
-
             <div className="relative grid gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] xl:items-center">
               <motion.div variants={buildRevealVariants(Boolean(reduceMotion), { y: 14 })}>
                 <p className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-white/60 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-primary shadow-sm backdrop-blur-md">
@@ -750,10 +741,6 @@ const Index = () => {
                   {/* Leader card */}
                   {leader ? (
                     <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/40 shadow-xl ring-1 ring-black/5 backdrop-blur-xl transition-all duration-500 hover:shadow-2xl">
-                      {/* Glow effects */}
-                      <div className="absolute -right-20 -top-20 h-72 w-72 pointer-events-none rounded-full bg-primary/10 blur-[60px]" />
-                      <div className="absolute -left-20 -bottom-20 h-72 w-72 pointer-events-none rounded-full bg-amber-500/5 blur-[60px]" />
-                      
                       <div className="relative border-b border-white/40 px-6 py-6 sm:px-8">
                         <p className="inline-flex items-center gap-2 rounded-full border border-amber-200/60 bg-amber-50/80 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-amber-700 shadow-sm backdrop-blur-md">
                           <Crown className="h-3.5 w-3.5" />
@@ -1175,7 +1162,6 @@ const HeroSignalTile = ({
   helper: string;
 }) => (
   <div className="group relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/40 px-5 py-5 shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/80 hover:bg-white/70 hover:shadow-xl">
-    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-50" />
     <div className="relative">
       <div className="flex items-center gap-3 text-primary">
         <span className="flex h-10 w-10 items-center justify-center rounded-[1rem] bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-sm ring-1 ring-primary/20 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-white group-hover:shadow-md">

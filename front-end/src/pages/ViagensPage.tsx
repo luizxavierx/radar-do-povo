@@ -488,13 +488,6 @@ const ViagensPage = () => {
 
           {/* ── Hero Premium ── */}
           <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/30 px-7 py-10 shadow-xl backdrop-blur-xl ring-1 ring-black/5 sm:px-12 sm:py-14">
-            <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <div className="absolute inset-y-0 left-[52%] w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent" />
-              <div className="animate-float-wide absolute -right-20 -top-10 h-72 w-72 rounded-full bg-primary/10 blur-[80px]" />
-              <div className="animate-float-slow absolute right-32 top-20 h-48 w-48 rounded-full border border-primary/20 bg-gradient-to-tr from-primary/5 to-transparent shadow-lg" />
-              <div className="animate-float-wide absolute -left-10 top-20 h-56 w-56 rounded-full bg-amber-500/5 blur-[60px]" style={{ animationDelay: '2s' }} />
-            </div>
-
             <div className="relative flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
 
               {/* Left: title block */}
@@ -543,7 +536,6 @@ const ViagensPage = () => {
 
                 {/* Gasto líquido — destaque principal */}
                 <article className="group relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/40 px-5 py-6 shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/80 hover:bg-white/70 hover:shadow-xl">
-                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-50" />
                   <div className="relative">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground transition-colors group-hover:text-foreground">
@@ -564,7 +556,6 @@ const ViagensPage = () => {
 
                 {/* Viagens no recorte — neutro */}
                 <article className="group relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/40 px-5 py-6 shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/80 hover:bg-white/70 hover:shadow-xl">
-                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-50" />
                   <div className="relative">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground transition-colors group-hover:text-foreground">

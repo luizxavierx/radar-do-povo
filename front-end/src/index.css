@@ -253,14 +253,6 @@
     box-shadow: var(--shadow-elevated);
   }
 
-  .editorial-hero::before {
-    content: "";
-    @apply pointer-events-none absolute inset-0;
-    background:
-      radial-gradient(circle at 14% 0%, hsl(var(--primary) / 0.06), transparent 28%),
-      radial-gradient(circle at 88% 8%, hsl(var(--accent) / 0.05), transparent 30%);
-  }
-
   .editorial-panel {
     @apply rounded-[1.8rem] border border-white/75 p-5 sm:p-6;
     background-color: hsl(var(--card) / 0.94);
@@ -292,7 +284,8 @@
   }
 
   .editorial-chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-border/70 bg-white/88 px-3 py-1.5 text-xs font-medium text-foreground;
+    @apply inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-1.5 text-xs font-medium text-foreground;
+    background-color: hsl(var(--card) / 0.88);
   }
 
   .editorial-divider {
@@ -300,7 +293,8 @@
   }
 
   .editorial-input-shell {
-    @apply relative overflow-hidden rounded-[1.65rem] border border-white/80 bg-white/92 p-2 shadow-card backdrop-blur-sm;
+    @apply relative overflow-hidden rounded-[1.65rem] border border-white/80 p-2 shadow-card backdrop-blur-sm;
+    background-color: hsl(var(--card) / 0.92);
   }
 
   .editorial-stacked-list > * + * {
