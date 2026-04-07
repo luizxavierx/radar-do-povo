@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import AppSidebar from "@/components/AppSidebar";
 import EditorialPageHeader from "@/components/EditorialPageHeader";
 import EditorialSection from "@/components/EditorialSection";
+import MobileFiltersPanel from "@/components/MobileFiltersPanel";
 import SeoHead from "@/components/SeoHead";
 import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
@@ -15,7 +16,7 @@ import { graphqlRequest } from "@/api/graphqlClient";
 import { POLITICO_BASICO_QUERY, POLITICOS_LIST_QUERY } from "@/api/queries";
 import { buildPoliticoPath } from "@/lib/politicos";
 import { buildBreadcrumbStructuredData } from "@/lib/seo";
-import { buildHoverLift, buildRevealVariants, buildStaggerVariants, editorialViewport } from "@/lib/motion";
+import { buildHoverLift, buildRevealVariants, buildStaggerVariants } from "@/lib/motion";
 import type { Connection, PoliticoResumo } from "@/api/types";
 
 const PAGE_SIZE = 24;
@@ -50,6 +51,7 @@ const BuscaPage = () => {
   const { data, isLoading, error } = usePoliticos(filter, { limit: PAGE_SIZE, offset });
 
   const hasFilter = Boolean(filter);
+  const secondaryFilterCount = [partido, uf, cargoAtual].filter((value) => Boolean(value.trim())).length;
   const total = data?.total ?? 0;
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
@@ -166,10 +168,12 @@ const BuscaPage = () => {
       <AppSidebar />
 
       <main className="lg:ml-72">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1rem)] sm:px-6 sm:pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1.25rem)] lg:pt-10">
           <EditorialPageHeader
             eyebrow="Busca editorial"
             icon={Search}
+            reveal="mount"
+            align="start"
             title={
               <>
                 Busca de <span className="text-gradient-primary">politicos</span>
@@ -177,21 +181,11 @@ const BuscaPage = () => {
             }
             description="Encontre perfis por nome, partido, UF ou cargo atual, com uma leitura mais institucional e organizada."
             aside={
-              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="hidden gap-3 md:grid">
                 <SearchPageHeaderMetric
                   label="Recorte"
                   value={hasFilter ? "Filtrado" : "Aberto"}
                   helper={hasFilter ? "Busca ativa na base" : "Aguardando filtros"}
-                />
-                <SearchPageHeaderMetric
-                  label="Resultados"
-                  value={formatCount(total)}
-                  helper="Contagem atual"
-                />
-                <SearchPageHeaderMetric
-                  label="Pagina"
-                  value={`${currentPage}/${totalPages}`}
-                  helper="Navegacao da consulta"
                 />
               </div>
             }
@@ -209,14 +203,14 @@ const BuscaPage = () => {
             }
           />
 
-          <EditorialSection tone="strong" className="mt-4">
+          <EditorialSection tone="strong" className="mt-4" reveal="mount">
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Consulta principal
               </p>
               <h2 className="mt-2 panel-heading">Encontre perfis por nome ou partido</h2>
               <p className="mt-2 panel-copy">
-                O campo principal conduz a busca, enquanto os filtros refinam a leitura sem poluir a página.
+                O campo principal conduz a busca, enquanto os filtros refinam a leitura sem poluir a pagina.
               </p>
             </div>
 
@@ -235,73 +229,85 @@ const BuscaPage = () => {
               />
             </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-4">
-              <label className="surface-muted px-4 py-3 text-xs">
-                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Partido
-                </span>
-                <input
-                  value={partido}
-                  onChange={(e) => {
-                    setPartido(e.target.value.slice(0, 10));
-                    setOffset(0);
-                  }}
-                  placeholder="PL, PT, PSD..."
-                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
-                />
-              </label>
-
-              <label className="surface-muted px-4 py-3 text-xs">
-                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  UF
-                </span>
-                <input
-                  value={uf}
-                  onChange={(e) => {
-                    setUf(e.target.value.slice(0, 2));
-                    setOffset(0);
-                  }}
-                  placeholder="SP, PR, BA..."
-                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium uppercase outline-none transition-colors focus:border-primary/25"
-                />
-              </label>
-
-              <label className="surface-muted px-4 py-3 text-xs">
-                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Cargo atual
-                </span>
-                <select
-                  value={cargoAtual}
-                  onChange={(e) => {
-                    setCargoAtual(e.target.value);
-                    setOffset(0);
-                  }}
-                  className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
-                >
-                  {cargoOptions.map((option) => (
-                    <option key={option || "todos"} value={option}>
-                      {option || "Todos"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="flex items-end">
-                <button
-                  onClick={resetFilters}
-                  className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-[1rem] border border-border bg-white text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
-                >
-                  <Filter className="h-3.5 w-3.5" />
-                  Limpar filtros
-                </button>
-              </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="editorial-chip">{formatCount(total)} resultados</span>
+              <span className="editorial-chip">{secondaryFilterCount} filtro(s) complementar(es)</span>
             </div>
+
+            <MobileFiltersPanel
+              className="mt-5"
+              title="Filtros complementares"
+              subtitle="Partido, UF e cargo atual"
+              summary={secondaryFilterCount ? "Refino ativo" : "Refino opcional"}
+              activeCount={secondaryFilterCount}
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <label className="surface-muted px-4 py-3 text-xs">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Partido
+                  </span>
+                  <input
+                    value={partido}
+                    onChange={(e) => {
+                      setPartido(e.target.value.slice(0, 10));
+                      setOffset(0);
+                    }}
+                    placeholder="PL, PT, PSD..."
+                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
+                  />
+                </label>
+
+                <label className="surface-muted px-4 py-3 text-xs">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    UF
+                  </span>
+                  <input
+                    value={uf}
+                    onChange={(e) => {
+                      setUf(e.target.value.slice(0, 2));
+                      setOffset(0);
+                    }}
+                    placeholder="SP, PR, BA..."
+                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium uppercase outline-none transition-colors focus:border-primary/25"
+                  />
+                </label>
+
+                <label className="surface-muted px-4 py-3 text-xs">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Cargo atual
+                  </span>
+                  <select
+                    value={cargoAtual}
+                    onChange={(e) => {
+                      setCargoAtual(e.target.value);
+                      setOffset(0);
+                    }}
+                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
+                  >
+                    {cargoOptions.map((option) => (
+                      <option key={option || "todos"} value={option}>
+                        {option || "Todos"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="flex items-end">
+                  <button
+                    onClick={resetFilters}
+                    className="touch-target inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-[1rem] border border-border bg-white text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                    Limpar filtros
+                  </button>
+                </div>
+              </div>
+            </MobileFiltersPanel>
           </EditorialSection>
 
           <motion.section
             initial="hidden"
-            whileInView="visible"
-            viewport={editorialViewport}
+            animate="visible"
             variants={buildStaggerVariants(Boolean(reduceMotion))}
             className="mt-8 space-y-3"
           >
@@ -328,11 +334,11 @@ const BuscaPage = () => {
           </motion.section>
 
           {total > PAGE_SIZE ? (
-            <section className="mt-8 flex items-center justify-center gap-3">
+            <section className="mt-8 flex flex-wrap items-center justify-center gap-2">
               <button
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}
-                className="rounded-[1rem] border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+                className="touch-target rounded-[1rem] border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Anterior
               </button>
@@ -344,7 +350,7 @@ const BuscaPage = () => {
               <button
                 onClick={() => setOffset(offset + PAGE_SIZE)}
                 disabled={offset + PAGE_SIZE >= total}
-                className="rounded-[1rem] border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+                className="touch-target rounded-[1rem] border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Proxima
               </button>
@@ -358,7 +364,7 @@ const BuscaPage = () => {
 
 const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
   <article className="group overflow-hidden rounded-[1.6rem] border border-border/70 bg-card/94 p-4 shadow-card transition-all duration-200 hover:border-primary/16 hover:shadow-elevated">
-    <div className="flex items-center gap-3">
+    <div className="flex items-start gap-3">
       {politico.fotoUrl ? (
         <img src={politico.fotoUrl} alt={politico.nomeCanonico} className="h-12 w-12 rounded-xl object-cover" />
       ) : (
@@ -387,6 +393,8 @@ const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
         </div>
       </div>
 
+    </div>
+    <div className="mt-3 flex justify-end">
       <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
         <Search className="h-3 w-3" />
         Ver perfil
@@ -418,3 +426,4 @@ function formatCount(value: number) {
 }
 
 export default BuscaPage;
+

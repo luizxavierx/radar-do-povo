@@ -484,7 +484,7 @@ const ViagensPage = () => {
       <AppSidebar />
 
       <main className="overflow-x-hidden lg:ml-72">
-        <div className="w-full px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
+        <div className="w-full px-4 pb-16 pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1rem)] sm:px-6 sm:pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1.25rem)] lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
 
           {/* ── Hero ── */}
           <section className="editorial-hero">
@@ -511,7 +511,7 @@ const ViagensPage = () => {
                   <span className="editorial-chip">
                     {filters.anoInicio === filters.anoFim
                       ? filters.anoInicio
-                      : `${filters.anoInicio} – ${filters.anoFim}`}
+                      : `${filters.anoInicio} - ${filters.anoFim}`}
                   </span>
 
                   {activeFilterCount > 0 ? (

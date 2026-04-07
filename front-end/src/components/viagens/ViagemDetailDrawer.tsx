@@ -54,7 +54,7 @@ const SectionCard = ({
   description: string;
   children: ReactNode;
 }) => (
-  <section className="rounded-3xl border border-border/70 bg-background/80 p-4">
+  <section className="rounded-3xl border border-border/70 bg-background/80 p-3 sm:p-4">
     <div className="mb-3">
       <h4 className="text-sm font-bold text-foreground">{title}</h4>
       <p className="mt-1 text-xs text-muted-foreground">{description}</p>
@@ -77,7 +77,7 @@ const ViagemDetailDrawer = ({
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="mx-auto h-[92vh] max-w-6xl rounded-t-[28px] border-border bg-white">
-        <DrawerHeader className="border-b border-border/70 px-6 pb-5 pt-4 text-left">
+        <DrawerHeader className="border-b border-border/70 px-4 pb-5 pt-4 text-left sm:px-6">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
               <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -87,7 +87,7 @@ const ViagemDetailDrawer = ({
               <DrawerTitle className="text-2xl font-extrabold text-foreground">
                 {viagem?.nomeViajante || "Viagem oficial"}
               </DrawerTitle>
-              <DrawerDescription className="max-w-3xl text-sm text-muted-foreground">
+              <DrawerDescription className="max-w-3xl break-words text-sm text-muted-foreground">
                 {viagem?.cargo || viagem?.funcao || viagem?.descricaoFuncao || "Cargo nao informado"}
                 {" | "}
                 processo {viagem?.processoId || "-"}
@@ -103,7 +103,7 @@ const ViagemDetailDrawer = ({
           </div>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5">
+        <div className="flex-1 overflow-y-auto px-4 pb-6 pt-5 sm:px-6">
           {isLoading ? <LoadingState message="Buscando passagens, pagamentos e trechos..." /> : null}
           {error ? <ErrorStateWithRetry error={error} onRetry={onRetry} /> : null}
 
@@ -201,8 +201,8 @@ const ViagemDetailDrawer = ({
                           key={passagem.id || `${passagem.emissaoData}-${index}`}
                           className="rounded-2xl border border-border/70 bg-card/80 p-3"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="text-xs">
+                          <div className="flex flex-col gap-2 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between min-[520px]:gap-3">
+                            <div className="min-w-0 text-xs">
                               <p className="font-semibold text-foreground">
                                 {passagem.meioTransporte || "Transporte nao informado"}
                               </p>
@@ -225,7 +225,7 @@ const ViagemDetailDrawer = ({
                                 pcdp {passagem.pcdp || "-"} | processo {passagem.processoId || "-"}
                               </p>
                             </div>
-                            <div className="text-right text-xs">
+                            <div className="text-left text-xs min-[520px]:text-right">
                               <p className="font-semibold text-foreground">
                                 {formatCents(passagem.valorPassagemCents)}
                               </p>
@@ -256,8 +256,8 @@ const ViagemDetailDrawer = ({
                           key={pagamento.id || `${pagamento.tipoPagamento}-${index}`}
                           className="rounded-2xl border border-border/70 bg-card/80 p-3"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="text-xs">
+                          <div className="flex flex-col gap-2 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between min-[520px]:gap-3">
+                            <div className="min-w-0 text-xs">
                               <p className="font-semibold text-foreground">
                                 {pagamento.tipoPagamento || "Tipo nao informado"}
                               </p>
@@ -271,7 +271,7 @@ const ViagemDetailDrawer = ({
                                 superior {pagamento.orgaoSuperiorNome || "-"} | processo {pagamento.processoId || "-"}
                               </p>
                             </div>
-                            <div className="text-right text-xs">
+                            <div className="text-left text-xs min-[520px]:text-right">
                               <p className="font-semibold text-foreground">
                                 {formatCents(pagamento.valorCents)}
                               </p>
@@ -300,8 +300,8 @@ const ViagemDetailDrawer = ({
                           key={trecho.id || `${trecho.sequencia}-${index}`}
                           className="rounded-2xl border border-border/70 bg-card/80 p-3"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="text-xs">
+                          <div className="flex flex-col gap-2 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between min-[520px]:gap-3">
+                            <div className="min-w-0 text-xs">
                               <p className="font-semibold text-foreground">
                                 trecho {trecho.sequencia || index + 1}
                               </p>
@@ -319,7 +319,7 @@ const ViagemDetailDrawer = ({
                                 {formatDate(trecho.origemData)} ate {formatDate(trecho.destinoData)}
                               </p>
                             </div>
-                            <div className="text-right text-xs">
+                            <div className="text-left text-xs min-[520px]:text-right">
                               <p className="font-semibold text-foreground">
                                 {trecho.meioTransporte || "Sem meio"}
                               </p>

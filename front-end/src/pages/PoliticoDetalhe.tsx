@@ -43,7 +43,7 @@ import {
   formatDate,
   toBigInt,
 } from "@/lib/formatters";
-import { buildRevealVariants, buildStaggerVariants, editorialViewport } from "@/lib/motion";
+import { buildRevealVariants, buildStaggerVariants } from "@/lib/motion";
 import { buildPoliticoPath, getPoliticoLookupValue } from "@/lib/politicos";
 import { buildBreadcrumbStructuredData, truncateSeoDescription } from "@/lib/seo";
 import type { Emenda, PerfilExterno, Viagem } from "@/api/types";
@@ -274,7 +274,7 @@ const PoliticoDetalhe = () => {
       <AppSidebar />
 
       <main className="min-h-screen lg:ml-72">
-        <div className="mx-auto w-full max-w-[1180px] px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+        <div className="mx-auto w-full max-w-[1180px] px-4 pb-14 pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1rem)] sm:px-6 sm:pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1.25rem)] lg:pt-10">
           <button
             onClick={() => navigate(-1)}
             className="mb-6 inline-flex items-center gap-2 rounded-[0.95rem] border border-border/75 bg-white/92 px-3 py-2 text-xs font-semibold text-muted-foreground shadow-[0_16px_28px_-28px_rgba(15,23,42,0.3)] transition-colors hover:border-primary/18 hover:text-foreground"
@@ -293,8 +293,7 @@ const PoliticoDetalhe = () => {
             <div className="space-y-6">
               <motion.section
                 initial="hidden"
-                whileInView="visible"
-                viewport={editorialViewport}
+                animate="visible"
                 variants={buildRevealVariants(Boolean(reduceMotion))}
                 className="editorial-hero p-5 sm:p-6"
               >
@@ -424,10 +423,9 @@ const PoliticoDetalhe = () => {
 
               <motion.section
                 initial="hidden"
-                whileInView="visible"
-                viewport={editorialViewport}
+                animate="visible"
                 variants={buildStaggerVariants(Boolean(reduceMotion))}
-                className="grid grid-cols-2 gap-3 xl:grid-cols-4"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
               >
                 <MetricCard
                   label="Gasto liquido em viagens"
@@ -959,7 +957,7 @@ const DossieSkeleton = () => (
         </div>
       </div>
     </section>
-    <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {Array.from({ length: 4 }).map((_, index) => (
         <Skeleton key={index} className="h-24 w-full rounded-[22px]" />
       ))}

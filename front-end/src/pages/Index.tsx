@@ -433,13 +433,12 @@ const Index = () => {
       <AppSidebar />
 
       <main className="lg:ml-72">
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+        <div className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1rem)] sm:px-6 sm:pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1.25rem)] lg:pt-10">
 
           {/* ── Hero ── */}
           <motion.section
             initial="hidden"
-            whileInView="visible"
-            viewport={editorialViewport}
+            animate="visible"
             variants={buildRevealVariants(Boolean(reduceMotion))}
             className="editorial-hero px-7 py-8 sm:px-10 sm:py-10"
           >

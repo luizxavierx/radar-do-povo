@@ -71,14 +71,14 @@ const AppSidebar = () => {
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-border/75 bg-white/92 backdrop-blur-sm lg:hidden">
-        <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between px-4">
+        <div className="mx-auto flex h-[calc(var(--mobile-header-height)+env(safe-area-inset-top))] max-w-[1240px] items-center justify-between px-4 pt-[env(safe-area-inset-top)]">
           <button onClick={() => goTo("/")} className="inline-flex items-center">
             <img src={logo} alt="Radar do Povo" className="h-9 w-auto" />
           </button>
 
           <button
             onClick={() => setOpen(true)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/80 bg-white text-foreground shadow-card"
+            className="touch-target inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/80 bg-white text-foreground shadow-card"
             aria-label="Abrir menu"
           >
             <Menu className="h-5 w-5" />
@@ -105,7 +105,7 @@ const AppSidebar = () => {
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-full flex-col overflow-y-auto">
+        <div className="flex h-full flex-col overflow-y-auto pt-[env(safe-area-inset-top)] lg:pt-0">
           <div className="border-b border-sidebar-border/80 px-5 py-5">
             <div className="flex items-center justify-between gap-2">
               <button onClick={() => goTo("/")} className="inline-flex items-center text-left">
@@ -114,7 +114,7 @@ const AppSidebar = () => {
 
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-xl p-2 text-sidebar-foreground/70 transition-colors hover:bg-muted lg:hidden"
+                className="touch-target rounded-xl p-2 text-sidebar-foreground/70 transition-colors hover:bg-muted lg:hidden"
                 aria-label="Fechar menu"
               >
                 <X className="h-5 w-5" />

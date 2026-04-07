@@ -1,6 +1,7 @@
 import type { Transition, Variants } from "framer-motion";
 
 export const editorialEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
+export type RevealStrategy = "in-view" | "mount";
 
 export const editorialDurations = {
   fast: 0.18,
@@ -34,12 +35,10 @@ export function buildRevealVariants(
     hidden: {
       opacity: 0,
       y: reduceMotion ? 0 : y,
-      filter: reduceMotion ? "none" : "blur(6px)",
     },
     visible: {
       opacity: 1,
       y: 0,
-      filter: "blur(0px)",
       transition: reduceMotion
         ? { duration: 0.01 }
         : {

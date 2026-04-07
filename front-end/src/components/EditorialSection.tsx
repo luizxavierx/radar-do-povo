@@ -1,11 +1,12 @@
 import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion";
 
-import { buildRevealVariants, editorialViewport } from "@/lib/motion";
+import { buildRevealVariants, editorialViewport, type RevealStrategy } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 type EditorialSectionProps = HTMLMotionProps<"section"> & {
   tone?: "default" | "muted" | "strong";
   delay?: number;
+  reveal?: RevealStrategy;
 };
 
 const toneClasses: Record<NonNullable<EditorialSectionProps["tone"]>, string> = {
@@ -19,15 +20,22 @@ const EditorialSection = ({
   className,
   tone = "default",
   delay = 0,
+  reveal = "in-view",
   ...props
 }: EditorialSectionProps) => {
   const reduceMotion = useReducedMotion();
+  const revealLifecycle =
+    reveal === "mount"
+      ? { initial: "hidden" as const, animate: "visible" as const }
+      : {
+          initial: "hidden" as const,
+          whileInView: "visible" as const,
+          viewport: editorialViewport,
+        };
 
   return (
     <motion.section
-      initial="hidden"
-      whileInView="visible"
-      viewport={editorialViewport}
+      {...revealLifecycle}
       variants={buildRevealVariants(Boolean(reduceMotion), { delay })}
       className={cn(toneClasses[tone], className)}
       {...props}

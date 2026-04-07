@@ -9,6 +9,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
+import MobileFiltersPanel from "@/components/MobileFiltersPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -182,6 +183,9 @@ const ViagensFilters = ({
       : "",
   ].filter(Boolean);
   const activeFiltersCount = activeBadges.length;
+  const mobileFilterSummary = activeFiltersCount
+    ? `${activeFiltersCount} filtro(s) ativo(s)`
+    : `Periodo ${value.anoInicio}-${value.anoFim}`;
 
   const advancedFiltersContent = (
     <div className="surface-muted p-4 sm:p-5">
@@ -263,174 +267,135 @@ const ViagensFilters = ({
           </div>
         </div>
 
-        <div className="surface-muted bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(244,248,250,0.92)_58%,rgba(235,247,245,0.82)_100%)] p-4 sm:p-5">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))] xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,1fr))]">
-            <div className="space-y-2 xl:col-span-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Busca principal
-              </label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={textDraft.search}
-                  onChange={(event) =>
-                    setTextDraft((current) => ({ ...current, search: event.target.value }))
-                  }
-                  placeholder="Nome, destino, motivo, cargo, funcao ou orgao"
-                  className="h-11 rounded-[1rem] border-border/70 bg-white pl-9"
-                />
+        <MobileFiltersPanel
+          title="Filtros principais"
+          subtitle="Busca e periodo"
+          summary={mobileFilterSummary}
+          activeCount={activeFiltersCount}
+        >
+          <div className="space-y-4">
+            <div className="surface-muted bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(244,248,250,0.92)_58%,rgba(235,247,245,0.82)_100%)] p-4 sm:p-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
+                <div className="space-y-2 sm:col-span-2 xl:col-span-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Busca principal
+                  </label>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={textDraft.search}
+                      onChange={(event) =>
+                        setTextDraft((current) => ({ ...current, search: event.target.value }))
+                      }
+                      placeholder="Nome, destino, motivo, cargo, funcao ou orgao"
+                      className="h-11 rounded-[1rem] border-border/70 bg-white pl-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Ano inicial
+                  </label>
+                  <Select
+                    value={String(value.anoInicio)}
+                    onValueChange={(nextValue) => onChange({ anoInicio: Number(nextValue) })}
+                  >
+                    <SelectTrigger className="h-11 rounded-[1rem] bg-white">
+                      <SelectValue placeholder="Selecione o ano inicial" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {travelYears.map((year) => (
+                        <SelectItem key={`start-${year}`} value={String(year)}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Ano final
+                  </label>
+                  <Select
+                    value={String(value.anoFim)}
+                    onValueChange={(nextValue) => onChange({ anoFim: Number(nextValue) })}
+                  >
+                    <SelectTrigger className="h-11 rounded-[1rem] bg-white">
+                      <SelectValue placeholder="Selecione o ano final" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {travelYears.map((year) => (
+                        <SelectItem key={`end-${year}`} value={String(year)}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Situacao
+                  </label>
+                  <Input
+                    value={textDraft.situacao}
+                    onChange={(event) =>
+                      setTextDraft((current) => ({ ...current, situacao: event.target.value }))
+                    }
+                    placeholder="Ex.: concluida"
+                    className="h-11 rounded-2xl border-border/70 bg-white"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Ano inicial
-              </label>
-              <Select
-                value={String(value.anoInicio)}
-                onValueChange={(nextValue) => onChange({ anoInicio: Number(nextValue) })}
-              >
-                <SelectTrigger className="h-11 rounded-[1rem] bg-white">
-                  <SelectValue placeholder="Selecione o ano inicial" />
-                </SelectTrigger>
-                <SelectContent>
-                  {travelYears.map((year) => (
-                    <SelectItem key={`start-${year}`} value={String(year)}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="lg:hidden">
+              <Collapsible open={mobileAdvancedOpen} onOpenChange={setMobileAdvancedOpen}>
+                <CollapsibleTrigger className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/40">
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-xl bg-primary/10 p-2 text-primary">
+                      <SlidersHorizontal className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Mais filtros</p>
+                      <p className="text-[11px] text-muted-foreground">Processo, PCDP, CPF e outros campos</p>
+                    </div>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${
+                      mobileAdvancedOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">{advancedFiltersContent}</CollapsibleContent>
+              </Collapsible>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Ano final
-              </label>
-              <Select
-                value={String(value.anoFim)}
-                onValueChange={(nextValue) => onChange({ anoFim: Number(nextValue) })}
-              >
-                <SelectTrigger className="h-11 rounded-[1rem] bg-white">
-                  <SelectValue placeholder="Selecione o ano final" />
-                </SelectTrigger>
-                <SelectContent>
-                  {travelYears.map((year) => (
-                    <SelectItem key={`end-${year}`} value={String(year)}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Situacao
-              </label>
-              <Input
-                value={textDraft.situacao}
-                onChange={(event) =>
-                  setTextDraft((current) => ({ ...current, situacao: event.target.value }))
-                }
-                placeholder="Ex.: concluida"
-                className="h-11 rounded-2xl border-border/70 bg-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Orgao superior
-              </label>
-              <Input
-                value={textDraft.orgaoSuperiorCodigo}
-                onChange={(event) =>
-                  setTextDraft((current) => ({
-                    ...current,
-                    orgaoSuperiorCodigo: event.target.value,
-                  }))
-                }
-                placeholder="Ex.: 26000"
-                className="h-11 rounded-2xl border-border/70 bg-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Orgao solicitante
-              </label>
-              <Input
-                value={textDraft.orgaoSolicitanteCodigo}
-                onChange={(event) =>
-                  setTextDraft((current) => ({
-                    ...current,
-                    orgaoSolicitanteCodigo: event.target.value,
-                  }))
-                }
-                placeholder="Ex.: 26298"
-                className="h-11 rounded-2xl border-border/70 bg-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Nome do viajante
-              </label>
-              <Input
-                value={textDraft.nomeViajante}
-                onChange={(event) =>
-                  setTextDraft((current) => ({ ...current, nomeViajante: event.target.value }))
-                }
-                placeholder="Ex.: Kim Kataguiri"
-                className="h-11 rounded-2xl border-border/70 bg-white"
-              />
+            <div className="hidden lg:block">
+              <Collapsible open={desktopAdvancedOpen} onOpenChange={setDesktopAdvancedOpen}>
+                <CollapsibleTrigger className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/40">
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-xl bg-primary/10 p-2 text-primary">
+                      <SlidersHorizontal className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Mais filtros</p>
+                      <p className="text-[11px] text-muted-foreground">Expanda quando precisar aprofundar</p>
+                    </div>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${
+                      desktopAdvancedOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">{advancedFiltersContent}</CollapsibleContent>
+              </Collapsible>
             </div>
           </div>
-        </div>
-
-        <div className="lg:hidden">
-          <Collapsible open={mobileAdvancedOpen} onOpenChange={setMobileAdvancedOpen}>
-            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <span className="rounded-xl bg-primary/10 p-2 text-primary">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Mais filtros</p>
-                  <p className="text-[11px] text-muted-foreground">Processo, PCDP, CPF e outros campos</p>
-                </div>
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 text-muted-foreground transition-transform ${
-                  mobileAdvancedOpen ? "rotate-180" : ""
-                }`}
-              />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-3">{advancedFiltersContent}</CollapsibleContent>
-          </Collapsible>
-        </div>
-
-        <div className="hidden lg:block">
-          <Collapsible open={desktopAdvancedOpen} onOpenChange={setDesktopAdvancedOpen}>
-            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <span className="rounded-xl bg-primary/10 p-2 text-primary">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Mais filtros</p>
-                  <p className="text-[11px] text-muted-foreground">Expanda quando precisar aprofundar</p>
-                </div>
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 text-muted-foreground transition-transform ${
-                  desktopAdvancedOpen ? "rotate-180" : ""
-                }`}
-              />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-3">{advancedFiltersContent}</CollapsibleContent>
-          </Collapsible>
-        </div>
+        </MobileFiltersPanel>
 
         {activeFiltersCount ? (
           <div className="rounded-2xl border border-border/70 bg-background/65 p-3">

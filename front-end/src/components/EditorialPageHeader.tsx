@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
-import { buildRevealVariants, editorialViewport } from "@/lib/motion";
+import { buildRevealVariants, editorialViewport, type RevealStrategy } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 type EditorialPageHeaderProps = {
@@ -13,6 +13,8 @@ type EditorialPageHeaderProps = {
   aside?: ReactNode;
   meta?: ReactNode;
   className?: string;
+  align?: "start" | "end";
+  reveal?: RevealStrategy;
 };
 
 const EditorialPageHeader = ({
@@ -23,18 +25,31 @@ const EditorialPageHeader = ({
   aside,
   meta,
   className,
+  align = "end",
+  reveal = "in-view",
 }: EditorialPageHeaderProps) => {
   const reduceMotion = useReducedMotion();
+  const revealLifecycle =
+    reveal === "mount"
+      ? { initial: "hidden" as const, animate: "visible" as const }
+      : {
+          initial: "hidden" as const,
+          whileInView: "visible" as const,
+          viewport: editorialViewport,
+        };
 
   return (
     <motion.section
-      initial="hidden"
-      whileInView="visible"
-      viewport={editorialViewport}
+      {...revealLifecycle}
       variants={buildRevealVariants(Boolean(reduceMotion))}
       className={cn("editorial-hero", className)}
     >
-      <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+      <div
+        className={cn(
+          "relative z-10 flex flex-col gap-6 xl:flex-row xl:justify-between",
+          align === "start" ? "xl:items-start" : "xl:items-end"
+        )}
+      >
         <div className="max-w-3xl">
           <div className="editorial-eyebrow">
             {Icon ? <Icon className="h-3.5 w-3.5" /> : null}

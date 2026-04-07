@@ -30,6 +30,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import AppSidebar from "@/components/AppSidebar";
 import EditorialPageHeader from "@/components/EditorialPageHeader";
 import EditorialSection from "@/components/EditorialSection";
+import MobileFiltersPanel from "@/components/MobileFiltersPanel";
 import PaginationControls from "@/components/PaginationControls";
 import SeoHead from "@/components/SeoHead";
 import StatsCard from "@/components/StatsCard";
@@ -48,7 +49,7 @@ import {
   formatCountCompact,
 } from "@/lib/formatters";
 import { buildBreadcrumbStructuredData } from "@/lib/seo";
-import { buildHoverLift, buildRevealVariants, buildStaggerVariants, editorialViewport } from "@/lib/motion";
+import { buildHoverLift, buildRevealVariants, buildStaggerVariants } from "@/lib/motion";
 import type {
   EmendaSerieAnualNode,
   RankingEmendaFiltroInput,
@@ -244,6 +245,19 @@ const RankingsPage = () => {
   const totalPagoCents       = resumo?.totalPagoCents       ?? "0";
   const totalEmpenhadoCents  = resumo?.totalEmpenhadoCents  ?? "0";
   const ticketMedioPagoCents = resumo?.ticketMedioPagoCents ?? "0";
+  const activeFilterCount =
+    Number(scope !== "parlamentares") +
+    Number(Boolean(uf)) +
+    Number(Boolean(tipoEmenda.trim())) +
+    Number(anoInicio !== DEFAULT_START_YEAR || anoFim !== DEFAULT_END_YEAR);
+  const mobileFilterSummary = [
+    `Escopo ${activeScopeMeta.label}`,
+    `Periodo ${anoInicio}-${anoFim}`,
+    uf ? `UF ${uf}` : null,
+    tipoEmenda.trim() ? `Tipo ${tipoEmenda.trim()}` : null,
+  ]
+    .filter(Boolean)
+    .join(" | ");
   const seoDescription =
     "Compare rankings de emendas parlamentares, evolucao anual, composicao por tipo e distribuicao geografica em uma leitura orientada por recorte.";
   const reduceMotion = useReducedMotion();
@@ -289,12 +303,13 @@ const RankingsPage = () => {
       <AppSidebar />
 
       <main className="lg:ml-72">
-        <div className="mx-auto w-full max-w-[1320px] px-4 pb-16 pt-20 sm:px-6 sm:pt-24 lg:pt-10">
+        <div className="mx-auto w-full max-w-[1320px] px-4 pb-16 pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1rem)] sm:px-6 sm:pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1.25rem)] lg:pt-10">
 
           {/* ── Hero ── */}
           <EditorialPageHeader
             eyebrow="Panorama de emendas"
             icon={FileText}
+            reveal="mount"
             title={
               <>
                 Emendas por <span className="text-gradient-primary">ano, autor e tipo</span>
@@ -302,7 +317,7 @@ const RankingsPage = () => {
             }
             description="Painel comparativo para enxergar volume financeiro, distribuicao anual, concentracao por autoria e composicao do gasto com uma leitura mais limpa."
             aside={
-              <div className="grid gap-2.5 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="hidden gap-2.5 sm:grid sm:grid-cols-3 xl:grid-cols-1">
                 <HeroSummaryCard
                   label="Escopo"
                   value={activeScopeMeta.label}
@@ -331,7 +346,7 @@ const RankingsPage = () => {
           />
 
           {/* ── Filters + scope tabs ── */}
-          <EditorialSection tone="muted" className="mt-4">
+          <EditorialSection tone="muted" className="mt-4" reveal="mount">
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -350,93 +365,99 @@ const RankingsPage = () => {
                 </button>
               </div>
 
-              {/* Scope tabs */}
-              <div className="overflow-x-auto overscroll-x-contain">
-                <div className="flex min-w-max gap-2 pb-1">
-                  {scopeTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => { setScope(tab.id); setOffset(0); }}
-                      className={`inline-flex items-center gap-2 rounded-[1rem] border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
-                        scope === tab.id
-                          ? "border-primary/18 bg-primary/8 text-primary"
-                          : "border-border bg-white text-muted-foreground hover:border-primary/18 hover:text-foreground"
-                      }`}
-                    >
-                      <tab.icon className="h-3.5 w-3.5" />
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Filter fields */}
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                <FilterField label="Ano inicial">
-                  <select
-                    value={anoInicio}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      setAnoInicio(next);
-                      if (next > anoFim) setAnoFim(next);
-                      setOffset(0);
-                    }}
-                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
-                  >
-                    {years.map((year) => <option key={`start-${year}`} value={year}>{year}</option>)}
-                  </select>
-                </FilterField>
-
-                <FilterField label="Ano final">
-                  <select
-                    value={anoFim}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      setAnoFim(next);
-                      if (next < anoInicio) setAnoInicio(next);
-                      setOffset(0);
-                    }}
-                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
-                  >
-                    {years.map((year) => <option key={`end-${year}`} value={year}>{year}</option>)}
-                  </select>
-                </FilterField>
-
-                <FilterField label="UF">
-                  <select
-                    value={uf}
-                    onChange={(e) => { setUf(e.target.value); setOffset(0); }}
-                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
-                  >
-                    <option value="">Todas</option>
-                    {ufOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-                  </select>
-                </FilterField>
-
-                <FilterField label="Tipo de emenda">
-                  <input
-                    value={tipoEmenda}
-                    onChange={(e) => { setTipoEmenda(e.target.value); setOffset(0); }}
-                    placeholder="Ex.: Individual"
-                    className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/25"
-                  />
-                </FilterField>
-
-                <FilterField label="Resultados">
-                  <div className="flex h-10 items-center rounded-[1rem] border border-border/75 bg-white/88 px-3 text-sm font-medium text-foreground">
-                    {formatCountCompact(totalRanking)} autores
+              <MobileFiltersPanel
+                title="Filtros do ranking"
+                subtitle="Escopo, periodo, UF e tipo de emenda"
+                summary={mobileFilterSummary}
+                activeCount={activeFilterCount}
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="overflow-x-auto overscroll-x-contain">
+                    <div className="flex min-w-max gap-2 pb-1">
+                      {scopeTabs.map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => { setScope(tab.id); setOffset(0); }}
+                          className={`inline-flex items-center gap-2 rounded-[1rem] border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
+                            scope === tab.id
+                              ? "border-primary/18 bg-primary/8 text-primary"
+                              : "border-border bg-white text-muted-foreground hover:border-primary/18 hover:text-foreground"
+                          }`}
+                        >
+                          <tab.icon className="h-3.5 w-3.5" />
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </FilterField>
-              </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    <FilterField label="Ano inicial">
+                      <select
+                        value={anoInicio}
+                        onChange={(e) => {
+                          const next = Number(e.target.value);
+                          setAnoInicio(next);
+                          if (next > anoFim) setAnoFim(next);
+                          setOffset(0);
+                        }}
+                        className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
+                      >
+                        {years.map((year) => <option key={`start-${year}`} value={year}>{year}</option>)}
+                      </select>
+                    </FilterField>
+
+                    <FilterField label="Ano final">
+                      <select
+                        value={anoFim}
+                        onChange={(e) => {
+                          const next = Number(e.target.value);
+                          setAnoFim(next);
+                          if (next < anoInicio) setAnoInicio(next);
+                          setOffset(0);
+                        }}
+                        className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
+                      >
+                        {years.map((year) => <option key={`end-${year}`} value={year}>{year}</option>)}
+                      </select>
+                    </FilterField>
+
+                    <FilterField label="UF">
+                      <select
+                        value={uf}
+                        onChange={(e) => { setUf(e.target.value); setOffset(0); }}
+                        className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none focus:border-primary/25"
+                      >
+                        <option value="">Todas</option>
+                        {ufOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+                      </select>
+                    </FilterField>
+
+                    <FilterField label="Tipo de emenda">
+                      <input
+                        value={tipoEmenda}
+                        onChange={(e) => { setTipoEmenda(e.target.value); setOffset(0); }}
+                        placeholder="Ex.: Individual"
+                        className="h-10 w-full rounded-[1rem] border border-border bg-white px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/25"
+                      />
+                    </FilterField>
+
+                    <FilterField label="Resultados">
+                      <div className="flex h-10 items-center rounded-[1rem] border border-border/75 bg-white/88 px-3 text-sm font-medium text-foreground">
+                        {formatCountCompact(totalRanking)} autores
+                      </div>
+                    </FilterField>
+                  </div>
+                </div>
+              </MobileFiltersPanel>
             </div>
           </EditorialSection>
 
           {/* ── KPIs ── */}
           <motion.section
             initial="hidden"
-            whileInView="visible"
-            viewport={editorialViewport}
+            animate="visible"
             variants={buildStaggerVariants(Boolean(reduceMotion))}
             className="mt-4"
           >
