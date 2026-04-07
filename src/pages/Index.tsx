@@ -466,7 +466,7 @@ const Index = () => {
                   </span>
                 </h1>
                 <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-                  Leitura institucional de emendas, viagens oficiais e perfis políticos, com menos ruído e mais critério na comparação dos dados públicos.
+                  Leitura 66666666institucional de emendas, viagens oficiais e perfis políticos, com menos ruído e mais critério na comparação dos dados públicos.
                 </p>
               </motion.div>
 
