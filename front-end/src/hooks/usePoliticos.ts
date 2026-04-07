@@ -108,10 +108,36 @@ export function usePoliticos(filter?: PoliticoFilterInput, pagination?: Paginati
         POLITICOS_LIST_QUERY,
         { filter, pagination: normalizedPagination },
         { signal }
-      ).then((d) => d.politicos),
+      ).then((d) => normalizeConnection(d.politicos)),
     enabled: hasFilter,
     ...paginatedQueryDefaults,
   });
+}
+
+export function normalizeConnection<T>(raw: unknown): Connection<T> {
+  const source = (raw ?? {}) as Record<string, unknown>;
+  const nodesRaw = source.nodes;
+
+  const nodes = Array.isArray(nodesRaw)
+    ? (nodesRaw.filter(Boolean) as T[])
+    : nodesRaw && typeof nodesRaw === "object"
+      ? (Object.values(nodesRaw as Record<string, T>).filter(Boolean) as T[])
+      : [];
+
+  const totalRaw = Number(source.total);
+  const limitRaw = Number(source.limit);
+  const offsetRaw = Number(source.offset);
+
+  const total = Number.isFinite(totalRaw) && totalRaw >= 0 ? Math.trunc(totalRaw) : nodes.length;
+  const limit = Number.isFinite(limitRaw) && limitRaw >= 0 ? Math.trunc(limitRaw) : nodes.length;
+  const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? Math.trunc(offsetRaw) : 0;
+
+  return {
+    total,
+    limit,
+    offset,
+    nodes,
+  };
 }
 
 export function usePoliticoDetalhe(idOrNome?: { id?: string; nomeCanonico?: string }) {

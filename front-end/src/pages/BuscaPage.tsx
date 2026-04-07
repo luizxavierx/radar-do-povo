@@ -11,7 +11,7 @@ import MobileFiltersPanel from "@/components/MobileFiltersPanel";
 import SeoHead from "@/components/SeoHead";
 import SearchBar from "@/components/SearchBar";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
-import { usePoliticos } from "@/hooks/usePoliticos";
+import { normalizeConnection, usePoliticos } from "@/hooks/usePoliticos";
 import { graphqlRequest } from "@/api/graphqlClient";
 import { POLITICO_BASICO_QUERY, POLITICOS_LIST_QUERY } from "@/api/queries";
 import { buildPoliticoPath } from "@/lib/politicos";
@@ -52,11 +52,12 @@ const BuscaPage = () => {
 
   const hasFilter = Boolean(filter);
   const secondaryFilterCount = [partido, uf, cargoAtual].filter((value) => Boolean(value.trim())).length;
+  const nodes = data?.nodes ?? [];
   const total = data?.total ?? 0;
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const totalPages = total ? Math.ceil(total / PAGE_SIZE) : 1;
   const seoDescription =
-    "Busque politicos por nome, partido, UF ou cargo atual e acesse perfis consolidados com filtros institucionais.";
+    "Busque políticos por nome, partido, UF ou cargo atual e acesse perfis consolidados com filtros institucionais.";
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -72,7 +73,7 @@ const BuscaPage = () => {
           POLITICOS_LIST_QUERY,
           { filter, pagination: { limit: PAGE_SIZE, offset: nextOffset } },
           { signal }
-        ).then((d) => d.politicos),
+        ).then((d) => normalizeConnection<PoliticoResumo>(d.politicos)),
       staleTime: 60_000,
     });
   }, [data, filter, offset, queryClient]);
@@ -135,21 +136,21 @@ const BuscaPage = () => {
   return (
     <div>
       <SeoHead
-        title="Busca de politicos | Radar do Povo"
+        title="Busca de políticos | Radar do Povo"
         description={seoDescription}
         path="/busca"
         keywords={[
-          "buscar politicos",
-          "perfil politico",
-          "politicos por partido",
-          "politicos por uf",
+          "buscar políticos",
+          "perfil político",
+          "políticos por partido",
+          "políticos por uf",
           "radar do povo busca",
         ]}
         structuredData={[
           {
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            name: "Busca de politicos",
+            name: "Busca de políticos",
             description: seoDescription,
             url: "https://radardopovo.com/busca",
             inLanguage: "pt-BR",
@@ -176,7 +177,7 @@ const BuscaPage = () => {
             align="start"
             title={
               <>
-                Busca de <span className="text-gradient-primary">politicos</span>
+                Busca de <span className="text-gradient-primary">políticos</span>
               </>
             }
             description="Encontre perfis por nome, partido, UF ou cargo atual, com uma leitura mais institucional e organizada."
@@ -192,36 +193,36 @@ const BuscaPage = () => {
             meta={
               hasFilter ? (
                 <>
-                  {search ? <span className="editorial-chip">Nome: {search}</span> : null}
-                  {partido ? <span className="editorial-chip">Partido: {partido}</span> : null}
-                  {uf ? <span className="editorial-chip">UF: {uf}</span> : null}
-                  {cargoAtual ? <span className="editorial-chip">Cargo: {cargoAtual}</span> : null}
+                  {search ? <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-white/60 px-3 py-1 text-[11px] font-bold text-primary shadow-sm backdrop-blur-md">Nome: {search}</span> : null}
+                  {partido ? <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/60 px-3 py-1 text-[11px] font-bold text-muted-foreground shadow-sm backdrop-blur-md">Partido: {partido}</span> : null}
+                  {uf ? <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/60 px-3 py-1 text-[11px] font-bold text-muted-foreground shadow-sm backdrop-blur-md">UF: {uf}</span> : null}
+                  {cargoAtual ? <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/60 px-3 py-1 text-[11px] font-bold text-muted-foreground shadow-sm backdrop-blur-md">Cargo: {cargoAtual}</span> : null}
                 </>
               ) : (
-                <span className="editorial-chip">Use a busca e os filtros para iniciar</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/60 px-3 py-1 text-[11px] font-bold text-muted-foreground shadow-sm backdrop-blur-md">Use a busca e os filtros para iniciar</span>
               )
             }
           />
 
-          <EditorialSection tone="strong" className="mt-4" reveal="mount">
+          <EditorialSection tone="strong" className="mt-6 rounded-[2rem] border border-white/50 bg-white/30 p-6 shadow-lg ring-1 ring-black/5 backdrop-blur-md sm:p-8" reveal="mount">
             <div className="max-w-3xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
                 Consulta principal
               </p>
-              <h2 className="mt-2 panel-heading">Encontre perfis por nome ou partido</h2>
-              <p className="mt-2 panel-copy">
-                O campo principal conduz a busca, enquanto os filtros refinam a leitura sem poluir a pagina.
+              <h2 className="mt-3 text-2xl font-extrabold tracking-tighter text-foreground sm:text-[2rem]">Encontre perfis por nome ou partido</h2>
+              <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">
+                O campo principal conduz a busca, enquanto os filtros refinam a leitura sem poluir a página.
               </p>
             </div>
 
-            <div className="mt-5">
+            <div className="mt-6 relative rounded-[1.5rem] bg-white/80 p-2 shadow-sm sm:p-4">
               <SearchBar
                 onSearch={(q) => {
                   setSearch(q);
                   setOffset(0);
                 }}
                 isLoading={isLoading}
-                placeholder="Ex.: joao silva"
+                placeholder="Ex.: joão silva"
                 defaultValue={search}
                 submitLabel="Buscar"
                 autoSearch
@@ -229,21 +230,21 @@ const BuscaPage = () => {
               />
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              <span className="editorial-chip">{formatCount(total)} resultados</span>
-              <span className="editorial-chip">{secondaryFilterCount} filtro(s) complementar(es)</span>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-white/60 px-3.5 py-1.5 text-[11px] font-bold text-primary shadow-sm backdrop-blur-md">{formatCount(total)} resultados</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/60 px-3.5 py-1.5 text-[11px] font-bold text-muted-foreground shadow-sm backdrop-blur-md">{secondaryFilterCount} filtro(s) complementar(es)</span>
             </div>
 
             <MobileFiltersPanel
-              className="mt-5"
+              className="mt-6"
               title="Filtros complementares"
               subtitle="Partido, UF e cargo atual"
               summary={secondaryFilterCount ? "Refino ativo" : "Refino opcional"}
               activeCount={secondaryFilterCount}
             >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <label className="surface-muted px-4 py-3 text-xs">
-                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <label className="rounded-[1.25rem] border border-white/60 bg-white/50 px-4 py-3.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-colors hover:bg-white/80">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
                     Partido
                   </span>
                   <input
@@ -253,12 +254,12 @@ const BuscaPage = () => {
                       setOffset(0);
                     }}
                     placeholder="PL, PT, PSD..."
-                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
+                    className="w-full bg-transparent text-sm font-extrabold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground/70"
                   />
                 </label>
 
-                <label className="surface-muted px-4 py-3 text-xs">
-                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                <label className="rounded-[1.25rem] border border-white/60 bg-white/50 px-4 py-3.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-colors hover:bg-white/80">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
                     UF
                   </span>
                   <input
@@ -268,12 +269,12 @@ const BuscaPage = () => {
                       setOffset(0);
                     }}
                     placeholder="SP, PR, BA..."
-                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium uppercase outline-none transition-colors focus:border-primary/25"
+                    className="w-full bg-transparent text-sm font-extrabold uppercase text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground/70"
                   />
                 </label>
 
-                <label className="surface-muted px-4 py-3 text-xs">
-                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                <label className="rounded-[1.25rem] border border-white/60 bg-white/50 px-4 py-3.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-colors hover:bg-white/80">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
                     Cargo atual
                   </span>
                   <select
@@ -282,7 +283,7 @@ const BuscaPage = () => {
                       setCargoAtual(e.target.value);
                       setOffset(0);
                     }}
-                    className="w-full rounded-[1rem] border border-border bg-white px-3 py-2.5 text-xs font-medium outline-none transition-colors focus:border-primary/25"
+                    className="w-full cursor-pointer bg-transparent text-sm font-extrabold text-foreground outline-none"
                   >
                     {cargoOptions.map((option) => (
                       <option key={option || "todos"} value={option}>
@@ -295,9 +296,9 @@ const BuscaPage = () => {
                 <div className="flex items-end">
                   <button
                     onClick={resetFilters}
-                    className="touch-target inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-[1rem] border border-border bg-white text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 hover:text-foreground"
+                    className="touch-target inline-flex h-[68px] w-full items-center justify-center gap-2 rounded-[1.25rem] border border-white/80 bg-white/60 text-xs font-bold text-muted-foreground shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:border-primary/30 hover:bg-white/90 hover:text-primary hover:shadow-md"
                   >
-                    <Filter className="h-3.5 w-3.5" />
+                    <Filter className="h-4 w-4" />
                     Limpar filtros
                   </button>
                 </div>
@@ -306,19 +307,19 @@ const BuscaPage = () => {
           </EditorialSection>
 
           <motion.section
-            initial="hidden"
+            initial={false}
             animate="visible"
             variants={buildStaggerVariants(Boolean(reduceMotion))}
-            className="mt-8 space-y-3"
+            className="mt-8 space-y-4"
           >
             {!hasFilter ? <EmptyState message="Use ao menos um filtro para iniciar a consulta." /> : null}
-            {isLoading ? <LoadingState message="Consultando lista de politicos..." /> : null}
+            {isLoading ? <LoadingState message="Consultando lista de políticos..." /> : null}
             {error ? <ErrorState error={error as Error} /> : null}
-            {!isLoading && !error && hasFilter && data?.nodes.length === 0 ? (
-              <EmptyState message="Nenhum politico encontrado com os filtros selecionados." />
+            {!isLoading && !error && hasFilter && nodes.length === 0 ? (
+              <EmptyState message="Nenhum político encontrado com os filtros selecionados." />
             ) : null}
 
-            {data?.nodes.map((politico) => (
+            {nodes.map((politico) => (
               <motion.button
                 key={politico.id}
                 variants={buildRevealVariants(Boolean(reduceMotion), { y: 12 })}
@@ -334,25 +335,25 @@ const BuscaPage = () => {
           </motion.section>
 
           {total > PAGE_SIZE ? (
-            <section className="mt-8 flex flex-wrap items-center justify-center gap-2">
+            <section className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}
-                className="touch-target rounded-[1rem] border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+                className="touch-target rounded-full border border-white/80 bg-white/60 px-5 py-2.5 text-xs font-bold text-muted-foreground shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:border-primary/30 hover:bg-white/90 hover:text-foreground hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Anterior
               </button>
 
-              <span className="rounded-[1rem] border border-border bg-white px-3 py-2 text-xs text-muted-foreground">
-                Pagina {currentPage} de {totalPages}
+              <span className="rounded-full border border-white/60 bg-white/40 px-4 py-2.5 text-xs font-bold text-foreground shadow-sm backdrop-blur-md">
+                Página {currentPage} de {totalPages}
               </span>
 
               <button
                 onClick={() => setOffset(offset + PAGE_SIZE)}
                 disabled={offset + PAGE_SIZE >= total}
-                className="touch-target rounded-[1rem] border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/18 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+                className="touch-target rounded-full border border-white/80 bg-white/60 px-5 py-2.5 text-xs font-bold text-muted-foreground shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:border-primary/30 hover:bg-white/90 hover:text-foreground hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Proxima
+                Próxima
               </button>
             </section>
           ) : null}
@@ -363,40 +364,40 @@ const BuscaPage = () => {
 };
 
 const PoliticianResultCard = ({ politico }: { politico: PoliticoResumo }) => (
-  <article className="group overflow-hidden rounded-[1.6rem] border border-border/70 bg-card/94 p-4 shadow-card transition-all duration-200 hover:border-primary/16 hover:shadow-elevated">
-    <div className="flex items-start gap-3">
+  <article className="group overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/50 p-5 shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:bg-white/80 hover:shadow-xl">
+    <div className="flex items-start gap-4">
       {politico.fotoUrl ? (
-        <img src={politico.fotoUrl} alt={politico.nomeCanonico} className="h-12 w-12 rounded-xl object-cover" />
+        <img src={politico.fotoUrl} alt={politico.nomeCanonico} className="h-14 w-14 rounded-[1.25rem] object-cover shadow-sm ring-1 ring-black/5 transition-transform duration-300 group-hover:scale-105" />
       ) : (
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
-          <Users className="h-5 w-5 text-muted-foreground" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-white/80 shadow-sm ring-1 ring-black/5 transition-colors group-hover:bg-primary/5">
+          <Users className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
         </div>
       )}
 
-      <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-bold tracking-tight text-foreground group-hover:text-primary">
+      <div className="min-w-0 flex-1 pt-0.5">
+        <h3 className="truncate text-base font-extrabold tracking-tight text-foreground transition-colors group-hover:text-primary sm:text-lg">
           {politico.nomeCompleto || politico.nomeCanonico}
         </h3>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-bold">
           {politico.partido ? (
-            <span className="rounded-full bg-primary/12 px-2 py-0.5 font-semibold text-primary">{politico.partido}</span>
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-primary shadow-sm">{politico.partido}</span>
           ) : null}
           {politico.uf ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
-              <MapPin className="h-2.5 w-2.5" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100/80 px-2.5 py-1 text-slate-600 shadow-sm ring-1 ring-black/5">
+              <MapPin className="h-3 w-3" />
               {politico.uf}
             </span>
           ) : null}
           {politico.cargoAtual ? (
-            <span className="rounded-full bg-accent/10 px-2 py-0.5 font-semibold text-accent">{politico.cargoAtual}</span>
+            <span className="rounded-full bg-slate-100/80 px-2.5 py-1 text-slate-600 shadow-sm ring-1 ring-black/5">{politico.cargoAtual}</span>
           ) : null}
         </div>
       </div>
 
     </div>
-    <div className="mt-3 flex justify-end">
-      <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
-        <Search className="h-3 w-3" />
+    <div className="mt-4 flex justify-end">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/80 px-3.5 py-1.5 text-[11px] font-bold text-muted-foreground shadow-sm transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary">
+        <Search className="h-3.5 w-3.5" />
         Ver perfil
       </span>
     </div>
@@ -412,12 +413,12 @@ const SearchPageHeaderMetric = ({
   value: string;
   helper: string;
 }) => (
-  <div className="surface-muted px-4 py-3">
-    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+  <div className="rounded-[1.25rem] border border-white/60 bg-white/40 p-4 shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:bg-white/60 hover:shadow-md">
+    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
       {label}
     </p>
-    <p className="mt-2 text-lg font-bold tracking-tight text-foreground">{value}</p>
-    <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p>
+    <p className="mt-2 text-lg font-extrabold tracking-tight text-foreground">{value}</p>
+    <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">{helper}</p>
   </div>
 );
 
@@ -426,4 +427,3 @@ function formatCount(value: number) {
 }
 
 export default BuscaPage;
-

@@ -143,7 +143,7 @@ function readSavedViewLabel() {
     if (!raw) return undefined;
 
     const parsed = JSON.parse(raw) as { savedAt?: string };
-    return parsed.savedAt ? "Visao salva neste navegador" : undefined;
+    return parsed.savedAt ? "Visão salva neste navegador" : undefined;
   } catch {
     return undefined;
   }
@@ -411,7 +411,7 @@ const ViagensPage = () => {
         savedAt: new Date().toISOString(),
       })
     );
-    setSavedViewLabel("Visao salva neste navegador");
+    setSavedViewLabel("Visão salva neste navegador");
   };
 
   const handleComparePreviousPeriod = () => {
@@ -441,7 +441,7 @@ const ViagensPage = () => {
   ].filter(Boolean).length;
   const canComparePreviousPeriod = filters.anoInicio > 2019 && filters.anoFim > 2019;
   const seoDescription =
-    "Explore o painel de viagens oficiais com filtros por periodo, orgao, viajante e destino, alem de rankings e detalhes consolidados.";
+    "Explore o painel de viagens oficiais com filtros por período, órgão, viajante e destino, além de rankings e detalhes consolidados.";
 
   return (
     <div className="overflow-x-hidden">
@@ -453,7 +453,7 @@ const ViagensPage = () => {
           "viagens oficiais",
           "gastos com viagens",
           "painel de viagens",
-          "viagens publicas",
+          "viagens públicas",
           "radar do povo viagens",
         ]}
         structuredData={[
@@ -471,8 +471,8 @@ const ViagensPage = () => {
             },
             about: [
               { "@type": "Thing", name: "Viagens oficiais" },
-              { "@type": "Thing", name: "Gastos publicos" },
-              { "@type": "Thing", name: "Transparencia publica" },
+              { "@type": "Thing", name: "Gastos públicos" },
+              { "@type": "Thing", name: "Transparência pública" },
             ],
           },
           buildBreadcrumbStructuredData([
@@ -486,42 +486,52 @@ const ViagensPage = () => {
       <main className="overflow-x-hidden lg:ml-72">
         <div className="w-full px-4 pb-16 pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1rem)] sm:px-6 sm:pt-[calc(var(--mobile-header-height)+env(safe-area-inset-top)+1.25rem)] lg:px-6 lg:pt-10 xl:px-8 2xl:px-10">
 
-          {/* ── Hero ── */}
-          <section className="editorial-hero">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+          {/* ── Hero Premium ── */}
+          <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/30 px-7 py-10 shadow-xl backdrop-blur-xl ring-1 ring-black/5 sm:px-12 sm:py-14">
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="absolute inset-y-0 left-[52%] w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent" />
+              <div className="animate-float-wide absolute -right-20 -top-10 h-72 w-72 rounded-full bg-primary/10 blur-[80px]" />
+              <div className="animate-float-slow absolute right-32 top-20 h-48 w-48 rounded-full border border-primary/20 bg-gradient-to-tr from-primary/5 to-transparent shadow-lg" />
+              <div className="animate-float-wide absolute -left-10 top-20 h-56 w-56 rounded-full bg-amber-500/5 blur-[60px]" style={{ animationDelay: '2s' }} />
+            </div>
+
+            <div className="relative flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
 
               {/* Left: title block */}
               <div className="min-w-0 max-w-2xl">
-                <p className="editorial-eyebrow">
-                  <Plane className="h-3 w-3" />
+                <p className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-white/60 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-primary shadow-sm backdrop-blur-md">
+                  <Plane className="h-3.5 w-3.5" />
                   Painel de viagens
                 </p>
 
-                <h1 className="mt-3 text-[2rem] font-extrabold leading-[1.15] tracking-tight text-foreground sm:text-[2.4rem]">
+                <h1 className="mt-2 text-[2.25rem] font-extrabold leading-[1.15] tracking-tighter text-foreground drop-shadow-sm sm:text-[3.25rem]">
                   Viagens oficiais{" "}
-                  <span className="text-primary">em foco</span>
+                  <span className="relative inline-block">
+                    <span className="absolute -inset-1 rounded-xl bg-primary/15 blur-xl"></span>
+                    <span className="relative bg-gradient-to-br from-primary via-primary/90 to-blue-600 bg-clip-text text-transparent">em foco</span>
+                  </span>
                 </h1>
 
-                <p className="mt-2.5 max-w-xl text-sm leading-6 text-muted-foreground">
-                  Leitura clara dos deslocamentos oficiais por periodo, orgao e viajante.
+                <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-muted-foreground sm:text-[15px]">
+                  Leitura clara dos deslocamentos oficiais por período, órgão e viajante, refinada e organizada.
                 </p>
 
                 {/* Meta chips */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="editorial-chip">
+                <div className="mt-6 flex flex-wrap gap-2.5">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/60 px-3.5 py-1.5 text-[11px] font-bold text-muted-foreground shadow-sm backdrop-blur-md">
                     {filters.anoInicio === filters.anoFim
                       ? filters.anoInicio
                       : `${filters.anoInicio} - ${filters.anoFim}`}
                   </span>
 
                   {activeFilterCount > 0 ? (
-                    <span className="editorial-chip">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-[11px] font-bold text-primary shadow-sm backdrop-blur-md">
                       {activeFilterCount} filtro{activeFilterCount > 1 ? "s" : ""} ativo{activeFilterCount > 1 ? "s" : ""}
                     </span>
                   ) : null}
 
                   {savedViewLabel ? (
-                    <span className="editorial-chip text-primary">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-3.5 py-1.5 text-[11px] font-bold text-blue-600 shadow-sm backdrop-blur-md">
                       {savedViewLabel}
                     </span>
                   ) : null}
@@ -529,42 +539,48 @@ const ViagensPage = () => {
               </div>
 
               {/* Right: summary cards */}
-              <div className="grid gap-3 sm:grid-cols-2 xl:w-[400px] xl:shrink-0">
+              <div className="grid gap-4 sm:grid-cols-2 xl:w-[460px] xl:shrink-0">
 
                 {/* Gasto líquido — destaque principal */}
-                <article className="surface-muted px-4 py-4 sm:px-5 sm:py-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Gasto liquido
+                <article className="group relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/40 px-5 py-6 shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/80 hover:bg-white/70 hover:shadow-xl">
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-50" />
+                  <div className="relative">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground transition-colors group-hover:text-foreground">
+                        Gasto líquido
+                      </p>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-sm ring-1 ring-primary/20 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-white group-hover:shadow-md">
+                        <Wallet className="h-5 w-5" />
+                      </span>
+                    </div>
+                    <p className="mt-4 text-2xl font-extrabold tracking-tight text-primary sm:text-3xl drop-shadow-sm">
+                      {formatCentsCompact(resumoData?.totalGastoLiquidoCents)}
                     </p>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Wallet className="h-4 w-4" />
-                    </span>
+                    <p className="mt-1.5 text-[12px] font-medium text-muted-foreground">
+                      {formatCents(resumoData?.totalGastoLiquidoCents)}
+                    </p>
                   </div>
-                  <p className="mt-3 text-2xl font-bold tracking-tight text-primary sm:text-3xl">
-                    {formatCentsCompact(resumoData?.totalGastoLiquidoCents)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {formatCents(resumoData?.totalGastoLiquidoCents)}
-                  </p>
                 </article>
 
                 {/* Viagens no recorte — neutro */}
-                <article className="surface-muted px-4 py-4 sm:px-5 sm:py-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Viagens no recorte
+                <article className="group relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/40 px-5 py-6 shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/80 hover:bg-white/70 hover:shadow-xl">
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-50" />
+                  <div className="relative">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground transition-colors group-hover:text-foreground">
+                        Viagens no recorte
+                      </p>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] bg-white/80 text-muted-foreground shadow-sm ring-1 ring-black/5 transition-all duration-300 group-hover:scale-110 group-hover:bg-muted group-hover:text-foreground">
+                        <Plane className="h-5 w-5" />
+                      </span>
+                    </div>
+                    <p className="mt-4 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                      {formatCountCompact(totalViagensPainel)}
                     </p>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                      <Plane className="h-4 w-4" />
-                    </span>
+                    <p className="mt-1.5 text-[12px] font-medium text-muted-foreground">
+                      {totalViagensPainel.toLocaleString("pt-BR")} viagens
+                    </p>
                   </div>
-                  <p className="mt-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                    {formatCountCompact(totalViagensPainel)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {totalViagensPainel.toLocaleString("pt-BR")} viagens encontradas
-                  </p>
                 </article>
 
               </div>
@@ -572,16 +588,18 @@ const ViagensPage = () => {
           </section>
 
           {/* ── Content sections ── */}
-          <div className="mt-5 space-y-5">
-            <ViagensFilters
-              value={filters}
-              onChange={updateFilters}
-              onReset={handleReset}
-              onSaveView={handleSaveView}
-              onComparePreviousPeriod={handleComparePreviousPeriod}
-              canComparePreviousPeriod={canComparePreviousPeriod}
-              savedViewLabel={savedViewLabel}
-            />
+          <div className="mt-8 space-y-8">
+            <div className="rounded-[2rem] border border-white/50 bg-white/30 p-2 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
+              <ViagensFilters
+                value={filters}
+                onChange={updateFilters}
+                onReset={handleReset}
+                onSaveView={handleSaveView}
+                onComparePreviousPeriod={handleComparePreviousPeriod}
+                canComparePreviousPeriod={canComparePreviousPeriod}
+                savedViewLabel={savedViewLabel}
+              />
+            </div>
 
             <ViagensKpis
               data={resumoData}
@@ -635,7 +653,7 @@ const ViagensPage = () => {
               }}
             />
 
-            <section className="min-w-0">
+            <section className="min-w-0 rounded-[2rem] border border-white/60 bg-white/40 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur-md sm:p-8">
               <ViagensTable
                 data={viagensTableData}
                 isLoading={viagensPainelQuery.isLoading}
