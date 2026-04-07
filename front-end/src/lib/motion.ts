@@ -27,6 +27,20 @@ export function buildRevealVariants(
     duration?: number;
   }
 ): Variants {
+  if (reduceMotion) {
+    return {
+      hidden: {
+        opacity: 1,
+        y: 0,
+      },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0 },
+      },
+    };
+  }
+
   const y = options?.y ?? 18;
   const delay = options?.delay ?? 0;
   const duration = options?.duration ?? editorialDurations.slow;
@@ -34,18 +48,16 @@ export function buildRevealVariants(
   return {
     hidden: {
       opacity: 0,
-      y: reduceMotion ? 0 : y,
+      y,
     },
     visible: {
       opacity: 1,
       y: 0,
-      transition: reduceMotion
-        ? { duration: 0.01 }
-        : {
-            duration,
-            delay,
-            ease: editorialEase,
-          },
+      transition: {
+        duration,
+        delay,
+        ease: editorialEase,
+      },
     },
   };
 }

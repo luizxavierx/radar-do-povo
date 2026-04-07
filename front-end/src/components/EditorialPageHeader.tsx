@@ -31,9 +31,9 @@ const EditorialPageHeader = ({
   const reduceMotion = useReducedMotion();
   const revealLifecycle =
     reveal === "mount"
-      ? { initial: "hidden" as const, animate: "visible" as const }
+      ? { initial: false as const, animate: "visible" as const }
       : {
-          initial: "hidden" as const,
+          initial: false as const,
           whileInView: "visible" as const,
           viewport: editorialViewport,
         };

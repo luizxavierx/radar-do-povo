@@ -322,6 +322,8 @@ const BuscaPage = () => {
             {nodes.map((politico) => (
               <motion.button
                 key={politico.id}
+                initial={false}
+                animate="visible"
                 variants={buildRevealVariants(Boolean(reduceMotion), { y: 12 })}
                 whileHover={buildHoverLift(Boolean(reduceMotion), -2)}
                 onClick={() => {
