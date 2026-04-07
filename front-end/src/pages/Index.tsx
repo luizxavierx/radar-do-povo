@@ -448,7 +448,6 @@ const Index = () => {
               <div className="absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
               {/* Glows mais sofisticados */}
               <div className="animate-float-wide absolute -right-20 -top-10 h-72 w-72 rounded-full bg-primary/10 blur-[80px]" />
-              <div className="animate-float-slow absolute right-32 top-20 h-48 w-48 rounded-full border border-primary/20 bg-gradient-to-tr from-primary/5 to-transparent shadow-lg" />
               <div className="animate-float-wide absolute -left-10 top-20 h-56 w-56 rounded-full bg-blue-500/5 blur-[60px]" style={{ animationDelay: '2s' }} />
               <div className="absolute left-[12%] top-12 h-20 w-20 rounded-full border border-white/60 bg-white/20 shadow-sm backdrop-blur-md" />
             </div>
