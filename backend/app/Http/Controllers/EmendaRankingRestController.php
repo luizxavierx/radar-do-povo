@@ -15,6 +15,47 @@ final class EmendaRankingRestController extends Controller
 
     public function __construct(private readonly EmendaService $emendaService) {}
 
+    public function resumo(Request $request): JsonResponse
+    {
+        $filtro = $this->normalizeFiltro($request);
+        if ($filtro['apenasParlamentares'] === null) {
+            $filtro['apenasParlamentares'] = true;
+        }
+
+        return response()->json($this->camelize(
+            $this->emendaService->rankingSummary($filtro),
+        ));
+    }
+
+    public function serieAnual(Request $request): JsonResponse
+    {
+        $filtro = $this->normalizeFiltro($request);
+        if ($filtro['apenasParlamentares'] === null) {
+            $filtro['apenasParlamentares'] = true;
+        }
+
+        $result = $this->emendaService->annualSeries($filtro);
+        $pagination = [
+            'limit' => count($result['nodes']),
+            'offset' => 0,
+        ];
+
+        return response()->json($this->camelize($this->connectionPayload($result, $pagination)));
+    }
+
+    public function topTipos(Request $request): JsonResponse
+    {
+        $filtro = $this->normalizeFiltro($request);
+        if ($filtro['apenasParlamentares'] === null) {
+            $filtro['apenasParlamentares'] = true;
+        }
+
+        $pagination = $this->paginationQuery($request, 8, 'radar.max_ranking_page_size');
+        $result = $this->emendaService->topTipos($filtro, $pagination['limit'], $pagination['offset']);
+
+        return response()->json($this->camelize($this->connectionPayload($result, $pagination)));
+    }
+
     public function topGastadores(Request $request): JsonResponse
     {
         $filtro = $this->normalizeFiltro($request);

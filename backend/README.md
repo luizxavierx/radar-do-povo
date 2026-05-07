@@ -39,20 +39,27 @@ Estrutura implementada:
 - `POST /graphql`
 - `GET /healthz` (health rapido do framework)
 - `GET /api/healthz` (health detalhado: db/redis)
+- `GET /api/impostometro` (adapter configuravel)
+- `GET /api/emendas/rankings/resumo`
+- `GET /api/emendas/rankings/serie-anual`
+- `GET /api/emendas/rankings/top-tipos`
 - `GET /api/metrics` (formato Prometheus simples)
 
 ## Configuracao de ambiente
 
 Use o arquivo:
 
-- [`.env.example`](/Users/Note%20LG/Downloads/Api-radar/.env.example)
+- [`.env.example`](.env.example)
 
 Pontos importantes:
 
 - Porta da API: `APP_PORT=8081`
+- Host interno da API: `APP_HOST=127.0.0.1`
+- Dominio publico: `APP_URL=https://radardopovo.com`
 - RDS com SSL: `DB_SSLMODE=verify-full` e `DB_SSL_ROOT_CERT=/certs/global-bundle.pem`
 - Cache obrigatorio em Redis: `CACHE_STORE=redis`
 - Brasil.IO e opcional e exige token: `BRASILIO_TOKEN=...`
+- Impostometro e opcional e exige fonte/token configurados: `IMPOSTOMETRO_API_URL` e `IMPOSTOMETRO_API_TOKEN`
 
 Fontes externas configuradas:
 - Camara: `https://dadosabertos.camara.leg.br`
@@ -81,12 +88,16 @@ php artisan route:cache
 php artisan lighthouse:cache
 ```
 
-3. Subir na porta `8081`:
+3. Subir em `127.0.0.1:8081` por systemd:
 
 ```bash
-chmod +x scripts/start-api.sh
-APP_PORT=8081 ./scripts/start-api.sh
+sudo cp deploy/api-radar.service /etc/systemd/system/api-radar.service
+sudo systemctl daemon-reload
+sudo systemctl enable api-radar
+sudo systemctl restart api-radar
 ```
+
+4. Configurar Apache no dominio principal usando `deploy/apache-radardopovo.conf`.
 
 ## Query GraphQL de teste
 
@@ -174,11 +185,11 @@ query TopPorPais {
 - Evitar query GraphQL monolitica com multiplos niveis em `limit` alto; paginar em camadas.
 - Para dados completos, usar paginação incremental (`offset`) em `viagens`, `emendas` e subcolecoes.
 - Script de indices extras:
-  - [`database/sql/001_performance_indexes.sql`](/Users/Note%20LG/Downloads/Api-radar/database/sql/001_performance_indexes.sql)
+  - [`database/sql/001_performance_indexes.sql`](database/sql/001_performance_indexes.sql)
 
 ## Documentacao adicional
 
-- [Arquitetura](/Users/Note%20LG/Downloads/Api-radar/docs/ARCHITECTURE.md)
-- [Deploy EC2 Ubuntu](/Users/Note%20LG/Downloads/Api-radar/docs/DEPLOY_EC2_UBUNTU.md)
-- [Testes GraphQL](/Users/Note%20LG/Downloads/Api-radar/docs/GRAPHQL_TESTS.md)
-- [Systemd Service](/Users/Note%20LG/Downloads/Api-radar/docs/SYSTEMD_SERVICE.md)
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Deploy EC2 Ubuntu/VPS](docs/DEPLOY_EC2_UBUNTU.md)
+- [Testes GraphQL](docs/GRAPHQL_TESTS.md)
+- [Systemd Service](docs/SYSTEMD_SERVICE.md)

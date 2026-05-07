@@ -151,6 +151,30 @@ final class CacheKeyFactory
     /**
      * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null} $filtro
      */
+    public static function emendaRankingSummary(array $filtro): string
+    {
+        return 'emenda:ranking_summary:v1:' . self::genericFilterKey($filtro);
+    }
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null} $filtro
+     */
+    public static function emendaAnnualSeries(array $filtro): string
+    {
+        return 'emenda:annual_series:v1:' . self::genericFilterKey($filtro);
+    }
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null} $filtro
+     */
+    public static function emendaTopTipos(array $filtro, int $limit, int $offset): string
+    {
+        return 'emenda:top_tipos:v1:' . self::genericFilterKey($filtro) . ":{$limit}:{$offset}";
+    }
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null} $filtro
+     */
     public static function emendaTopGastadores(array $filtro, int $limit, int $offset): string
     {
         return 'emenda:top_gastadores:v2:' . self::genericFilterKey($filtro) . ":{$limit}:{$offset}";
@@ -226,6 +250,16 @@ final class CacheKeyFactory
     public static function newsByPolitico(string $politico, int $limit): string
     {
         return 'news:politico:' . md5(mb_strtolower(trim($politico)) . ':' . $limit);
+    }
+
+    public static function impostometroResumo(): string
+    {
+        return 'impostometro:resumo:v1';
+    }
+
+    public static function impostometroResumoStale(): string
+    {
+        return 'impostometro:resumo:stale:v1';
     }
 
     /**

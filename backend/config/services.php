@@ -23,4 +23,14 @@ return [
         'token' => env('BRASILIO_TOKEN', ''),
         'eleicoes_dataset_path' => env('BRASILIO_ELEICOES_DATASET_PATH', '/api/dataset/eleicoes-brasil/candidatos/data/'),
     ],
+
+    'impostometro' => [
+        'api_url' => env('IMPOSTOMETRO_API_URL', ''),
+        'api_token' => env('IMPOSTOMETRO_API_TOKEN', ''),
+        'token_header' => env('IMPOSTOMETRO_TOKEN_HEADER', 'Authorization'),
+        'token_scheme' => env('IMPOSTOMETRO_TOKEN_SCHEME', 'Bearer'),
+        'cache_ttl_seconds' => (int) env('IMPOSTOMETRO_CACHE_TTL_SECONDS', 300),
+        'stale_ttl_seconds' => (int) env('IMPOSTOMETRO_STALE_TTL_SECONDS', 86400),
+        'source_label' => env('IMPOSTOMETRO_SOURCE_LABEL', 'Impostometro'),
+    ],
 ];

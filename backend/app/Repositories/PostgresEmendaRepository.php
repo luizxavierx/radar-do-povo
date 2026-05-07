@@ -153,6 +153,154 @@ final class PostgresEmendaRepository implements EmendaRepositoryInterface
         ];
     }
 
+    public function rankingSummary(array $filtro): array
+    {
+        $filtro = $this->normalizeFiltro($filtro);
+        $paisExpr = $this->paisExpression('localidade_aplicacao');
+        $autorExpr = "COALESCE(NULLIF(BTRIM(codigo_autor_emenda), ''), NULLIF(BTRIM(nome_autor_emenda), ''))";
+
+        $base = DB::table('emendas');
+        $this->applyEmendaFiltro($base, $filtro);
+
+        $summary = (array) (clone $base)->selectRaw("
+            COUNT(1)::bigint AS total_emendas,
+            COUNT(DISTINCT {$autorExpr})::bigint AS total_autores,
+            COUNT(DISTINCT {$paisExpr})::bigint AS total_paises,
+            COUNT(DISTINCT NULLIF(BTRIM(tipo_emenda), ''))::bigint AS total_tipos,
+            COALESCE(SUM(valor_empenhado_cents), 0)::bigint AS total_empenhado_cents,
+            COALESCE(SUM(valor_liquidado_cents), 0)::bigint AS total_liquidado_cents,
+            COALESCE(SUM(valor_pago_cents), 0)::bigint AS total_pago_cents,
+            COALESCE(SUM(valor_rp_inscritos_cents), 0)::bigint AS total_rp_inscritos_cents,
+            COALESCE(SUM(valor_rp_cancelados_cents), 0)::bigint AS total_rp_cancelados_cents,
+            COALESCE(SUM(valor_rp_pagos_cents), 0)::bigint AS total_rp_pagos_cents,
+            COALESCE(ROUND(COALESCE(SUM(valor_pago_cents), 0)::numeric / NULLIF(COUNT(1), 0)), 0)::bigint
+                AS ticket_medio_pago_cents
+        ")->first();
+
+        return [
+            'total_emendas' => (int) ($summary['total_emendas'] ?? 0),
+            'total_autores' => (int) ($summary['total_autores'] ?? 0),
+            'total_paises' => (int) ($summary['total_paises'] ?? 0),
+            'total_tipos' => (int) ($summary['total_tipos'] ?? 0),
+            'total_empenhado_cents' => $summary['total_empenhado_cents'] ?? '0',
+            'total_liquidado_cents' => $summary['total_liquidado_cents'] ?? '0',
+            'total_pago_cents' => $summary['total_pago_cents'] ?? '0',
+            'total_rp_inscritos_cents' => $summary['total_rp_inscritos_cents'] ?? '0',
+            'total_rp_cancelados_cents' => $summary['total_rp_cancelados_cents'] ?? '0',
+            'total_rp_pagos_cents' => $summary['total_rp_pagos_cents'] ?? '0',
+            'ticket_medio_pago_cents' => $summary['ticket_medio_pago_cents'] ?? '0',
+            'periodo' => [
+                'ano_inicio' => $filtro['anoInicio'],
+                'ano_fim' => $filtro['anoFim'],
+            ],
+        ];
+    }
+
+    public function annualSeries(array $filtro): array
+    {
+        $filtro = $this->normalizeFiltro($filtro);
+        $paisExpr = $this->paisExpression('localidade_aplicacao');
+        $autorExpr = "COALESCE(NULLIF(BTRIM(codigo_autor_emenda), ''), NULLIF(BTRIM(nome_autor_emenda), ''))";
+
+        $base = DB::table('emendas')->whereNotNull('ano_emenda');
+        $this->applyEmendaFiltro($base, $filtro);
+
+        $nodes = (clone $base)
+            ->selectRaw("
+                ano_emenda AS ano,
+                COUNT(1)::bigint AS total_emendas,
+                COUNT(DISTINCT {$autorExpr})::bigint AS total_autores,
+                COUNT(DISTINCT {$paisExpr})::bigint AS total_paises,
+                COUNT(DISTINCT NULLIF(BTRIM(tipo_emenda), ''))::bigint AS total_tipos,
+                COALESCE(SUM(valor_empenhado_cents), 0)::bigint AS total_empenhado_cents,
+                COALESCE(SUM(valor_liquidado_cents), 0)::bigint AS total_liquidado_cents,
+                COALESCE(SUM(valor_pago_cents), 0)::bigint AS total_pago_cents,
+                COALESCE(SUM(valor_rp_inscritos_cents), 0)::bigint AS total_rp_inscritos_cents,
+                COALESCE(SUM(valor_rp_cancelados_cents), 0)::bigint AS total_rp_cancelados_cents,
+                COALESCE(SUM(valor_rp_pagos_cents), 0)::bigint AS total_rp_pagos_cents
+            ")
+            ->groupBy('ano_emenda')
+            ->orderBy('ano_emenda')
+            ->get()
+            ->map(static function ($row): array {
+                return [
+                    'ano' => (int) ($row->ano ?? 0),
+                    'total_emendas' => (int) ($row->total_emendas ?? 0),
+                    'total_autores' => (int) ($row->total_autores ?? 0),
+                    'total_paises' => (int) ($row->total_paises ?? 0),
+                    'total_tipos' => (int) ($row->total_tipos ?? 0),
+                    'total_empenhado_cents' => $row->total_empenhado_cents ?? '0',
+                    'total_liquidado_cents' => $row->total_liquidado_cents ?? '0',
+                    'total_pago_cents' => $row->total_pago_cents ?? '0',
+                    'total_rp_inscritos_cents' => $row->total_rp_inscritos_cents ?? '0',
+                    'total_rp_cancelados_cents' => $row->total_rp_cancelados_cents ?? '0',
+                    'total_rp_pagos_cents' => $row->total_rp_pagos_cents ?? '0',
+                ];
+            })
+            ->all();
+
+        return [
+            'nodes' => $nodes,
+            'total' => count($nodes),
+        ];
+    }
+
+    public function topTipos(array $filtro, int $limit, int $offset): array
+    {
+        $filtro = $this->normalizeFiltro($filtro);
+        $maxPageSize = (int) config('radar.max_page_size', 20);
+        $limit = max(1, min($limit, max(1, $maxPageSize)));
+        $offset = max(0, $offset);
+        $tipoExpr = "COALESCE(NULLIF(BTRIM(tipo_emenda), ''), 'NAO_INFORMADO')";
+
+        $base = DB::table('emendas');
+        $this->applyEmendaFiltro($base, $filtro);
+
+        $grouped = (clone $base)
+            ->selectRaw("{$tipoExpr} AS tipo_emenda")
+            ->groupByRaw($tipoExpr);
+
+        $total = (int) DB::query()
+            ->fromSub($grouped, 't')
+            ->count();
+
+        $nodes = (clone $base)
+            ->selectRaw("
+                {$tipoExpr} AS tipo_emenda,
+                COUNT(1)::bigint AS total_emendas,
+                COALESCE(SUM(valor_empenhado_cents), 0)::bigint AS total_empenhado_cents,
+                COALESCE(SUM(valor_liquidado_cents), 0)::bigint AS total_liquidado_cents,
+                COALESCE(SUM(valor_pago_cents), 0)::bigint AS total_pago_cents,
+                COALESCE(SUM(valor_rp_inscritos_cents), 0)::bigint AS total_rp_inscritos_cents,
+                COALESCE(SUM(valor_rp_cancelados_cents), 0)::bigint AS total_rp_cancelados_cents,
+                COALESCE(SUM(valor_rp_pagos_cents), 0)::bigint AS total_rp_pagos_cents
+            ")
+            ->groupByRaw($tipoExpr)
+            ->orderByDesc('total_pago_cents')
+            ->orderBy('tipo_emenda')
+            ->limit($limit)
+            ->offset($offset)
+            ->get()
+            ->map(static function ($row): array {
+                return [
+                    'tipo_emenda' => (string) ($row->tipo_emenda ?? 'NAO_INFORMADO'),
+                    'total_emendas' => (int) ($row->total_emendas ?? 0),
+                    'total_empenhado_cents' => $row->total_empenhado_cents ?? '0',
+                    'total_liquidado_cents' => $row->total_liquidado_cents ?? '0',
+                    'total_pago_cents' => $row->total_pago_cents ?? '0',
+                    'total_rp_inscritos_cents' => $row->total_rp_inscritos_cents ?? '0',
+                    'total_rp_cancelados_cents' => $row->total_rp_cancelados_cents ?? '0',
+                    'total_rp_pagos_cents' => $row->total_rp_pagos_cents ?? '0',
+                ];
+            })
+            ->all();
+
+        return [
+            'nodes' => $nodes,
+            'total' => $total,
+        ];
+    }
+
     public function topGastadores(array $filtro, int $limit, int $offset): array
     {
         $filtro = $this->normalizeFiltro($filtro);

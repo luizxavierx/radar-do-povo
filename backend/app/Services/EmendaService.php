@@ -55,6 +55,61 @@ final class EmendaService
 
     /**
      * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null,apenasParlamentares?:bool|null,cargoParlamentar?:string|null} $filtro
+     * @return array<string,mixed>
+     */
+    public function rankingSummary(array $filtro): array
+    {
+        $filtro = $this->normalizeFiltro($filtro);
+        $cacheKey = CacheKeyFactory::emendaRankingSummary($filtro);
+        $ttl = (int) config('radar.query_cache_ttl_seconds', 300);
+
+        return $this->cache->remember(
+            $cacheKey,
+            $ttl,
+            fn (): array => $this->repository->rankingSummary($filtro),
+        );
+    }
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null,apenasParlamentares?:bool|null,cargoParlamentar?:string|null} $filtro
+     * @return array{nodes: array<int,array<string,mixed>>, total: int}
+     */
+    public function annualSeries(array $filtro): array
+    {
+        $filtro = $this->normalizeFiltro($filtro);
+        $cacheKey = CacheKeyFactory::emendaAnnualSeries($filtro);
+        $ttl = (int) config('radar.query_cache_ttl_seconds', 300);
+
+        return $this->cache->remember(
+            $cacheKey,
+            $ttl,
+            fn (): array => $this->repository->annualSeries($filtro),
+        );
+    }
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null,apenasParlamentares?:bool|null,cargoParlamentar?:string|null} $filtro
+     * @return array{nodes: array<int,array<string,mixed>>, total: int}
+     */
+    public function topTipos(array $filtro, int $limit, int $offset): array
+    {
+        $filtro = $this->normalizeFiltro($filtro);
+        $maxPageSize = (int) config('radar.max_ranking_page_size', config('radar.max_page_size', 20));
+        $limit = max(1, min($limit, max(1, $maxPageSize)));
+        $offset = max(0, $offset);
+
+        $cacheKey = CacheKeyFactory::emendaTopTipos($filtro, $limit, $offset);
+        $ttl = (int) config('radar.query_cache_ttl_seconds', 300);
+
+        return $this->cache->remember(
+            $cacheKey,
+            $ttl,
+            fn (): array => $this->repository->topTipos($filtro, $limit, $offset),
+        );
+    }
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null,apenasParlamentares?:bool|null,cargoParlamentar?:string|null} $filtro
      * @return array{nodes: array<int,array<string,mixed>>, total: int}
      */
     public function topGastadores(array $filtro, int $limit, int $offset): array

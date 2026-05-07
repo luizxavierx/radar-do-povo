@@ -143,8 +143,8 @@ npm install
 
 Use o arquivo `.env.example` como base. Os pontos principais são:
 
-- `RADAR_API_BASE`
-- `RADAR_PROXY_TARGET`
+- `RADAR_API_BASE=/graphql` para producao e dev same-origin
+- `RADAR_PROXY_TARGET=http://127.0.0.1:8081` apenas para desenvolvimento local
 - `RADAR_SHARED_API_KEY` apenas para desenvolvimento local com proxy
 - `VITE_MEMBER_API_BASE_URL`
 - `VITE_MEMBER_PORTAL_BASE_URL`
@@ -163,11 +163,16 @@ npm run build
 
 ## Deploy
 
-O projeto em produção é servido como build estático em VPS, com Apache apontando para `dist/` e fazendo proxy do backend interno:
+O projeto em produção é servido como build estático em VPS, com Apache apontando para `dist/` e fazendo proxy do backend interno no mesmo dominio `radardopovo.com`:
 
-- `/graphql` -> backend Laravel
-- `/api/*` -> backend Laravel
-- `/healthz` -> backend Laravel
+- `/graphql` -> `http://127.0.0.1:8081/graphql`
+- `/api/*` -> `http://127.0.0.1:8081/api/*`
+- `/healthz` -> `http://127.0.0.1:8081/healthz`
+
+Templates de referencia:
+
+- `backend/deploy/apache-radardopovo.conf`
+- `backend/deploy/api-radar.service`
 
 Os artefatos públicos importantes para indexação ficam em `public/`:
 

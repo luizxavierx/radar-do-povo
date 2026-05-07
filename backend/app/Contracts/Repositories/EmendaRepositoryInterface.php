@@ -20,6 +20,24 @@ interface EmendaRepositoryInterface
 
     /**
      * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null,apenasParlamentares?:bool|null,cargoParlamentar?:string|null} $filtro
+     * @return array<string,mixed>
+     */
+    public function rankingSummary(array $filtro): array;
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null,apenasParlamentares?:bool|null,cargoParlamentar?:string|null} $filtro
+     * @return array{nodes: array<int,array<string,mixed>>, total: int}
+     */
+    public function annualSeries(array $filtro): array;
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null,apenasParlamentares?:bool|null,cargoParlamentar?:string|null} $filtro
+     * @return array{nodes: array<int,array<string,mixed>>, total: int}
+     */
+    public function topTipos(array $filtro, int $limit, int $offset): array;
+
+    /**
+     * @param array{anoInicio?:int|null,anoFim?:int|null,uf?:string|null,tipoEmenda?:string|null,pais?:string|null,apenasParlamentares?:bool|null,cargoParlamentar?:string|null} $filtro
      * @return array{nodes: array<int,array<string,mixed>>, total: int}
      */
     public function topGastadores(array $filtro, int $limit, int $offset): array;

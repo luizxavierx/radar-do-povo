@@ -2,7 +2,7 @@
 
 ## Endpoint
 
-- GraphQL: `https://api.radardopovo.com/graphql`
+- GraphQL: `https://radardopovo.com/graphql`
 - Metodo: `POST`
 - Header: `Content-Type: application/json`
 
